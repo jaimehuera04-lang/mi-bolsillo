@@ -1,0 +1,61 @@
+/* ============================================================
+   sw.js - "Service Worker"
+   Es un ayudante que corre en segundo plano y guarda una copia
+   de la app en el celular. Gracias a el, Mi Bolsillo abre aunque
+   estes sin internet.
+
+   IMPORTANTE: cuando cambies archivos, sube el numero de VERSION.
+   Asi el celular sabe que tiene que bajar la version nueva.
+   ============================================================ */
+
+const VERSION = 'mi-bolsillo-v1';
+
+const ARCHIVOS = [
+  './',
+  './index.html',
+  './css/estilos.css',
+  './js/datos.js',
+  './js/graficos.js',
+  './js/consejos.js',
+  './js/app.js',
+  './manifest.json',
+  './iconos/icono-192.png',
+  './iconos/icono-512.png',
+];
+
+// 1. Al instalar: guardamos una copia de todo
+self.addEventListener('install', evento => {
+  evento.waitUntil(
+    caches.open(VERSION)
+      .then(cache => cache.addAll(ARCHIVOS))
+      .then(() => self.skipWaiting())
+  );
+});
+
+// 2. Al activarse: borramos las copias viejas
+self.addEventListener('activate', evento => {
+  evento.waitUntil(
+    caches.keys()
+      .then(nombres => Promise.all(
+        nombres.filter(n => n !== VERSION).map(n => caches.delete(n))
+      ))
+      .then(() => self.clients.claim())
+  );
+});
+
+// 3. Al pedir un archivo: primero intentamos la red (asi ves los
+//    cambios al tiro cuando estas desarrollando) y si no hay
+//    internet, servimos la copia guardada.
+self.addEventListener('fetch', evento => {
+  if (evento.request.method !== 'GET') return;
+
+  evento.respondWith(
+    fetch(evento.request)
+      .then(respuesta => {
+        const copia = respuesta.clone();
+        caches.open(VERSION).then(cache => cache.put(evento.request, copia));
+        return respuesta;
+      })
+      .catch(() => caches.match(evento.request).then(r => r || caches.match('./index.html')))
+  );
+});

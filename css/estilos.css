@@ -1,0 +1,329 @@
+/* ============================================================
+   Mi Bolsillo - hoja de estilos
+   Todo esta comentado para que puedas cambiar colores y tamanos
+   sin miedo. Los "--nombre" de abajo son variables: cambias el
+   valor una sola vez y se actualiza en toda la app.
+   ============================================================ */
+
+:root {
+  /* Colores base */
+  --verde:        #10a072;
+  --verde-suave:  #e8f7f1;
+  --verde-oscuro: #0b7554;
+  --rojo:         #e2564d;
+  --rojo-suave:   #fdeceb;
+  --azul:         #3b7dd8;
+  --morado:       #7c5cd6;
+  --amarillo:     #e8a33d;
+
+  --fondo:        #f4f6f8;
+  --tarjeta:      #ffffff;
+  --texto:        #1c2530;
+  --texto-suave:  #667585;
+  --borde:        #e4e9ee;
+
+  --radio:        18px;
+  --sombra:       0 2px 10px rgba(20, 35, 50, .06);
+  --sombra-alta:  0 8px 28px rgba(20, 35, 50, .14);
+
+  --alto-barra-inferior: 68px;
+}
+
+/* Modo oscuro: se activa solo si el celular esta en modo oscuro */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fondo:       #12171d;
+    --tarjeta:     #1b222b;
+    --texto:       #e9eef3;
+    --texto-suave: #94a3b3;
+    --borde:       #2a333e;
+    --verde-suave: #12352a;
+    --rojo-suave:  #3a1f1d;
+    --sombra:      0 2px 10px rgba(0, 0, 0, .3);
+  }
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--fondo);
+  color: var(--texto);
+  font-size: 16px;
+  line-height: 1.5;
+  /* respeta el "notch" y la barra de gestos del celular */
+  padding-bottom: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom));
+}
+
+h1, h2, h3 { margin: 0 0 8px; line-height: 1.25; }
+h1 { font-size: 22px; }
+h2 { font-size: 18px; }
+h3 { font-size: 15px; }
+p  { margin: 0 0 10px; }
+
+/* ---------- Encabezado ---------- */
+.cabecera {
+  padding: calc(env(safe-area-inset-top) + 18px) 18px 14px;
+  background: linear-gradient(135deg, var(--verde), var(--verde-oscuro));
+  color: #fff;
+  border-radius: 0 0 26px 26px;
+}
+.cabecera .saludo { font-size: 14px; opacity: .9; margin: 0; }
+.cabecera .titulo { font-size: 20px; font-weight: 700; margin: 2px 0 0; }
+.cabecera-fila { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
+.chip-mes {
+  background: rgba(255,255,255,.18);
+  border: 1px solid rgba(255,255,255,.28);
+  color: #fff;
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.chip-mes button {
+  background: none; border: 0; color: #fff; font-size: 15px;
+  cursor: pointer; padding: 0 2px; line-height: 1; opacity: .85;
+}
+.chip-mes button:hover { opacity: 1; }
+
+/* ---------- Contenedores ---------- */
+.pantalla { padding: 16px 16px 24px; display: none; animation: aparecer .22s ease; }
+.pantalla.activa { display: block; }
+@keyframes aparecer { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+.tarjeta {
+  background: var(--tarjeta);
+  border-radius: var(--radio);
+  padding: 16px;
+  box-shadow: var(--sombra);
+  border: 1px solid var(--borde);
+  margin-bottom: 14px;
+}
+.tarjeta-titulo {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; margin-bottom: 12px;
+}
+.tarjeta-titulo h2, .tarjeta-titulo h3 { margin: 0; }
+
+/* ---------- Resumen del mes ---------- */
+.resumen-saldo { text-align: center; padding: 4px 0 2px; }
+.resumen-saldo .etiqueta { font-size: 13px; color: var(--texto-suave); }
+.resumen-saldo .monto { font-size: 34px; font-weight: 800; letter-spacing: -.5px; margin: 2px 0 0; }
+.resumen-saldo .monto.positivo { color: var(--verde); }
+.resumen-saldo .monto.negativo { color: var(--rojo); }
+
+.par-cifras { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.cifra {
+  border-radius: 14px; padding: 12px; text-align: left;
+  background: var(--verde-suave);
+}
+.cifra.gasto { background: var(--rojo-suave); }
+.cifra .rotulo { font-size: 12px; color: var(--texto-suave); display: flex; align-items: center; gap: 5px; }
+.cifra .valor { font-size: 18px; font-weight: 700; margin-top: 2px; }
+.cifra.ingreso .valor { color: var(--verde-oscuro); }
+.cifra.gasto .valor { color: var(--rojo); }
+
+/* ---------- Botones ---------- */
+.boton {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 0; border-radius: 14px; padding: 13px 16px;
+  font-size: 15px; font-weight: 600; font-family: inherit;
+  cursor: pointer; transition: transform .12s ease, filter .12s ease;
+  background: var(--verde); color: #fff; width: 100%;
+}
+.boton:active { transform: scale(.97); }
+.boton.secundario { background: var(--tarjeta); color: var(--texto); border: 1px solid var(--borde); }
+.boton.peligro    { background: var(--rojo); }
+.boton.fantasma   { background: transparent; color: var(--verde); font-weight: 600; }
+/* "chico" sigue siendo comodo de tocar con el dedo (unos 39px de alto) */
+.boton.chico      { padding: 10px 13px; font-size: 13px; width: auto; }
+
+/* ---------- Barra de navegacion inferior ---------- */
+.navegacion {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  background: var(--tarjeta);
+  border-top: 1px solid var(--borde);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.navegacion button {
+  background: none; border: 0; font-family: inherit; cursor: pointer;
+  padding: 9px 2px 10px; color: var(--texto-suave);
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  font-size: 10.5px; font-weight: 600;
+}
+.navegacion button .icono { font-size: 20px; line-height: 1; }
+.navegacion button.activa { color: var(--verde); }
+
+/* ---------- Boton flotante (+) ---------- */
+.boton-flotante {
+  position: fixed; right: 18px;
+  bottom: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom) + 16px);
+  width: 58px; height: 58px; border-radius: 50%;
+  background: var(--verde); color: #fff; border: 0;
+  font-size: 30px; line-height: 1; cursor: pointer; z-index: 41;
+  box-shadow: var(--sombra-alta);
+  transition: transform .12s ease;
+}
+.boton-flotante:active { transform: scale(.92); }
+
+/* ---------- Lista de movimientos ---------- */
+.lista { list-style: none; margin: 0; padding: 0; }
+.movimiento {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 0; border-bottom: 1px solid var(--borde);
+}
+.movimiento:last-child { border-bottom: 0; }
+.movimiento .emoji {
+  width: 42px; height: 42px; border-radius: 13px; flex: 0 0 42px;
+  display: grid; place-items: center; font-size: 20px; background: var(--fondo);
+}
+.movimiento .info { flex: 1; min-width: 0; }
+.movimiento .info .nombre { font-weight: 600; font-size: 15px; }
+.movimiento .info .detalle { font-size: 12.5px; color: var(--texto-suave); }
+.movimiento .monto { font-weight: 700; font-size: 15px; white-space: nowrap; }
+.movimiento .monto.ingreso { color: var(--verde); }
+.movimiento .monto.gasto   { color: var(--rojo); }
+.movimiento .borrar {
+  background: none; border: 0; color: var(--texto-suave);
+  font-size: 17px; cursor: pointer; padding: 4px 2px 4px 8px;
+}
+
+.fecha-grupo {
+  font-size: 12px; font-weight: 700; color: var(--texto-suave);
+  text-transform: uppercase; letter-spacing: .04em; margin: 14px 0 2px;
+}
+
+/* ---------- Estado vacio ---------- */
+.vacio { text-align: center; padding: 26px 14px; color: var(--texto-suave); }
+.vacio .emoji-grande { font-size: 42px; display: block; margin-bottom: 8px; }
+
+/* ---------- Formularios ---------- */
+label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 5px; }
+input, select, textarea {
+  width: 100%; padding: 13px 14px; font-size: 16px; font-family: inherit;
+  border: 1px solid var(--borde); border-radius: 13px;
+  background: var(--tarjeta); color: var(--texto);
+}
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--verde); outline-offset: 1px; }
+.ayuda { font-size: 12px; color: var(--texto-suave); margin: 5px 0 0; }
+
+.interruptor-tipo { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
+.interruptor-tipo button {
+  border: 1px solid var(--borde); background: var(--tarjeta); color: var(--texto-suave);
+  border-radius: 13px; padding: 12px; font-size: 15px; font-weight: 600;
+  font-family: inherit; cursor: pointer;
+}
+.interruptor-tipo button.activo.gasto   { background: var(--rojo-suave);  color: var(--rojo);   border-color: var(--rojo); }
+.interruptor-tipo button.activo.ingreso { background: var(--verde-suave); color: var(--verde-oscuro); border-color: var(--verde); }
+
+.rejilla-categorias { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.rejilla-categorias button {
+  border: 1px solid var(--borde); background: var(--tarjeta); border-radius: 14px;
+  padding: 10px 4px; cursor: pointer; font-family: inherit; color: var(--texto);
+  display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10.5px;
+}
+.rejilla-categorias button .emoji { font-size: 21px; }
+.rejilla-categorias button.activa { border-color: var(--verde); background: var(--verde-suave); font-weight: 700; }
+
+/* ---------- Ventana emergente (modal) ---------- */
+.telon {
+  position: fixed; inset: 0; background: rgba(12, 20, 28, .5); z-index: 50;
+  display: none; align-items: flex-end; justify-content: center;
+}
+.telon.abierto { display: flex; }
+.hoja {
+  background: var(--tarjeta); width: 100%; max-width: 520px;
+  border-radius: 24px 24px 0 0; padding: 18px 18px calc(20px + env(safe-area-inset-bottom));
+  max-height: 92vh; overflow-y: auto; animation: subir .25s ease;
+}
+@keyframes subir { from { transform: translateY(100%); } to { transform: none; } }
+.hoja-agarradera { width: 42px; height: 4px; border-radius: 3px; background: var(--borde); margin: 0 auto 12px; }
+
+/* ---------- Barras de progreso ---------- */
+.barra { height: 9px; border-radius: 6px; background: var(--borde); overflow: hidden; }
+.barra > span { display: block; height: 100%; border-radius: 6px; transition: width .5s ease; }
+
+.linea-progreso { margin-bottom: 13px; }
+.linea-progreso .encabezado {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 13px; margin-bottom: 5px; gap: 8px;
+}
+.linea-progreso .encabezado .nombre { font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.linea-progreso .encabezado .cifras { color: var(--texto-suave); font-size: 12px; white-space: nowrap; }
+
+/* ---------- Cajita educativa ---------- */
+.consejo {
+  background: var(--verde-suave); border-radius: 14px; padding: 13px 14px;
+  font-size: 13.5px; border-left: 4px solid var(--verde);
+}
+.consejo strong { display: block; margin-bottom: 3px; }
+.consejo.aviso { background: #fff6e6; border-left-color: var(--amarillo); }
+@media (prefers-color-scheme: dark) { .consejo.aviso { background: #33280f; } }
+
+/* ---------- Acordeon de tecnicas de ahorro ---------- */
+.tecnica { border: 1px solid var(--borde); border-radius: 15px; margin-bottom: 10px; overflow: hidden; background: var(--tarjeta); }
+.tecnica > summary {
+  padding: 14px; cursor: pointer; font-weight: 700; font-size: 15px;
+  display: flex; align-items: center; gap: 10px; list-style: none;
+}
+.tecnica > summary::-webkit-details-marker { display: none; }
+.tecnica > summary .emoji { font-size: 21px; }
+.tecnica > summary .flecha { margin-left: auto; color: var(--texto-suave); transition: transform .2s; }
+.tecnica[open] > summary .flecha { transform: rotate(90deg); }
+.tecnica .cuerpo { padding: 0 14px 14px; font-size: 14px; color: var(--texto); }
+.tecnica .cuerpo ul { padding-left: 20px; margin: 8px 0; }
+.tecnica .cuerpo li { margin-bottom: 5px; }
+.tecnica .etiqueta-nivel {
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  padding: 3px 8px; border-radius: 999px; background: var(--fondo); color: var(--texto-suave);
+}
+
+/* ---------- Graficos ---------- */
+.grafico { width: 100%; display: block; overflow: visible; }
+.leyenda { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 12px; font-size: 12.5px; }
+.leyenda .item { display: flex; align-items: center; gap: 6px; }
+.leyenda .punto { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 10px; }
+.leyenda .item .pct { color: var(--texto-suave); }
+
+.pestanas-grafico { display: flex; gap: 6px; }
+.pestanas-grafico button {
+  border: 1px solid var(--borde); background: transparent; color: var(--texto-suave);
+  border-radius: 999px; padding: 5px 11px; font-size: 12px; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+}
+.pestanas-grafico button.activa { background: var(--verde); color: #fff; border-color: var(--verde); }
+
+/* ---------- Metas ---------- */
+.meta { display: flex; gap: 12px; align-items: flex-start; }
+.meta .emoji { font-size: 28px; }
+.meta .cuerpo { flex: 1; min-width: 0; }
+.meta .acciones { display: flex; gap: 8px; margin-top: 10px; }
+
+/* ---------- Varios ---------- */
+.aviso-instalar {
+  display: none; align-items: center; gap: 10px;
+  background: var(--tarjeta); border: 1px dashed var(--verde);
+  border-radius: 14px; padding: 12px; margin-bottom: 14px; font-size: 13px;
+}
+.aviso-instalar.visible { display: flex; }
+
+.mensajito {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom) + 84px);
+  background: var(--texto); color: var(--fondo);
+  padding: 11px 18px; border-radius: 999px; font-size: 13.5px; font-weight: 600;
+  z-index: 60; opacity: 0; pointer-events: none; transition: opacity .25s ease;
+  max-width: 90vw; text-align: center;
+}
+.mensajito.visible { opacity: 1; }
+
+.fila-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+@media (min-width: 700px) {
+  .pantalla { max-width: 620px; margin: 0 auto; }
+  .cabecera > div { max-width: 620px; margin: 0 auto; }
+}

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <!-- viewport-fit=cover: aprovecha toda la pantalla del celular, hasta debajo del notch -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+  <title>Mi Bolsillo - controla tus gastos</title>
+  <meta name="description" content="App simple para llevar tus ingresos, gastos y metas de ahorro, con graficos y consejos para aprender a manejar tu plata.">
+  <meta name="theme-color" content="#10a072">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="iconos/icono-192.png">
+  <link rel="apple-touch-icon" href="iconos/icono-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Mi Bolsillo">
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+  <!-- ================= ENCABEZADO ================= -->
+  <header class="cabecera">
+    <div>
+      <div class="cabecera-fila">
+        <div>
+          <p class="saludo" id="saludo">Hola</p>
+          <p class="titulo">Mi Bolsillo</p>
+        </div>
+        <div class="chip-mes">
+          <button id="mesAnterior" aria-label="Mes anterior">&#9664;</button>
+          <span id="etiquetaMes">agosto 2026</span>
+          <button id="mesSiguiente" aria-label="Mes siguiente">&#9654;</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= 1. INICIO (dashboard) ================= -->
+  <main class="pantalla activa" id="pantalla-inicio">
+
+    <div class="aviso-instalar" id="avisoInstalar">
+      <span style="font-size:22px">📲</span>
+      <div style="flex:1">
+        <strong>Instalala en tu celular</strong>
+        <div class="ayuda">Se abre como una app normal y funciona sin internet.</div>
+      </div>
+      <button class="boton chico" id="botonInstalar">Instalar</button>
+    </div>
+
+    <!-- Resumen grande del mes -->
+    <section class="tarjeta">
+      <div class="resumen-saldo">
+        <div class="etiqueta">Te queda este mes</div>
+        <div class="monto positivo" id="saldoMes">$0</div>
+      </div>
+      <div class="par-cifras">
+        <div class="cifra ingreso">
+          <div class="rotulo">⬆️ Entro</div>
+          <div class="valor" id="totalIngresos">$0</div>
+        </div>
+        <div class="cifra gasto">
+          <div class="rotulo">⬇️ Salio</div>
+          <div class="valor" id="totalGastos">$0</div>
+        </div>
+      </div>
+      <div style="margin-top:14px">
+        <div class="linea-progreso" style="margin-bottom:0">
+          <div class="encabezado">
+            <span class="nombre">🐷 Tasa de ahorro</span>
+            <span class="cifras" id="textoTasaAhorro">0%</span>
+          </div>
+          <div class="barra"><span id="barraTasaAhorro" style="width:0%; background:var(--verde)"></span></div>
+          <p class="ayuda">Es el porcentaje de lo que entro que NO se gasto. Sobre 20% es una muy buena senal.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Consejos automaticos segun tus numeros -->
+    <div id="zonaConsejos"></div>
+
+    <!-- Grafico de dona -->
+    <section class="tarjeta">
+      <div class="tarjeta-titulo">
+        <h2>En que se te fue</h2>
+        <span class="ayuda" style="margin:0">este mes</span>
+      </div>
+      <div id="graficoDona"></div>
+    </section>
+
+    <!-- Grafico de barras / linea -->
+    <section class="tarjeta">
+      <div class="tarjeta-titulo">
+        <h2 id="tituloTendencia">Mes a mes</h2>
+        <div class="pestanas-grafico">
+          <button class="activa" data-vista="barras">Comparar</button>
+          <button data-vista="linea">Mi saldo</button>
+        </div>
+      </div>
+      <div id="graficoTendencia"></div>
+      <p class="ayuda" id="pieTendencia">Verde es lo que entro, rojo lo que salio. Si el rojo supera al verde, ese mes gastaste mas de lo que ganaste.</p>
+    </section>
+
+    <!-- Regla 50/30/20 -->
+    <section class="tarjeta">
+      <div class="tarjeta-titulo">
+        <h2>Tu reparto del mes</h2>
+        <button class="boton fantasma chico" data-ir="aprender">Que es esto?</button>
+      </div>
+      <div id="graficoRegla"></div>
+    </section>
+
+    <!-- Topes por categoria -->
+    <section class="tarjeta" id="tarjetaTopes">
+      <div class="tarjeta-titulo">
+        <h2>Tus topes</h2>
+        <button class="boton fantasma chico" data-ir="ajustes">Editar</button>
+      </div>
+      <div id="listaTopes"></div>
+    </section>
+
+    <!-- Pildora educativa -->
+    <div class="consejo" style="margin-bottom:14px">
+      <strong>💡 Para tener en cuenta</strong>
+      <span id="pildoraDia"></span>
+    </div>
+  </main>
+
+  <!-- ================= 2. MOVIMIENTOS ================= -->
+  <main class="pantalla" id="pantalla-movimientos">
+    <div class="tarjeta">
+      <div class="tarjeta-titulo">
+        <h2>Movimientos</h2>
+        <select id="filtroTipo" style="width:auto; padding:7px 10px; font-size:13px">
+          <option value="todos">Todos</option>
+          <option value="gasto">Solo gastos</option>
+          <option value="ingreso">Solo ingresos</option>
+        </select>
+      </div>
+      <div id="listaMovimientos"></div>
+    </div>
+  </main>
+
+  <!-- ================= 3. METAS ================= -->
+  <main class="pantalla" id="pantalla-metas">
+    <div class="consejo" style="margin-bottom:14px">
+      <strong>🎯 Por que sirven las metas</strong>
+      Ahorrar "por si acaso" cuesta. Ahorrar para algo con nombre y fecha cuesta mucho menos:
+      tu cabeza deja de ver la plata guardada como algo que te falta y empieza a verla como algo que avanza.
+    </div>
+    <div id="listaMetas"></div>
+    <button class="boton" id="botonNuevaMeta">+ Crear una meta</button>
+  </main>
+
+  <!-- ================= 4. APRENDER ================= -->
+  <main class="pantalla" id="pantalla-aprender">
+    <div class="tarjeta">
+      <h2>Tecnicas de ahorro</h2>
+      <p class="ayuda" style="margin-bottom:0">
+        Ninguna sirve para todo el mundo. Lee una, prueba la que te calce y quedate con esa.
+        Tocalas para abrirlas.
+      </p>
+    </div>
+    <div id="listaTecnicas"></div>
+
+    <div class="tarjeta" style="margin-top:6px">
+      <h3>🧮 Calculadora: cuanto junto?</h3>
+      <p class="ayuda">Mira lo que pasa si guardas un monto fijo cada mes.</p>
+      <label for="calcMonto">Guardo cada mes</label>
+      <input type="number" id="calcMonto" value="50000" min="0" step="1000" inputmode="numeric">
+      <label for="calcAnios">Durante (anos)</label>
+      <input type="number" id="calcAnios" value="5" min="1" max="40" inputmode="numeric">
+      <label for="calcTasa">Rentabilidad anual estimada (%)</label>
+      <input type="number" id="calcTasa" value="5" min="0" max="30" step="0.5" inputmode="decimal">
+      <div class="consejo" style="margin-top:14px" id="resultadoCalc"></div>
+      <p class="ayuda">
+        Es un ejercicio educativo con una rentabilidad constante que en la vida real sube y baja.
+        Esta app no entrega recomendaciones de inversion.
+      </p>
+    </div>
+  </main>
+
+  <!-- ================= 5. AJUSTES ================= -->
+  <main class="pantalla" id="pantalla-ajustes">
+    <section class="tarjeta">
+      <h2>Tus datos</h2>
+      <label for="campoNombre">Como te llamas?</label>
+      <input type="text" id="campoNombre" placeholder="Tu nombre" autocomplete="given-name">
+      <label for="campoMoneda">Moneda</label>
+      <select id="campoMoneda">
+        <option value="CLP">Peso chileno (CLP)</option>
+        <option value="USD">Dolar (USD)</option>
+        <option value="EUR">Euro (EUR)</option>
+        <option value="MXN">Peso mexicano (MXN)</option>
+        <option value="ARS">Peso argentino (ARS)</option>
+        <option value="COP">Peso colombiano (COP)</option>
+        <option value="PEN">Sol peruano (PEN)</option>
+      </select>
+      <label for="campoIngresoEsperado">Cuanto esperas recibir al mes?</label>
+      <input type="number" id="campoIngresoEsperado" placeholder="Ej: 750000" inputmode="numeric">
+      <p class="ayuda">Opcional. Sirve para calcular tus topes sugeridos.</p>
+      <button class="boton" id="botonGuardarAjustes" style="margin-top:14px">Guardar</button>
+    </section>
+
+    <section class="tarjeta">
+      <div class="tarjeta-titulo">
+        <h2>Topes por categoria</h2>
+      </div>
+      <p class="ayuda" style="margin-top:-4px">
+        Es el metodo de los sobres: le pones un maximo a lo que se te descontrola.
+        Deja en blanco lo que no quieras controlar.
+      </p>
+      <div id="editorTopes"></div>
+    </section>
+
+    <section class="tarjeta">
+      <h2>Copia de seguridad</h2>
+      <p class="ayuda" style="margin-top:-4px">
+        Tus datos viven solo en este dispositivo: nadie mas los ve, pero tampoco se recuperan
+        solos si cambias de celular. Descarga una copia de vez en cuando.
+      </p>
+      <div class="fila-botones" style="margin-top:12px">
+        <button class="boton secundario" id="botonExportar">⬇️ Descargar</button>
+        <button class="boton secundario" id="botonImportar">⬆️ Restaurar</button>
+      </div>
+      <input type="file" id="archivoImportar" accept="application/json,.json" hidden>
+    </section>
+
+    <section class="tarjeta">
+      <h2>Otras opciones</h2>
+      <button class="boton secundario" id="botonEjemplo" style="margin-bottom:10px">
+        🧪 Cargar datos de ejemplo
+      </button>
+      <button class="boton secundario" id="botonTutorial" style="margin-bottom:10px">
+        📖 Ver el tutorial otra vez
+      </button>
+      <button class="boton peligro" id="botonBorrarTodo">🗑️ Borrar todos mis datos</button>
+    </section>
+
+    <p class="ayuda" style="text-align:center">Mi Bolsillo · version 1.0</p>
+  </main>
+
+  <!-- ================= BOTON + Y NAVEGACION ================= -->
+  <button class="boton-flotante" id="botonAgregar" aria-label="Agregar movimiento">+</button>
+
+  <nav class="navegacion">
+    <button class="activa" data-pantalla="inicio"><span class="icono">📊</span>Inicio</button>
+    <button data-pantalla="movimientos"><span class="icono">📝</span>Movimientos</button>
+    <button data-pantalla="metas"><span class="icono">🎯</span>Metas</button>
+    <button data-pantalla="aprender"><span class="icono">💡</span>Aprender</button>
+    <button data-pantalla="ajustes"><span class="icono">⚙️</span>Ajustes</button>
+  </nav>
+
+  <!-- ================= VENTANA: NUEVO MOVIMIENTO ================= -->
+  <div class="telon" id="telonMovimiento">
+    <div class="hoja">
+      <div class="hoja-agarradera"></div>
+      <div class="tarjeta-titulo">
+        <h2 id="tituloHojaMovimiento">Anotar un gasto</h2>
+        <button class="boton fantasma chico" data-cerrar="telonMovimiento">Cerrar</button>
+      </div>
+
+      <div class="interruptor-tipo">
+        <button type="button" id="tipoGasto"   class="activo gasto">⬇️ Gasto</button>
+        <button type="button" id="tipoIngreso" class="ingreso">⬆️ Ingreso</button>
+      </div>
+
+      <form id="formMovimiento">
+        <label for="campoMonto">Cuanto?</label>
+        <input type="number" id="campoMonto" inputmode="numeric" min="1" step="1" required
+               placeholder="0" style="font-size:24px; font-weight:700; text-align:center">
+
+        <label>Categoria</label>
+        <div class="rejilla-categorias" id="rejillaCategorias"></div>
+
+        <label for="campoNota">Nota (opcional)</label>
+        <input type="text" id="campoNota" placeholder="Ej: feria del domingo" maxlength="60">
+
+        <label for="campoFecha">Fecha</label>
+        <input type="date" id="campoFecha">
+
+        <button class="boton" type="submit" style="margin-top:18px">Guardar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= VENTANA: NUEVA META ================= -->
+  <div class="telon" id="telonMeta">
+    <div class="hoja">
+      <div class="hoja-agarradera"></div>
+      <div class="tarjeta-titulo">
+        <h2>Nueva meta de ahorro</h2>
+        <button class="boton fantasma chico" data-cerrar="telonMeta">Cerrar</button>
+      </div>
+      <form id="formMeta">
+        <label for="metaNombre">Para que estas ahorrando?</label>
+        <input type="text" id="metaNombre" required maxlength="40" placeholder="Ej: fondo de emergencia">
+        <label for="metaObjetivo">Cuanto necesitas juntar?</label>
+        <input type="number" id="metaObjetivo" required min="1" inputmode="numeric" placeholder="Ej: 900000">
+        <label for="metaEmoji">Un emoji para reconocerla</label>
+        <select id="metaEmoji">
+          <option value="🛟">🛟 Fondo de emergencia</option>
+          <option value="✈️">✈️ Viaje</option>
+          <option value="🚗">🚗 Auto</option>
+          <option value="🏠">🏠 Casa</option>
+          <option value="💻">💻 Tecnologia</option>
+          <option value="🎓">🎓 Estudios</option>
+          <option value="🎁">🎁 Regalo</option>
+          <option value="🏥">🏥 Salud</option>
+          <option value="🎯">🎯 Otra cosa</option>
+        </select>
+        <label for="metaFecha">Para cuando? (opcional)</label>
+        <input type="date" id="metaFecha">
+        <button class="boton" type="submit" style="margin-top:18px">Crear meta</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= VENTANA: TUTORIAL ================= -->
+  <div class="telon" id="telonTutorial">
+    <div class="hoja">
+      <div class="hoja-agarradera"></div>
+      <h2 id="tutorialTitulo">Bienvenido 👋</h2>
+      <div id="tutorialCuerpo" style="font-size:14.5px"></div>
+      <div class="fila-botones" style="margin-top:18px">
+        <button class="boton secundario" id="tutorialAtras">Atras</button>
+        <button class="boton" id="tutorialSiguiente">Siguiente</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="mensajito" id="mensajito"></div>
+
+  <script src="js/datos.js"></script>
+  <script src="js/graficos.js"></script>
+  <script src="js/consejos.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
