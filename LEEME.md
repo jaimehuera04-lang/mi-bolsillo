@@ -6,6 +6,30 @@ una sección que te enseña técnicas de ahorro explicadas en simple.
 Está pensada para usarse desde el celular y **se puede instalar como una app real**
 (ícono en la pantalla de inicio, funciona sin internet).
 
+## 🌐 App publicada
+
+**https://jaimehuera04-lang.github.io/mi-bolsillo/**
+
+Ese link es el que abres desde el celular para instalarla. Ver más abajo
+"Cómo instalarla en el celular".
+
+### Cómo subir cambios
+
+Cada vez que edites algo y quieras verlo en el celular:
+
+```bash
+cd mi-bolsillo
+git add -A
+git commit -m "lo que cambiaste"
+git push
+```
+
+En un par de minutos el link se actualiza solo.
+
+⚠️ **Importante:** si cambiaste archivos, sube antes el número de versión en `sw.js`
+(`const VERSION = 'mi-bolsillo-v1'` → `'v2'`). Si no, el celular sigue mostrando la
+copia vieja que tenía guardada.
+
 ---
 
 ## 🚀 Cómo abrirla
@@ -34,23 +58,29 @@ Funciona para mirarla, pero **no** se puede instalar como app ni funciona sin in
 
 ## 📱 Cómo instalarla en el celular
 
-Primero necesitas que la app esté en una dirección que el celular pueda abrir. Dos caminos:
+**Ojo: esta app NO está en la App Store ni en Play Store, así que no hay nada que
+"descargar".** Se instala desde el navegador, y queda igual que cualquier otra app.
 
-**Rápido y gratis (recomendado para probar):** súbela a GitHub Pages, Netlify o Vercel.
-Con arrastrar la carpeta `mi-bolsillo` a [netlify.com/drop](https://app.netlify.com/drop)
-ya tienes un link funcionando en menos de un minuto.
+### 🍎 iPhone / iPad
 
-**En tu red local:** corre el servidor de la Opción B y entra desde el celular a
-`http://LA-IP-DE-TU-PC:5173` (los dos tienen que estar en el mismo WiFi).
+Tiene que ser con **Safari**. Desde Chrome de iPhone no aparece la opción.
 
-Ya con el link abierto en el celular:
+1. Abre **Safari** y entra a `https://jaimehuera04-lang.github.io/mi-bolsillo/`
+2. Toca el botón **Compartir** (el cuadrito con la flecha hacia arriba, abajo al centro)
+3. Desliza hacia abajo en esa lista y toca **"Agregar a inicio"**
+4. Toca **Agregar** arriba a la derecha
 
-- **Android (Chrome):** menú ⋮ → *Instalar aplicación* / *Agregar a pantalla principal*.
-  La app también te muestra sola un aviso verde de "Instalar".
-- **iPhone (Safari):** botón Compartir → *Agregar a pantalla de inicio*.
-  (En iPhone el aviso automático no aparece: es una limitación de Safari, no un error.)
+Listo: aparece el ícono verde en tu pantalla de inicio.
 
-Queda con su ícono, se abre en pantalla completa y funciona sin internet.
+### 🤖 Android
+
+1. Abre el link en **Chrome**
+2. Menú ⋮ → **Instalar aplicación**
+
+También aparece solo un aviso verde de "Instalar" dentro de la app.
+
+En ambos casos queda con su ícono, se abre en pantalla completa (sin la barra del
+navegador) y funciona sin internet.
 
 ---
 
