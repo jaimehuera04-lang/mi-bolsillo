@@ -49,6 +49,8 @@ const Datos = (() => {
       metas: [],
       presupuestos: {},          // { comida: 150000, ocio: 40000, ... }
       ajustes: {
+        correo: '',              // se pide una sola vez al abrir la app
+        registrado: false,       // true cuando ya dejo su correo
         nombre: '',
         moneda: 'CLP',
         ingresoEsperado: 0,
@@ -152,6 +154,38 @@ const Datos = (() => {
     Object.assign(estado.ajustes, parciales);
     guardar();
   }
+
+  /* ---------- Registro ----------
+     Aclaracion honesta: esto NO es una cuenta. No hay servidor, ni
+     contrasena, ni sincronizacion. El correo se guarda en este
+     dispositivo igual que el resto de los datos, y sirve para
+     personalizar la app e identificar tus copias de seguridad.   */
+
+  /** Revisa que el correo tenga forma de correo (algo@algo.algo). */
+  function correoValido(correo) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(correo).trim());
+  }
+
+  /** De "jaime.huera04@gmail.com" saca "Jaime", para poder saludar. */
+  function nombreDesdeCorreo(correo) {
+    const usuario = String(correo).split('@')[0] || '';
+    const limpio = usuario.split(/[._\-+0-9]+/).filter(Boolean)[0] || '';
+    return limpio ? limpio.charAt(0).toUpperCase() + limpio.slice(1).toLowerCase() : '';
+  }
+
+  function registrar(correo) {
+    const limpio = String(correo).trim().toLowerCase();
+    if (!correoValido(limpio)) throw new Error('correo invalido');
+    estado.ajustes.correo = limpio;
+    estado.ajustes.registrado = true;
+    // al registrarse ya no se muestran las instrucciones
+    estado.ajustes.tutorialVisto = true;
+    if (!estado.ajustes.nombre) estado.ajustes.nombre = nombreDesdeCorreo(limpio);
+    guardar();
+    return estado.ajustes;
+  }
+
+  const estaRegistrado = () => Boolean(estado.ajustes.registrado && estado.ajustes.correo);
 
   /* ---------- Fechas ---------- */
   function hoyISO() {
@@ -390,6 +424,7 @@ const Datos = (() => {
     agregarMovimiento, borrarMovimiento,
     agregarMeta, abonarMeta, borrarMeta,
     fijarPresupuesto, guardarAjustes,
+    registrar, estaRegistrado, correoValido, nombreDesdeCorreo,
     hoyISO, nombreMes, fechaLegible, formatearDinero, categoriaPorId,
     movimientosDelMes, resumenDelMes, gastosPorCategoria, historialMeses,
     saldoDiario, reparto503020, estadoPresupuestos, gastosHormiga,

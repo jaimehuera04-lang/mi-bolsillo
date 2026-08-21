@@ -306,6 +306,7 @@
   /* ---------------- 8. Ajustes ---------------- */
   function cargarAjustesEnFormulario() {
     const a = Datos.obtener().ajustes;
+    $$$('campoCorreoAjustes').value = a.correo || '';
     $$$('campoNombre').value = a.nombre || '';
     $$$('campoMoneda').value = a.moneda || 'CLP';
     $$$('campoIngresoEsperado').value = a.ingresoEsperado || '';
@@ -368,7 +369,56 @@
     dibujarCategorias();
   }
 
-  /* ---------------- 10. Tutorial ---------------- */
+  /* ---------------- 10. Registro ----------------
+     No es una cuenta: no hay servidor ni contrasena. Solo pedimos
+     el correo una vez, lo guardamos en este dispositivo y con eso
+     personalizamos la app. Quien se registra entra directo, sin
+     pasar por el tutorial.                                       */
+
+  function mostrarRegistro() {
+    $$$('bienvenida').hidden = false;
+    // el foco automatico molesta en celular (abre el teclado de golpe),
+    // asi que solo lo hacemos en pantallas grandes
+    if (window.innerWidth >= 700) setTimeout(() => $$$('campoCorreo').focus(), 300);
+  }
+
+  function ocultarRegistro() {
+    $$$('bienvenida').hidden = true;
+  }
+
+  function mostrarErrorCorreo(mensaje) {
+    const caja = $$$('errorCorreo');
+    caja.textContent = mensaje;
+    caja.hidden = !mensaje;
+    $$$('campoCorreo').classList.toggle('con-error', Boolean(mensaje));
+  }
+
+  function enviarRegistro(evento) {
+    evento.preventDefault();
+    const correo = $$$('campoCorreo').value.trim();
+
+    if (!correo) {
+      mostrarErrorCorreo('⚠️ Escribe tu correo para continuar');
+      $$$('campoCorreo').focus();
+      return;
+    }
+    if (!Datos.correoValido(correo)) {
+      mostrarErrorCorreo('⚠️ Ese correo no se ve bien. Revisa que tenga @ y un punto.');
+      $$$('campoCorreo').focus();
+      return;
+    }
+
+    mostrarErrorCorreo('');
+    Datos.registrar(correo);      // esto tambien marca el tutorial como visto
+    ocultarRegistro();
+    actualizarSaludo();
+    cargarAjustesEnFormulario();
+
+    const nombre = Datos.obtener().ajustes.nombre;
+    avisar(nombre ? `Bienvenido, ${nombre} 👋` : 'Bienvenido 👋');
+  }
+
+  /* ---------------- 11. Tutorial ---------------- */
   const PASOS = [
     {
       titulo: 'Bienvenido a Mi Bolsillo 👋',
@@ -421,7 +471,7 @@
     abrirHoja('telonTutorial');
   }
 
-  /* ---------------- 11. Copia de seguridad ---------------- */
+  /* ---------------- 12. Copia de seguridad ---------------- */
   function exportarArchivo() {
     const blob = new Blob([Datos.exportar()], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -448,7 +498,7 @@
     lector.readAsText(archivo);
   }
 
-  /* ---------------- 12. Instalacion en el celular ---------------- */
+  /* ---------------- 13. Instalacion en el celular ---------------- */
   let promesaInstalacion = null;
 
   window.addEventListener('beforeinstallprompt', e => {
@@ -463,8 +513,13 @@
     avisar('Listo, ya la tienes instalada 🎉');
   });
 
-  /* ---------------- 13. Eventos ---------------- */
+  /* ---------------- 14. Eventos ---------------- */
   function conectarEventos() {
+    // ---- Registro ----
+    $$$('formRegistro').addEventListener('submit', enviarRegistro);
+    // al empezar a corregir, el error se va solo
+    $$$('campoCorreo').addEventListener('input', () => mostrarErrorCorreo(''));
+
     // Navegacion inferior
     $$('.navegacion button').forEach(b =>
       b.addEventListener('click', () => irA(b.dataset.pantalla)));
@@ -597,7 +652,16 @@
 
     // ---- Ajustes ----
     $$$('botonGuardarAjustes').addEventListener('click', () => {
+      // si escribio un correo, tiene que ser valido; si lo dejo vacio, lo respetamos
+      const correo = $$$('campoCorreoAjustes').value.trim().toLowerCase();
+      if (correo && !Datos.correoValido(correo)) {
+        avisar('Ese correo no se ve bien. Revisa que tenga @ y un punto.');
+        $$$('campoCorreoAjustes').focus();
+        return;
+      }
+
       Datos.guardarAjustes({
+        correo,
         nombre: $$$('campoNombre').value.trim(),
         moneda: $$$('campoMoneda').value,
         ingresoEsperado: Number($$$('campoIngresoEsperado').value) || 0,
@@ -639,6 +703,10 @@
       Datos.borrarTodo();
       cargarAjustesEnFormulario();
       irA('inicio');
+      // se borro tambien el registro, asi que volvemos a la pantalla de bienvenida
+      $$$('campoCorreo').value = '';
+      mostrarErrorCorreo('');
+      mostrarRegistro();
       avisar('Todo borrado');
     });
 
@@ -674,7 +742,7 @@
     $$$('saludo').textContent = nombre ? `${momento}, ${nombre}` : momento;
   }
 
-  /* ---------------- 14. Arranque ---------------- */
+  /* ---------------- 15. Arranque ---------------- */
   function iniciar() {
     Datos.cargar();
     conectarEventos();
@@ -685,7 +753,11 @@
     fijarTipo('gasto');
     irA('inicio');
 
-    if (!Datos.obtener().ajustes.tutorialVisto) {
+    // Quien no se ha registrado ve primero la pantalla de bienvenida.
+    // Quien ya se registro entra directo, sin instrucciones.
+    if (!Datos.estaRegistrado()) {
+      mostrarRegistro();
+    } else if (!Datos.obtener().ajustes.tutorialVisto) {
       setTimeout(abrirTutorial, 450);
     }
 

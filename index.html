@@ -16,6 +16,45 @@
 </head>
 <body>
 
+  <!-- ================= PANTALLA DE REGISTRO =================
+       Se muestra una sola vez, la primera vez que se abre la app.
+       Queda oculta por defecto y es app.js quien decide mostrarla,
+       asi nunca aparece de golpe a quien ya se registro.        -->
+  <div class="bienvenida" id="bienvenida" hidden>
+    <div class="bienvenida-caja">
+      <div class="bienvenida-marca">
+        <span class="bienvenida-emoji">💚</span>
+        <h1>Mi Bolsillo</h1>
+        <p class="bienvenida-bajada">
+          Ordena tus gastos, mira en que se te va la plata y aprende a ahorrar.
+        </p>
+      </div>
+
+      <form id="formRegistro" novalidate>
+        <label for="campoCorreo">Tu correo electronico</label>
+        <input type="email" id="campoCorreo" inputmode="email" autocomplete="email"
+               autocapitalize="off" spellcheck="false" placeholder="tucorreo@ejemplo.com"
+               aria-describedby="errorCorreo">
+        <p class="error-campo" id="errorCorreo" hidden></p>
+
+        <button class="boton" type="submit" style="margin-top:16px">Entrar</button>
+      </form>
+
+      <div class="bienvenida-nota">
+        <p>
+          <strong>🔒 Se guarda solo en este telefono.</strong>
+          No hay contrasena ni servidor: tu correo y tus datos no salen de aqui,
+          nadie mas los ve y no viajan a internet.
+        </p>
+        <p style="margin-bottom:0">
+          Por lo mismo, esto <strong>no es un respaldo</strong>. Si cambias de celular,
+          tus datos no se recuperan solos. Para eso usa
+          <em>Ajustes → Descargar copia</em>.
+        </p>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= ENCABEZADO ================= -->
   <header class="cabecera">
     <div>
@@ -181,7 +220,11 @@
   <main class="pantalla" id="pantalla-ajustes">
     <section class="tarjeta">
       <h2>Tus datos</h2>
-      <label for="campoNombre">Como te llamas?</label>
+      <label for="campoCorreoAjustes">Tu correo</label>
+      <input type="email" id="campoCorreoAjustes" inputmode="email" autocomplete="email"
+             autocapitalize="off" spellcheck="false" placeholder="tucorreo@ejemplo.com">
+      <p class="ayuda">Guardado solo en este dispositivo. No se envia a ningun lado.</p>
+      <label for="campoNombre">Como quieres que te salude?</label>
       <input type="text" id="campoNombre" placeholder="Tu nombre" autocomplete="given-name">
       <label for="campoMoneda">Moneda</label>
       <select id="campoMoneda">
@@ -234,7 +277,7 @@
       <button class="boton peligro" id="botonBorrarTodo">🗑️ Borrar todos mis datos</button>
     </section>
 
-    <p class="ayuda" style="text-align:center">Mi Bolsillo · version 1.0</p>
+    <p class="ayuda" style="text-align:center">Mi Bolsillo · version 1.1</p>
   </main>
 
   <!-- ================= BOTON + Y NAVEGACION ================= -->

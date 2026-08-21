@@ -116,6 +116,27 @@ mi-bolsillo/
 
 ---
 
+## 🔑 El registro
+
+La primera vez que se abre la app aparece una pantalla que pide **solo el correo
+electrónico**. Al entrar, ya no vuelve a aparecer ni se muestran las instrucciones.
+
+**Importante: esto no es una cuenta de verdad.** No hay servidor ni contraseña. El
+correo se guarda en el mismo teléfono, junto al resto de los datos, y sirve para:
+
+- saludarte por tu nombre (lo saca de la primera parte del correo)
+- identificar de quién es una copia de seguridad
+
+Lo que **no** hace: no sincroniza entre dispositivos, no recupera tus datos si cambias
+de celular, y no envía nada a internet.
+
+Se puede cambiar después en **Ajustes → Tu correo**. Si borras todos los datos, la
+pantalla de registro vuelve a aparecer.
+
+Si más adelante quieres un registro real (con contraseña, respaldo en la nube y poder
+entrar desde varios dispositivos), eso necesita un servidor — se puede hacer, pero es
+otro proyecto encima de este.
+
 ## 💾 Dónde se guardan los datos
 
 En el **almacenamiento del propio navegador o celular** (`localStorage`). Eso significa:
@@ -163,6 +184,7 @@ le pegas el link de tu app publicada y te genera el paquete de Play Store.
 
 ## ✅ Lo que ya funciona
 
+- Registro con correo la primera vez (y sin instrucciones después)
 - Anotar ingresos y gastos con 15 categorías, nota y fecha
 - Navegar entre meses
 - Dashboard: saldo, tasa de ahorro, dona por categoría, barras mes a mes, línea del saldo diario

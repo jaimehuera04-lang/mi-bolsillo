@@ -62,6 +62,46 @@ h2 { font-size: 18px; }
 h3 { font-size: 15px; }
 p  { margin: 0 0 10px; }
 
+/* ---------- Pantalla de registro (solo la primera vez) ---------- */
+.bienvenida {
+  position: fixed; inset: 0; z-index: 100;
+  background: linear-gradient(160deg, var(--verde), var(--verde-oscuro));
+  display: flex; align-items: center; justify-content: center;
+  padding: calc(env(safe-area-inset-top) + 20px) 18px calc(env(safe-area-inset-bottom) + 20px);
+  overflow-y: auto;
+}
+.bienvenida[hidden] { display: none; }
+
+.bienvenida-caja {
+  background: var(--tarjeta);
+  border-radius: 24px;
+  padding: 26px 20px 20px;
+  width: 100%; max-width: 420px;
+  box-shadow: var(--sombra-alta);
+  animation: aparecer .35s ease;
+}
+
+.bienvenida-marca { text-align: center; margin-bottom: 20px; }
+.bienvenida-emoji { font-size: 46px; display: block; line-height: 1; margin-bottom: 8px; }
+.bienvenida-marca h1 { font-size: 26px; margin: 0 0 6px; }
+.bienvenida-bajada { font-size: 14.5px; color: var(--texto-suave); margin: 0; }
+
+/* mensaje de error bajo el campo de correo */
+.error-campo {
+  color: var(--rojo); font-size: 13px; font-weight: 600;
+  margin: 7px 0 0; display: flex; align-items: center; gap: 6px;
+}
+.error-campo[hidden] { display: none; }
+input.con-error { border-color: var(--rojo); }
+input.con-error:focus { outline-color: var(--rojo); }
+
+.bienvenida-nota {
+  margin-top: 20px; padding-top: 16px;
+  border-top: 1px solid var(--borde);
+  font-size: 12.5px; color: var(--texto-suave); line-height: 1.55;
+}
+.bienvenida-nota p { margin: 0 0 9px; }
+
 /* ---------- Encabezado ---------- */
 .cabecera {
   padding: calc(env(safe-area-inset-top) + 18px) 18px 14px;
