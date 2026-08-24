@@ -12,7 +12,7 @@
   <link rel="apple-touch-icon" href="iconos/icono-192.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Mi Bolsillo">
-  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="stylesheet" href="src/ui/estilos.css">
 </head>
 <body>
 
@@ -100,6 +100,13 @@
           <div class="valor" id="totalGastos">$0</div>
         </div>
       </div>
+      <div class="par-cifras" style="margin-top:12px">
+        <div class="cifra" style="grid-column:1 / -1">
+          <div class="rotulo">💰 Lo que tienes hoy en total</div>
+          <div class="valor" id="patrimonioInicio">$0</div>
+          <p class="ayuda" id="detallePatrimonio" style="margin:4px 0 0"></p>
+        </div>
+      </div>
       <div style="margin-top:14px">
         <div class="linea-progreso" style="margin-bottom:0">
           <div class="encabezado">
@@ -111,6 +118,9 @@
         </div>
       </div>
     </section>
+
+    <!-- Aviso de una sola vez: migracion de datos o problema para guardar -->
+    <div id="avisoArranque" hidden></div>
 
     <!-- Consejos automaticos segun tus numeros -->
     <div id="zonaConsejos"></div>
@@ -171,6 +181,7 @@
           <option value="todos">Todos</option>
           <option value="gasto">Solo gastos</option>
           <option value="ingreso">Solo ingresos</option>
+          <option value="transferencia">Solo movidas entre cuentas</option>
         </select>
       </div>
       <div id="listaMovimientos"></div>
@@ -226,20 +237,29 @@
       <p class="ayuda">Guardado solo en este dispositivo. No se envia a ningun lado.</p>
       <label for="campoNombre">Como quieres que te salude?</label>
       <input type="text" id="campoNombre" placeholder="Tu nombre" autocomplete="given-name">
-      <label for="campoMoneda">Moneda</label>
-      <select id="campoMoneda">
-        <option value="CLP">Peso chileno (CLP)</option>
-        <option value="USD">Dolar (USD)</option>
-        <option value="EUR">Euro (EUR)</option>
-        <option value="MXN">Peso mexicano (MXN)</option>
-        <option value="ARS">Peso argentino (ARS)</option>
-        <option value="COP">Peso colombiano (COP)</option>
-        <option value="PEN">Sol peruano (PEN)</option>
-      </select>
       <label for="campoIngresoEsperado">Cuanto esperas recibir al mes?</label>
       <input type="number" id="campoIngresoEsperado" placeholder="Ej: 750000" inputmode="numeric">
       <p class="ayuda">Opcional. Sirve para calcular tus topes sugeridos.</p>
       <button class="boton" id="botonGuardarAjustes" style="margin-top:14px">Guardar</button>
+    </section>
+
+    <section class="tarjeta">
+      <div class="tarjeta-titulo">
+        <h2>Mis cuentas</h2>
+        <button class="boton fantasma chico" id="botonNuevaCuenta">+ Agregar</button>
+      </div>
+      <p class="ayuda" style="margin-top:-4px">
+        Una cuenta es cada lugar donde vive tu plata: la Cuenta RUT, el efectivo del bolsillo,
+        una billetera como MACH o Tenpo, la tarjeta de credito.
+      </p>
+      <div id="listaCuentas"></div>
+      <div class="par-cifras" style="margin-top:12px">
+        <div class="cifra" style="grid-column:1 / -1">
+          <div class="rotulo">Lo que tienes menos lo que debes</div>
+          <div class="valor" id="patrimonioTotal">$0</div>
+        </div>
+      </div>
+      <div id="cuentasArchivadas" hidden></div>
     </section>
 
     <section class="tarjeta">
@@ -277,7 +297,7 @@
       <button class="boton peligro" id="botonBorrarTodo">🗑️ Borrar todos mis datos</button>
     </section>
 
-    <p class="ayuda" style="text-align:center">Mi Bolsillo · version 1.1</p>
+    <p class="ayuda" style="text-align:center">Mi Bolsillo · version 2.0</p>
   </main>
 
   <!-- ================= BOTON + Y NAVEGACION ================= -->
@@ -303,6 +323,7 @@
       <div class="interruptor-tipo">
         <button type="button" id="tipoGasto"   class="activo gasto">⬇️ Gasto</button>
         <button type="button" id="tipoIngreso" class="ingreso">⬆️ Ingreso</button>
+        <button type="button" id="tipoTransferencia" class="transferencia">🔄 Mover</button>
       </div>
 
       <form id="formMovimiento">
@@ -310,8 +331,26 @@
         <input type="number" id="campoMonto" inputmode="numeric" min="1" step="1" required
                placeholder="0" style="font-size:24px; font-weight:700; text-align:center">
 
-        <label>Categoria</label>
-        <div class="rejilla-categorias" id="rejillaCategorias"></div>
+        <div id="bloqueCategorias">
+          <label>Categoria</label>
+          <div class="rejilla-categorias" id="rejillaCategorias"></div>
+        </div>
+
+        <div id="filaCuentaOrigen">
+          <label for="campoCuentaOrigen" id="etiquetaCuentaOrigen">De que cuenta salio?</label>
+          <select id="campoCuentaOrigen"></select>
+        </div>
+
+        <div id="filaCuentaDestino">
+          <label for="campoCuentaDestino" id="etiquetaCuentaDestino">A que cuenta entro?</label>
+          <select id="campoCuentaDestino"></select>
+        </div>
+
+        <p class="consejo aviso" id="avisoUnaCuenta" hidden>
+          <strong>Para mover plata necesitas dos cuentas</strong>
+          Crea la segunda en Ajustes → Mis cuentas. Por ejemplo tu Cuenta RUT y el efectivo,
+          o tu Cuenta RUT y la tarjeta de credito.
+        </p>
 
         <label for="campoNota">Nota (opcional)</label>
         <input type="text" id="campoNota" placeholder="Ej: feria del domingo" maxlength="60">
@@ -321,6 +360,36 @@
 
         <button class="boton" type="submit" style="margin-top:18px">Guardar</button>
       </form>
+    </div>
+  </div>
+
+  <!-- ================= VENTANA: CUENTA ================= -->
+  <div class="telon" id="telonCuenta">
+    <div class="hoja">
+      <div class="hoja-agarradera"></div>
+      <div class="tarjeta-titulo">
+        <h2 id="tituloHojaCuenta">Nueva cuenta</h2>
+        <button class="boton fantasma chico" data-cerrar="telonCuenta">Cerrar</button>
+      </div>
+
+      <form id="formCuenta">
+        <label for="cuentaNombre">Como se llama?</label>
+        <input type="text" id="cuentaNombre" required maxlength="30" placeholder="Ej: Cuenta RUT">
+
+        <label for="cuentaTipo">Que tipo de cuenta es?</label>
+        <select id="cuentaTipo"></select>
+
+        <label for="cuentaSaldo">Cuanto hay ahora?</label>
+        <input type="number" id="cuentaSaldo" step="1" inputmode="numeric" placeholder="0">
+        <p class="ayuda" id="ayudaSaldoCuenta"></p>
+
+        <button class="boton" type="submit" style="margin-top:18px">Guardar</button>
+      </form>
+
+      <div id="zonaBorrarCuenta" hidden style="margin-top:18px">
+        <p class="ayuda" id="ayudaBorrarCuenta"></p>
+        <button class="boton secundario" id="botonBorrarCuenta">📦 Archivar cuenta</button>
+      </div>
     </div>
   </div>
 
@@ -371,9 +440,19 @@
 
   <div class="mensajito" id="mensajito"></div>
 
-  <script src="js/datos.js"></script>
-  <script src="js/graficos.js"></script>
-  <script src="js/consejos.js"></script>
-  <script src="js/app.js"></script>
+  <!-- El orden importa: cada archivo usa los de mas arriba.
+       datos fijos -> motor de calculo -> almacenamiento -> fachada -> pantalla -->
+  <script src="src/data/categorias.js"></script>
+  <script src="src/data/tecnicas.js"></script>
+  <script src="src/core/fechas.js"></script>
+  <script src="src/core/dinero.js"></script>
+  <script src="src/core/calculos.js"></script>
+  <script src="src/core/sugerencias.js"></script>
+  <script src="src/storage/esquema.js"></script>
+  <script src="src/storage/migraciones.js"></script>
+  <script src="src/storage/almacenamiento.js"></script>
+  <script src="src/datos.js"></script>
+  <script src="src/ui/graficos.js"></script>
+  <script src="src/ui/app.js"></script>
 </body>
 </html>
