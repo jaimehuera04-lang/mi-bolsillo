@@ -227,10 +227,26 @@ input.con-error:focus { outline-color: var(--rojo); }
 .movimiento .monto { font-weight: 700; font-size: 15px; white-space: nowrap; }
 .movimiento .monto.ingreso { color: var(--verde); }
 .movimiento .monto.gasto   { color: var(--rojo); }
+.movimiento .monto.transferencia { color: var(--texto-suave); font-weight: 600; }
 .movimiento .borrar {
   background: none; border: 0; color: var(--texto-suave);
   font-size: 17px; cursor: pointer; padding: 4px 2px 4px 8px;
 }
+
+/* ---------- Cuentas ---------- */
+.cuenta {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 0; border-bottom: 1px solid var(--borde);
+}
+.cuenta:last-child { border-bottom: 0; }
+.cuenta .emoji {
+  width: 38px; height: 38px; border-radius: 12px; flex: 0 0 38px;
+  display: grid; place-items: center; font-size: 18px; background: var(--fondo);
+}
+.cuenta .info { flex: 1; min-width: 0; }
+.cuenta .info .nombre { font-weight: 600; font-size: 15px; }
+.cuenta .info .detalle { font-size: 12.5px; color: var(--texto-suave); }
+.cuenta .saldo { font-weight: 700; font-size: 15px; white-space: nowrap; }
 
 .fecha-grupo {
   font-size: 12px; font-weight: 700; color: var(--texto-suave);
@@ -251,14 +267,15 @@ input, select, textarea {
 input:focus, select:focus, textarea:focus { outline: 2px solid var(--verde); outline-offset: 1px; }
 .ayuda { font-size: 12px; color: var(--texto-suave); margin: 5px 0 0; }
 
-.interruptor-tipo { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
+.interruptor-tipo { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 4px; }
 .interruptor-tipo button {
   border: 1px solid var(--borde); background: var(--tarjeta); color: var(--texto-suave);
-  border-radius: 13px; padding: 12px; font-size: 15px; font-weight: 600;
+  border-radius: 13px; padding: 12px 6px; font-size: 14px; font-weight: 600;
   font-family: inherit; cursor: pointer;
 }
 .interruptor-tipo button.activo.gasto   { background: var(--rojo-suave);  color: var(--rojo);   border-color: var(--rojo); }
 .interruptor-tipo button.activo.ingreso { background: var(--verde-suave); color: var(--verde-oscuro); border-color: var(--verde); }
+.interruptor-tipo button.activo.transferencia { background: var(--fondo); color: var(--azul); border-color: var(--azul); }
 
 .rejilla-categorias { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .rejilla-categorias button {

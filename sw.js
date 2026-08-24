@@ -8,16 +8,24 @@
    Asi el celular sabe que tiene que bajar la version nueva.
    ============================================================ */
 
-const VERSION = 'mi-bolsillo-v2';
+const VERSION = 'mi-bolsillo-v3';
 
 const ARCHIVOS = [
   './',
   './index.html',
-  './css/estilos.css',
-  './js/datos.js',
-  './js/graficos.js',
-  './js/consejos.js',
-  './js/app.js',
+  './src/ui/estilos.css',
+  './src/data/categorias.js',
+  './src/data/tecnicas.js',
+  './src/core/fechas.js',
+  './src/core/dinero.js',
+  './src/core/calculos.js',
+  './src/core/sugerencias.js',
+  './src/storage/esquema.js',
+  './src/storage/migraciones.js',
+  './src/storage/almacenamiento.js',
+  './src/datos.js',
+  './src/ui/graficos.js',
+  './src/ui/app.js',
   './manifest.json',
   './iconos/icono-192.png',
   './iconos/icono-512.png',

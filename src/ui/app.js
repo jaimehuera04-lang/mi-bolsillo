@@ -22,6 +22,8 @@
     // formulario de movimiento
     tipo: 'gasto',
     categoria: 'comida',
+    cuentaOrigen: null,
+    cuentaDestino: null,
   };
 
   /* ---------------- 2. Utilidades ---------------- */
@@ -76,7 +78,7 @@
     if (vista.pantalla === 'inicio')       dibujarInicio();
     if (vista.pantalla === 'movimientos')  dibujarMovimientos();
     if (vista.pantalla === 'metas')        dibujarMetas();
-    if (vista.pantalla === 'ajustes')      dibujarEditorTopes();
+    if (vista.pantalla === 'ajustes')    { dibujarEditorTopes(); dibujarCuentas(); }
   }
 
   /* ---------------- 4. Inicio (dashboard) ---------------- */
@@ -89,6 +91,14 @@
     $$$('totalIngresos').textContent = dinero(r.ingresos);
     $$$('totalGastos').textContent = dinero(r.gastos);
 
+    // Lo que tienes hoy repartido entre tus cuentas. Es un dato distinto al
+    // saldo del mes: aquel mira un mes, este mira tu bolsillo completo.
+    const total = Datos.patrimonio();
+    $$$('patrimonioInicio').textContent = dinero(total);
+    $$$('patrimonioInicio').style.color = total < 0 ? 'var(--rojo)' : 'var(--texto)';
+    $$$('detallePatrimonio').textContent = Datos.saldosDeCuentas()
+      .map(c => `${c.icono} ${c.nombre}: ${dinero(c.saldo)}`).join(' · ');
+
     // Tasa de ahorro
     const tasa = Math.max(0, r.tasaAhorro);
     $$$('barraTasaAhorro').style.width = `${Math.min(100, tasa)}%`;
@@ -97,7 +107,7 @@
     $$$('textoTasaAhorro').textContent = r.ingresos > 0 ? `${r.tasaAhorro}%` : 'sin ingresos anotados';
 
     // Consejos automaticos
-    const consejos = Consejos.sugerir(vista.anio, vista.mes);
+    const consejos = Datos.sugerir(vista.anio, vista.mes);
     $$$('zonaConsejos').innerHTML = consejos.map(c => `
       <div class="consejo ${c.tipo === 'alerta' ? 'aviso' : ''}" style="margin-bottom:14px">
         <strong>${esc(c.titulo)}</strong>${esc(c.texto)}
@@ -114,7 +124,7 @@
     Graficos.reglaVisual($$$('graficoRegla'), Datos.reparto503020(vista.anio, vista.mes));
 
     dibujarTopes();
-    $$$('pildoraDia').textContent = ' ' + Consejos.pildoraDelDia();
+    $$$('pildoraDia').textContent = ' ' + Datos.pildoraDelDia();
   }
 
   function dibujarTendencia() {
@@ -155,6 +165,42 @@
   }
 
   /* ---------------- 5. Movimientos ---------------- */
+
+  /** Una linea de la lista. Las transferencias se ven distinto a proposito:
+      no llevan signo, porque no suman ni restan a lo que tienes. */
+  function lineaDeMovimiento(m) {
+    const nombreCuenta = id => {
+      const c = Datos.cuentaPorId(id);
+      return c ? `${c.icono} ${c.nombre}` : 'Cuenta borrada';
+    };
+
+    if (m.tipo === 'transferencia') {
+      return `
+        <li class="movimiento">
+          <span class="emoji">🔄</span>
+          <span class="info">
+            <span class="nombre">${esc(m.nota || 'Movida entre cuentas')}</span>
+            <span class="detalle">${esc(nombreCuenta(m.cuentaOrigen))} → ${esc(nombreCuenta(m.cuentaDestino))}</span>
+          </span>
+          <span class="monto transferencia">${esc(dinero(m.monto))}</span>
+          <button class="borrar" data-borrar="${m.id}" aria-label="Borrar">✕</button>
+        </li>`;
+    }
+
+    const cat = Datos.categoriaPorId(m.categoria);
+    const cuenta = m.tipo === 'ingreso' ? m.cuentaDestino : m.cuentaOrigen;
+    return `
+      <li class="movimiento">
+        <span class="emoji">${cat.emoji}</span>
+        <span class="info">
+          <span class="nombre">${esc(m.nota || cat.nombre)}</span>
+          <span class="detalle">${esc(cat.nombre)} · ${esc(nombreCuenta(cuenta))}</span>
+        </span>
+        <span class="monto ${m.tipo}">${m.tipo === 'ingreso' ? '+' : '-'}${esc(dinero(m.monto))}</span>
+        <button class="borrar" data-borrar="${m.id}" aria-label="Borrar">✕</button>
+      </li>`;
+  }
+
   function dibujarMovimientos() {
     let movs = Datos.movimientosDelMes(vista.anio, vista.mes);
     if (vista.filtroMovimientos !== 'todos') {
@@ -181,27 +227,24 @@
 
     let html = '';
     for (const [fecha, delDia] of porDia) {
-      const totalDia = delDia.reduce((a, m) => a + (m.tipo === 'ingreso' ? m.monto : -m.monto), 0);
-      html += `<div class="fecha-grupo">
-                 ${esc(Datos.fechaLegible(fecha))}
+      // el total del dia no cuenta las transferencias: mover plata entre tus
+      // cuentas no te deja ni con mas ni con menos
+      const totalDia = delDia.reduce((a, m) =>
+        m.tipo === 'ingreso' ? a + m.monto
+      : m.tipo === 'gasto'   ? a - m.monto
+      : a, 0);
+      // Un dia en que solo moviste plata entre cuentas no tiene total que mostrar:
+      // poner "+$0" seria un numero sin significado.
+      const soloMovidas = delDia.every(m => m.tipo === 'transferencia');
+      const totalHtml = soloMovidas ? '' : `
                  <span style="float:right; text-transform:none; letter-spacing:0">
                    ${totalDia >= 0 ? '+' : ''}${esc(dinero(totalDia))}
-                 </span>
+                 </span>`;
+      html += `<div class="fecha-grupo">
+                 ${esc(Datos.fechaLegible(fecha))}${totalHtml}
                </div>
                <ul class="lista">`;
-      for (const m of delDia) {
-        const cat = Datos.categoriaPorId(m.categoria);
-        html += `
-          <li class="movimiento">
-            <span class="emoji">${cat.emoji}</span>
-            <span class="info">
-              <span class="nombre">${esc(m.nota || cat.nombre)}</span>
-              <span class="detalle">${esc(cat.nombre)}</span>
-            </span>
-            <span class="monto ${m.tipo}">${m.tipo === 'ingreso' ? '+' : '-'}${esc(dinero(m.monto))}</span>
-            <button class="borrar" data-borrar="${m.id}" aria-label="Borrar">✕</button>
-          </li>`;
-      }
+      for (const m of delDia) html += lineaDeMovimiento(m);
       html += '</ul>';
     }
     $$$('listaMovimientos').innerHTML = html;
@@ -222,15 +265,16 @@
     }
 
     $$$('listaMetas').innerHTML = metas.map(m => {
-      const pct = Math.min(100, (m.ahorrado / m.objetivo) * 100);
-      const falta = Math.max(0, m.objetivo - m.ahorrado);
+      const pct = Math.min(100, (m.montoActual / m.montoObjetivo) * 100);
+      const falta = Math.max(0, m.montoObjetivo - m.montoActual);
       const lista = pct >= 100;
 
       // Si hay fecha limite, calculamos cuanto habria que guardar al mes
       let ritmo = '';
-      if (m.fechaLimite && !lista) {
+      if (m.fechaObjetivo && !lista) {
+        // aFecha() y no new Date(iso): esto ultimo se lee como UTC y corre un dia
         const meses = Math.max(1, Math.round(
-          (new Date(m.fechaLimite) - new Date()) / (1000 * 60 * 60 * 24 * 30.4)));
+          (Fechas.aFecha(m.fechaObjetivo) - Fechas.aFecha(Datos.hoyISO())) / (1000 * 60 * 60 * 24 * 30.4)));
         ritmo = `<p class="ayuda">Para llegar a tiempo necesitas guardar
                  <strong>${esc(dinero(Math.ceil(falta / meses)))}</strong> al mes
                  (quedan ${meses} ${meses === 1 ? 'mes' : 'meses'}).</p>`;
@@ -249,8 +293,8 @@
                 <span style="width:${pct}%; background:${lista ? 'var(--verde)' : 'var(--azul)'}"></span>
               </div>
               <div class="encabezado" style="display:flex; justify-content:space-between; font-size:13px; margin-top:6px">
-                <strong>${esc(dinero(m.ahorrado))}</strong>
-                <span style="color:var(--texto-suave)">de ${esc(dinero(m.objetivo))} · ${Math.round(pct)}%</span>
+                <strong>${esc(dinero(m.montoActual))}</strong>
+                <span style="color:var(--texto-suave)">de ${esc(dinero(m.montoObjetivo))} · ${Math.round(pct)}%</span>
               </div>
               ${lista
                 ? '<p class="ayuda" style="color:var(--verde); font-weight:600">🎉 Meta cumplida. Disfrutalo, te lo ganaste.</p>'
@@ -267,7 +311,7 @@
 
   /* ---------------- 7. Aprender ---------------- */
   function dibujarTecnicas() {
-    $$$('listaTecnicas').innerHTML = Consejos.TECNICAS.map(t => `
+    $$$('listaTecnicas').innerHTML = Datos.TECNICAS.map(t => `
       <details class="tecnica">
         <summary>
           <span class="emoji">${t.emoji}</span>
@@ -308,9 +352,104 @@
     const a = Datos.obtener().ajustes;
     $$$('campoCorreoAjustes').value = a.correo || '';
     $$$('campoNombre').value = a.nombre || '';
-    $$$('campoMoneda').value = a.moneda || 'CLP';
     $$$('campoIngresoEsperado').value = a.ingresoEsperado || '';
   }
+
+  /* ---------------- 8b. Cuentas ----------------
+     Una cuenta es un lugar donde vive tu plata: la Cuenta RUT, el
+     efectivo del bolsillo, la tarjeta de credito. El saldo no se
+     guarda, se calcula sumando tus movimientos sobre el saldo
+     inicial, asi nunca se desincroniza.                          */
+
+  function dibujarCuentas() {
+    const cuentas = Datos.saldosDeCuentas();
+    const total = Datos.patrimonio();
+
+    $$$('listaCuentas').innerHTML = cuentas.map(c => {
+      const tipo = Datos.tipoCuenta(c.tipo);
+      const esDeuda = tipo.deuda;
+      // En una tarjeta, saldo negativo significa que debes. En el resto, numeros rojos.
+      const texto = esDeuda && c.saldo < 0
+        ? `Debes ${dinero(Math.abs(c.saldo))}`
+        : dinero(c.saldo);
+      const color = c.saldo < 0 ? 'var(--rojo)' : 'var(--texto)';
+      return `
+        <div class="cuenta" data-cuenta="${c.id}">
+          <span class="emoji">${c.icono}</span>
+          <span class="info">
+            <span class="nombre">${esc(c.nombre)}</span>
+            <span class="detalle">${esc(tipo.nombre)}</span>
+          </span>
+          <span class="saldo" style="color:${color}">${esc(texto)}</span>
+          <button class="boton fantasma chico" data-editar-cuenta="${c.id}" aria-label="Editar">✏️</button>
+        </div>`;
+    }).join('');
+
+    $$$('patrimonioTotal').textContent = dinero(total);
+    $$$('patrimonioTotal').style.color = total < 0 ? 'var(--rojo)' : 'var(--verde)';
+
+    const archivadas = Datos.obtener().cuentas.filter(c => c.activa === false);
+    $$$('cuentasArchivadas').hidden = !archivadas.length;
+    $$$('cuentasArchivadas').innerHTML = archivadas.length
+      ? `<p class="ayuda">Archivadas: ${archivadas.map(c => esc(c.nombre)).join(', ')}.
+         Sus movimientos siguen contando en tu historial.
+         ${archivadas.map(c => `<button class="boton fantasma chico" data-reactivar="${c.id}">Reactivar ${esc(c.nombre)}</button>`).join(' ')}</p>`
+      : '';
+  }
+
+  /** Abre la hoja de cuenta. Sin id = cuenta nueva. */
+  function abrirFormularioCuenta(id) {
+    vista.cuentaEditando = id || null;
+    const c = id ? Datos.cuentaPorId(id) : null;
+
+    $$$('tituloHojaCuenta').textContent = c ? 'Editar cuenta' : 'Nueva cuenta';
+    $$$('cuentaNombre').value = c ? c.nombre : '';
+    $$$('cuentaSaldo').value = c ? c.saldoInicial : '';
+    $$$('cuentaTipo').innerHTML = Datos.TIPOS_CUENTA.map(t => `
+      <option value="${t.id}" ${c && c.tipo === t.id ? 'selected' : ''}>${t.emoji} ${esc(t.nombre)}</option>`
+    ).join('');
+    if (c) $$$('cuentaTipo').value = c.tipo;
+
+    // El saldo inicial solo se puede tocar al crear: cambiarlo despues
+    // mueve todos los saldos historicos de golpe y nadie entiende por que.
+    $$$('ayudaSaldoCuenta').textContent = c
+      ? 'Es el saldo con el que partio la cuenta. Cambiarlo mueve todos tus saldos desde esa fecha.'
+      : 'Cuanta plata hay hoy en esta cuenta. Si es una tarjeta de credito y debes plata, escribelo en negativo.';
+
+    $$$('zonaBorrarCuenta').hidden = !c;
+    if (c) {
+      const usados = Datos.movimientosDeCuenta(c.id);
+      $$$('ayudaBorrarCuenta').textContent = usados
+        ? `Esta cuenta tiene ${usados} ${usados === 1 ? 'movimiento' : 'movimientos'}. Archivarla la saca de los formularios sin borrar tu historial.`
+        : 'Esta cuenta no tiene movimientos, asi que se puede borrar sin perder nada.';
+      $$$('botonBorrarCuenta').textContent = usados ? '📦 Archivar cuenta' : '🗑️ Borrar cuenta';
+    }
+
+    abrirHoja('telonCuenta');
+  }
+
+  function guardarCuentaDesdeFormulario(evento) {
+    evento.preventDefault();
+    const datos = {
+      nombre: $$$('cuentaNombre').value,
+      tipo: $$$('cuentaTipo').value,
+      saldoInicial: Number($$$('cuentaSaldo').value) || 0,
+      icono: Datos.tipoCuenta($$$('cuentaTipo').value).emoji,
+    };
+    try {
+      if (vista.cuentaEditando) Datos.editarCuenta(vista.cuentaEditando, datos);
+      else Datos.agregarCuenta(datos);
+    } catch (error) {
+      avisar(error.message);
+      return;
+    }
+    cerrarHoja('telonCuenta');
+    dibujarCuentas();
+    dibujarInicioSiVisible();
+    avisar(vista.cuentaEditando ? 'Cuenta actualizada ✅' : 'Cuenta creada ✅');
+  }
+
+  const dibujarInicioSiVisible = () => { if (vista.pantalla === 'inicio') dibujarInicio(); };
 
   function dibujarEditorTopes() {
     const presupuestos = Datos.obtener().presupuestos;
@@ -337,6 +476,7 @@
 
   /* ---------------- 9. Formulario de movimiento ---------------- */
   function dibujarCategorias() {
+    if (vista.tipo === 'transferencia') return;   // una transferencia no tiene categoria
     const lista = vista.tipo === 'gasto' ? Datos.CATEGORIAS_GASTO : Datos.CATEGORIAS_INGRESO;
     if (!lista.some(c => c.id === vista.categoria)) vista.categoria = lista[0].id;
 
@@ -345,6 +485,42 @@
         <span class="emoji">${c.emoji}</span>
         <span>${esc(c.nombre)}</span>
       </button>`).join('');
+  }
+
+  /** Opciones de un selector de cuenta, con el saldo al lado. */
+  function opcionesDeCuenta(seleccionada) {
+    return Datos.saldosDeCuentas().map(c => `
+      <option value="${c.id}" ${c.id === seleccionada ? 'selected' : ''}>
+        ${c.icono} ${esc(c.nombre)} · ${esc(dinero(c.saldo))}
+      </option>`).join('');
+  }
+
+  /** Muestra los selectores que correspondan segun el tipo de movimiento. */
+  function dibujarCuentasDelFormulario() {
+    const cuentas = Datos.cuentasActivas();
+    const primera = (cuentas[0] || {}).id;
+    const segunda = (cuentas[1] || cuentas[0] || {}).id;
+
+    // el destino por defecto nunca puede ser igual al origen
+    if (vista.cuentaOrigen === vista.cuentaDestino && cuentas.length > 1) {
+      vista.cuentaDestino = cuentas.find(c => c.id !== vista.cuentaOrigen).id;
+    }
+    if (!cuentas.some(c => c.id === vista.cuentaOrigen))  vista.cuentaOrigen = primera;
+    if (!cuentas.some(c => c.id === vista.cuentaDestino)) vista.cuentaDestino = segunda;
+
+    $$$('campoCuentaOrigen').innerHTML  = opcionesDeCuenta(vista.cuentaOrigen);
+    $$$('campoCuentaDestino').innerHTML = opcionesDeCuenta(vista.cuentaDestino);
+
+    const t = vista.tipo;
+    $$$('filaCuentaOrigen').hidden  = t === 'ingreso';
+    $$$('filaCuentaDestino').hidden = t === 'gasto';
+    $$$('etiquetaCuentaOrigen').textContent =
+      t === 'transferencia' ? 'Sale de' : 'De que cuenta salio?';
+    $$$('etiquetaCuentaDestino').textContent =
+      t === 'transferencia' ? 'Entra a' : 'A que cuenta entro?';
+
+    // Una sola cuenta y querer transferir no tiene sentido: se avisa y se ofrece la salida.
+    $$$('avisoUnaCuenta').hidden = !(t === 'transferencia' && cuentas.length < 2);
   }
 
   function abrirFormularioMovimiento() {
@@ -356,17 +532,28 @@
       : `${vista.anio}-${String(vista.mes + 1).padStart(2, '0')}-01`;
     $$$('campoFecha').max = Datos.hoyISO();
     dibujarCategorias();
+    dibujarCuentasDelFormulario();
     abrirHoja('telonMovimiento');
     setTimeout(() => $$$('campoMonto').focus(), 260);
   }
+
+  const TITULO_MOVIMIENTO = {
+    gasto: 'Anotar un gasto',
+    ingreso: 'Anotar un ingreso',
+    transferencia: 'Mover plata entre cuentas',
+  };
 
   function fijarTipo(tipo) {
     vista.tipo = tipo;
     $$$('tipoGasto').classList.toggle('activo', tipo === 'gasto');
     $$$('tipoIngreso').classList.toggle('activo', tipo === 'ingreso');
-    $$$('tituloHojaMovimiento').textContent =
-      tipo === 'gasto' ? 'Anotar un gasto' : 'Anotar un ingreso';
+    $$$('tipoTransferencia').classList.toggle('activo', tipo === 'transferencia');
+    $$$('tituloHojaMovimiento').textContent = TITULO_MOVIMIENTO[tipo];
+
+    // La categoria solo existe para ingresos y gastos.
+    $$$('bloqueCategorias').hidden = tipo === 'transferencia';
     dibujarCategorias();
+    dibujarCuentasDelFormulario();
   }
 
   /* ---------------- 10. Registro ----------------
@@ -480,6 +667,7 @@
     a.download = `mi-bolsillo-${Datos.hoyISO()}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+    Datos.marcarRespaldo();
     avisar('Copia descargada ✅');
   }
 
@@ -487,12 +675,16 @@
     const lector = new FileReader();
     lector.onload = () => {
       try {
-        Datos.importar(lector.result);
+        const r = Datos.importar(lector.result);
         cargarAjustesEnFormulario();
+        ocultarRegistro();
         dibujar();
-        avisar('Datos restaurados ✅');
+        avisar(r.migro
+          ? 'Datos restaurados y actualizados al formato nuevo ✅'
+          : 'Datos restaurados ✅');
       } catch (e) {
-        avisar('Ese archivo no se pudo leer');
+        // el mensaje viene del validador y ya esta escrito para una persona
+        avisar(e.message || 'Ese archivo no se pudo leer');
       }
     };
     lector.readAsText(archivo);
@@ -547,6 +739,7 @@
     // ---- Formulario de movimiento ----
     $$$('tipoGasto').addEventListener('click', () => fijarTipo('gasto'));
     $$$('tipoIngreso').addEventListener('click', () => fijarTipo('ingreso'));
+    $$$('tipoTransferencia').addEventListener('click', () => fijarTipo('transferencia'));
 
     $$$('rejillaCategorias').addEventListener('click', e => {
       const b = e.target.closest('[data-categoria]');
@@ -555,25 +748,45 @@
       dibujarCategorias();
     });
 
+    // los selectores de cuenta se recuerdan para el proximo movimiento
+    $$$('campoCuentaOrigen').addEventListener('change', e => {
+      vista.cuentaOrigen = e.target.value;
+      if (vista.tipo === 'transferencia') dibujarCuentasDelFormulario();
+    });
+    $$$('campoCuentaDestino').addEventListener('change', e => {
+      vista.cuentaDestino = e.target.value;
+      if (vista.tipo === 'transferencia') dibujarCuentasDelFormulario();
+    });
+
     $$$('formMovimiento').addEventListener('submit', e => {
       e.preventDefault();
       const monto = Number($$$('campoMonto').value);
       if (!monto || monto <= 0) { avisar('Escribe un monto mayor que cero'); return; }
 
-      Datos.agregarMovimiento({
-        tipo: vista.tipo,
-        monto,
-        categoria: vista.categoria,
-        nota: $$$('campoNota').value,
-        fecha: $$$('campoFecha').value || Datos.hoyISO(),
-      });
+      const t = vista.tipo;
+      try {
+        Datos.agregarMovimiento({
+          tipo: t,
+          monto,
+          categoria: t === 'transferencia' ? null : vista.categoria,
+          nota: $$$('campoNota').value,
+          fecha: $$$('campoFecha').value || Datos.hoyISO(),
+          cuentaOrigen:  t === 'ingreso' ? null : $$$('campoCuentaOrigen').value,
+          cuentaDestino: t === 'gasto'   ? null : $$$('campoCuentaDestino').value,
+        });
+      } catch (error) {
+        avisar(error.message);
+        return;
+      }
 
       cerrarHoja('telonMovimiento');
       // si anotaste algo de otro mes, saltamos a ese mes para que lo veas
       const [a, m] = ($$$('campoFecha').value || Datos.hoyISO()).split('-').map(Number);
       vista.anio = a; vista.mes = m - 1;
       dibujar();
-      avisar(vista.tipo === 'gasto' ? 'Gasto anotado ✅' : 'Ingreso anotado ✅');
+      avisar(t === 'gasto' ? 'Gasto anotado ✅'
+           : t === 'ingreso' ? 'Ingreso anotado ✅'
+           : 'Plata movida entre tus cuentas ✅');
     });
 
     // ---- Lista de movimientos ----
@@ -607,12 +820,17 @@
 
     $$$('formMeta').addEventListener('submit', e => {
       e.preventDefault();
-      Datos.agregarMeta({
-        nombre: $$$('metaNombre').value,
-        objetivo: Number($$$('metaObjetivo').value),
-        emoji: $$$('metaEmoji').value,
-        fechaLimite: $$$('metaFecha').value,
-      });
+      try {
+        Datos.agregarMeta({
+          nombre: $$$('metaNombre').value,
+          montoObjetivo: Number($$$('metaObjetivo').value),
+          emoji: $$$('metaEmoji').value,
+          fechaObjetivo: $$$('metaFecha').value,
+        });
+      } catch (error) {
+        avisar(error.message);
+        return;
+      }
       cerrarHoja('telonMeta');
       dibujarMetas();
       avisar('Meta creada 🎯');
@@ -663,7 +881,6 @@
       Datos.guardarAjustes({
         correo,
         nombre: $$$('campoNombre').value.trim(),
-        moneda: $$$('campoMoneda').value,
         ingresoEsperado: Number($$$('campoIngresoEsperado').value) || 0,
       });
       guardarTopesDesdeFormulario();
@@ -678,6 +895,51 @@
       if (!inp) return;
       Datos.fijarPresupuesto(inp.dataset.tope, inp.value);
       avisar('Tope actualizado');
+    });
+
+    // ---- Cuentas ----
+    $$$('botonNuevaCuenta').addEventListener('click', () => abrirFormularioCuenta(null));
+    $$$('formCuenta').addEventListener('submit', guardarCuentaDesdeFormulario);
+
+    $$$('listaCuentas').addEventListener('click', e => {
+      const b = e.target.closest('[data-editar-cuenta]');
+      if (b) abrirFormularioCuenta(b.dataset.editarCuenta);
+    });
+
+    $$$('cuentasArchivadas').addEventListener('click', e => {
+      const b = e.target.closest('[data-reactivar]');
+      if (!b) return;
+      Datos.reactivarCuenta(b.dataset.reactivar);
+      dibujarCuentas();
+      avisar('Cuenta reactivada');
+    });
+
+    $$$('botonBorrarCuenta').addEventListener('click', () => {
+      const id = vista.cuentaEditando;
+      if (!id) return;
+      const usados = Datos.movimientosDeCuenta(id);
+
+      if (usados > 0) {
+        // Si todavia queda plata adentro, decirlo antes y no despues.
+        const saldo = Datos.saldoDeCuenta(id);
+        const aviso = saldo !== 0
+          ? `Esta cuenta todavia tiene ${dinero(saldo)}. Al archivarla deja de sumar a tu total de hoy, `
+            + 'aunque tus movimientos pasados quedan intactos. Si la plata se fue a otra cuenta, '
+            + 'anota primero esa movida con el boton + y despues archivala.\n\nArchivar igual?'
+          : 'Archivar esta cuenta? Deja de aparecer al anotar, pero sus movimientos siguen contando en tu historial.';
+        if (!confirm(aviso)) return;
+        try { Datos.archivarCuenta(id); }
+        catch (error) { avisar(error.message); return; }
+        avisar('Cuenta archivada 📦');
+      } else {
+        if (!confirm('Borrar esta cuenta? No tiene movimientos, asi que no se pierde nada.')) return;
+        try { Datos.borrarCuenta(id); }
+        catch (error) { avisar(error.message); return; }
+        avisar('Cuenta borrada');
+      }
+      cerrarHoja('telonCuenta');
+      dibujarCuentas();
+      dibujarInicioSiVisible();
     });
 
     $$$('botonExportar').addEventListener('click', exportarArchivo);
@@ -743,6 +1005,29 @@
   }
 
   /* ---------------- 15. Arranque ---------------- */
+
+  /** Si al abrir paso algo que el usuario deberia saber, se le dice una vez. */
+  function avisarDelArranque() {
+    const a = Datos.arranque();
+
+    if (a.error) {
+      $$$('avisoArranque').hidden = false;
+      $$$('avisoArranque').className = 'consejo aviso';
+      $$$('avisoArranque').innerHTML = `<strong>Ojo con este dispositivo</strong>${esc(a.error)}`;
+      return;
+    }
+
+    if (a.migro) {
+      $$$('avisoArranque').hidden = false;
+      $$$('avisoArranque').className = 'consejo';
+      $$$('avisoArranque').innerHTML =
+        '<strong>Actualizamos el formato de tus datos</strong>'
+        + 'Tus movimientos, metas y topes estan tal cual los dejaste, ahora repartidos en cuentas. '
+        + 'Guardamos una copia de lo anterior antes de tocar nada. '
+        + 'Si algo no te calza, descarga tu copia desde Ajustes y avisanos.';
+    }
+  }
+
   function iniciar() {
     Datos.cargar();
     conectarEventos();
@@ -752,6 +1037,7 @@
     calcularAhorro();
     fijarTipo('gasto');
     irA('inicio');
+    avisarDelArranque();
 
     // Quien no se ha registrado ve primero la pantalla de bienvenida.
     // Quien ya se registro entra directo, sin instrucciones.

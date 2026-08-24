@@ -1,0 +1,83 @@
+/* ============================================================
+   src/storage/esquema.js
+   La forma exacta que tienen los datos guardados.
+
+   Si cambias algo aqui, sube VERSION_ESQUEMA y escribe la
+   migracion correspondiente en migraciones.js. Nunca cambies
+   la forma sin migracion: los datos viejos de la gente que ya
+   tiene la app instalada entran mutilados y en silencio.
+   ============================================================ */
+
+const Esquema = (() => {
+
+  const VERSION_ESQUEMA = 2;
+
+  // La llave ya no lleva el numero de version: la version vive DENTRO
+  // del objeto. Poner "v1" en el nombre invita a crear otra llave en
+  // vez de migrar, que es justo lo que no queremos.
+  const LLAVE        = 'mi-bolsillo';
+  const LLAVE_VIEJA  = 'mi-bolsillo-v1';          // esquema 1, el de antes
+  const LLAVE_RESPALDO = 'mi-bolsillo:respaldo';  // copia previa a migrar
+
+  function nuevoId() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  /* ---------- Lo que ve alguien que recien instala ---------- */
+  function estadoNuevo() {
+    return {
+      meta: {
+        schemaVersion: VERSION_ESQUEMA,
+        creado: Fechas.hoyISO(),
+        ultimoRespaldo: '',
+      },
+
+      /* cuentas: donde vive la plata.
+         saldoInicial es el saldo del dia que creaste la cuenta.
+         El saldo de hoy NO se guarda, se calcula (ver calculos.js). */
+      cuentas: [],
+
+      /* movimientos: tipo 'ingreso' | 'gasto' | 'transferencia'.
+         monto siempre positivo y entero. El signo lo da el tipo.   */
+      movimientos: [],
+
+      /* compromisos: plata que ya prometiste y todavia no sale.
+         Se llenan en la Fase 2. Aqui solo dejamos el cajon listo.  */
+      compromisos: [],
+      ingresosPrevistos: [],
+      estacionales: [],
+      simulaciones: [],
+
+      metas: [],
+
+      // Secundario a proposito: el corazon de la app son los
+      // compromisos futuros, no los topes de gasto.
+      presupuestos: {},
+
+      ajustes: {
+        correo: '',
+        registrado: false,
+        nombre: '',
+        ingresoEsperado: 0,
+        tutorialVisto: false,
+        iaActivada: false,        // apagada de fabrica, se enciende en la Fase 6
+      },
+    };
+  }
+
+  /** Cuenta por defecto para quien recien parte o viene del esquema 1. */
+  function cuentaPorDefecto() {
+    return {
+      id: nuevoId(),
+      nombre: 'Mi cuenta',
+      tipo: 'cuenta_rut',
+      saldoInicial: 0,
+      icono: '🏧',
+      activa: true,
+      fechaCreacion: Fechas.hoyISO(),
+    };
+  }
+
+  return { VERSION_ESQUEMA, LLAVE, LLAVE_VIEJA, LLAVE_RESPALDO,
+           nuevoId, estadoNuevo, cuentaPorDefecto };
+})();

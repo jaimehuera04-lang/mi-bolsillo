@@ -88,31 +88,49 @@ navegador) y funciona sin internet.
 
 ```
 mi-bolsillo/
-├── index.html          Toda la estructura visual (las 5 pantallas)
+├── index.html          Toda la estructura visual (las pantallas)
 ├── manifest.json       Datos de la app: nombre, ícono, colores
 ├── sw.js               Hace que funcione sin internet
-├── css/
-│   └── estilos.css     Colores, tamaños, diseño
-├── js/
-│   ├── datos.js        El "cerebro": guarda y calcula. No dibuja nada.
-│   ├── graficos.js     Dibuja la dona, las barras y la línea (SVG a mano, sin librerías)
-│   ├── consejos.js     Las técnicas de ahorro y los consejos automáticos
-│   └── app.js          Une todo: escucha los toques y decide qué se muestra
+├── src/
+│   ├── datos.js        La puerta de entrada: lo único que la pantalla conoce
+│   ├── data/           Listas fijas: categorías, tipos de cuenta, técnicas de ahorro
+│   ├── core/           El motor. Funciones puras: calculan y no tocan nada más
+│   │   ├── fechas.js       Días y meses en ISO, sin líos de zona horaria
+│   │   ├── dinero.js       Pesos chilenos enteros y cómo se muestran
+│   │   ├── calculos.js     Totales, categorías, saldos de cuentas, patrimonio
+│   │   └── sugerencias.js  Mira tus números y decide qué vale la pena decir
+│   ├── storage/        Guardar y leer en el dispositivo
+│   │   ├── esquema.js      La forma exacta de los datos guardados
+│   │   ├── migraciones.js  Cómo pasan de un esquema al siguiente sin perder nada
+│   │   └── almacenamiento.js  localStorage, respaldos, importar y exportar
+│   └── ui/             La pantalla
+│       ├── estilos.css     Colores, tamaños, diseño
+│       ├── graficos.js     Dona, barras y línea (SVG a mano, sin librerías)
+│       └── app.js          Escucha los toques y decide qué se muestra
 ├── iconos/             Los íconos de la app
 └── herramientas/
-    ├── servidor.js         Servidor local para probar
-    └── generar-iconos.js   Vuelve a crear los íconos si cambias el color
+    ├── servidor.js            Servidor local para probar
+    ├── probar-migracion.js    Revisa que una migración no pierda ni un peso
+    └── generar-iconos.js      Vuelve a crear los íconos si cambias el color
 ```
+
+La regla que ordena todo: **el motor no sabe que existe una pantalla, y la pantalla no sabe hacer
+cuentas.** Los detalles están en [ARQUITECTURA.md](ARQUITECTURA.md).
 
 **Si quieres tocar algo, empieza por aquí:**
 
 | Quiero cambiar... | Abre este archivo | Busca |
 |---|---|---|
-| Los colores | `css/estilos.css` | el bloque `:root` de arriba |
-| Las categorías (agregar/quitar) | `js/datos.js` | `CATEGORIAS_GASTO` |
-| Los textos de las técnicas | `js/consejos.js` | `TECNICAS` |
-| Los consejos automáticos | `js/consejos.js` | `function sugerir` |
-| Los pasos del tutorial | `js/app.js` | `const PASOS` |
+| Los colores | `src/ui/estilos.css` | el bloque `:root` de arriba |
+| Las categorías (agregar/quitar) | `src/data/categorias.js` | `GASTO` |
+| Los tipos de cuenta | `src/data/categorias.js` | `TIPOS_CUENTA` |
+| Los textos de las técnicas | `src/data/tecnicas.js` | `TECNICAS` |
+| Los consejos automáticos | `src/core/sugerencias.js` | `function sugerir` |
+| Los pasos del tutorial | `src/ui/app.js` | `const PASOS` |
+
+⚠️ Si agregas un archivo nuevo dentro de `src/`, acuérdate de sumarlo **en dos lugares**: la lista de
+`<script>` al final de `index.html` y la lista `ARCHIVOS` de `sw.js`. Si no, funciona en el computador
+pero no en el celular sin internet.
 
 ---
 
@@ -186,6 +204,9 @@ le pegas el link de tu app publicada y te genera el paquete de Play Store.
 
 - Registro con correo la primera vez (y sin instrucciones después)
 - Anotar ingresos y gastos con 15 categorías, nota y fecha
+- Cuentas múltiples: Cuenta RUT, corriente, vista, ahorro, efectivo, billetera digital y tarjeta de crédito
+- Mover plata entre tus cuentas sin que cuente como gasto ni como ingreso
+- Patrimonio: lo que tienes menos lo que debes, con el detalle por cuenta
 - Navegar entre meses
 - Dashboard: saldo, tasa de ahorro, dona por categoría, barras mes a mes, línea del saldo diario
 - Regla 50/30/20 comparada con tu reparto real
