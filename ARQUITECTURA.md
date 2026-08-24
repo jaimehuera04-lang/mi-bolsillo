@@ -54,7 +54,7 @@ Objeto raíz único en `localStorage`.
     id, nombre,
     tipo,            // 'cuenta_rut' | 'corriente' | 'vista' | 'ahorro' | 'efectivo'
                      // | 'credito' | 'billetera'   (MACH, Tenpo, BE Pay, Mercado Pago)
-    saldo,           // entero CLP; en tarjetas de crédito es deuda, va negativo
+    saldoInicial,    // entero CLP; en tarjetas de crédito la deuda va negativa
     icono, activa, fechaCreacion
   }],
 
@@ -92,6 +92,15 @@ Objeto raíz único en `localStorage`.
   ajustes:      { correo, nombre, ingresoEsperado, iaActivada: false }
 }
 ```
+
+### Por qué el saldo no se guarda
+
+Las cuentas guardan `saldoInicial`, no el saldo de hoy. El saldo actual se calcula sumando los
+movimientos sobre ese punto de partida (`Calculos.saldoDeCuenta`).
+
+Un saldo guardado se desincroniza apenas se borra o edita un movimiento viejo, y a partir de ahí
+la app muestra un número que nadie puede explicar. Uno calculado no puede mentir: si el saldo está
+mal, el error está en algún movimiento y se puede ir a buscar.
 
 ### Por qué una compra en cuotas se guarda así
 
@@ -133,6 +142,10 @@ cada peso. Un número sin desglose no cumple la regla 5 de [VOZ.md](VOZ.md).
 
 ## Persistencia y migraciones
 
+- Una sola llave en `localStorage`: **`mi-bolsillo`**. La versión vive dentro del objeto, no en el
+  nombre de la llave — poner "v1" en el nombre invita a crear otra llave en vez de migrar.
+  `mi-bolsillo-v1` es la llave del esquema 1 y solo se lee; `mi-bolsillo:respaldo` guarda la copia
+  previa a la última migración.
 - Objeto raíz versionado con `meta.schemaVersion`.
 - Cada salto de esquema es una función explícita `migrate_1_to_2(estado)`, aplicadas en cadena.
 - **Antes de migrar, la app genera automáticamente una copia de seguridad exportable** con el
