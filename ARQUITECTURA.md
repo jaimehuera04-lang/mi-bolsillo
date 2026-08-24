@@ -1,0 +1,161 @@
+# ARQUITECTURA
+
+## Capas
+
+```
+  Interfaz (DOM, eventos, gráficos SVG)
+        ↑ recibe resultados ya calculados
+  Motor financiero  /src/core   ← funciones puras, sin DOM, sin storage
+        ↑ recibe el estado
+  Persistencia  /src/storage    ← localStorage + migraciones + respaldo
+```
+
+Regla que ordena todo lo demás: **el núcleo no sabe que existe una pantalla, y la pantalla no
+sabe hacer cuentas.** Si un cálculo financiero está dentro de una función que también escribe
+HTML, está en el lugar equivocado.
+
+Meta de estructura (se llega ahí por fases, no de un salto):
+
+```
+/src/core       calculos puros: sueldoLibre, compromisos, simulador, liberacion
+/src/storage    esquema, migraciones, respaldo, import/export
+/src/ui         pantallas, componentes, gráficos
+/src/data       categorías, calendario estacional chileno
+```
+
+## Reglas técnicas no negociables
+
+1. **La IA nunca calcula.** Flujo: datos → motor → resultados → IA solo redacta.
+2. **Los compromisos son entidad de primera clase**, no un tipo de movimiento.
+3. **Montos en enteros.** Pesos chilenos enteros, nunca float. Formatear es presentación.
+4. **Fechas ISO** `AAAA-MM-DD`, comparadas en la zona horaria local del usuario. Nunca
+   `new Date('2026-03-01')` a secas: eso se interpreta en UTC y corre el día.
+5. **El núcleo se separa de la interfaz.** Funciones puras, testeables sin navegador.
+6. **Almacenamiento versionado** con `schemaVersion` y migraciones explícitas.
+7. **Las transferencias no son ingresos ni gastos.** Mueven plata entre cuentas del mismo
+   usuario y dejan el patrimonio total igual.
+8. **Gasto con tarjeta ≠ pago de tarjeta.** El gasto se contabiliza al comprar; el pago de la
+   tarjeta es una transferencia. Contar los dos como gasto duplica el monto.
+9. **Sin secretos en el frontend.** Ninguna API key ni token en el cliente ni en el repositorio.
+
+## Modelo de datos
+
+Objeto raíz único en `localStorage`.
+
+```js
+{
+  meta: {
+    schemaVersion: 2,
+    creado: '2026-08-20',
+    ultimoRespaldo: '2026-08-24'
+  },
+
+  cuentas: [{
+    id, nombre,
+    tipo,            // 'cuenta_rut' | 'corriente' | 'vista' | 'ahorro' | 'efectivo'
+                     // | 'credito' | 'billetera'   (MACH, Tenpo, BE Pay, Mercado Pago)
+    saldo,           // entero CLP; en tarjetas de crédito es deuda, va negativo
+    icono, activa, fechaCreacion
+  }],
+
+  movimientos: [{
+    id,
+    tipo,            // 'ingreso' | 'gasto' | 'transferencia'
+    monto,           // entero CLP, siempre positivo
+    fecha,           // 'AAAA-MM-DD'
+    categoria, subcategoria,
+    cuentaOrigen,    // gasto y transferencia
+    cuentaDestino,   // ingreso y transferencia
+    descripcion, nota, etiquetas: [],
+    compromisoId     // si este movimiento pagó una cuota concreta
+  }],
+
+  compromisos: [{
+    id, nombre,
+    tipo,            // 'cuota' | 'fijo' | 'estacional'
+    montoCuota,      // entero CLP
+    fechaVencimiento,
+    cuotaNumero, cuotasTotales,   // 3 de 12
+    compraId,        // agrupa las 12 cuotas de una misma compra
+    tarjeta,         // 'CMR' | 'Ripley' | ...
+    categoria, cuenta,
+    estado,          // 'pendiente' | 'pagado'
+    interes          // entero CLP total, o 0 si fue sin interés
+  }],
+
+  ingresosPrevistos: [{ id, nombre, monto, frecuencia, diaDelMes, activo }],
+  estacionales:      [{ id, nombre, mes, montoEstimado, recurrenciaAnual }],
+  metas:             [{ id, nombre, montoObjetivo, montoActual, fechaObjetivo, aporteMensual, cuenta }],
+  simulaciones:      [{ id, descripcion, monto, cuotas, fecha, resultado }],
+
+  presupuestos: { comida: 130000 },   // secundario, no es el corazón de la app
+  ajustes:      { correo, nombre, ingresoEsperado, iaActivada: false }
+}
+```
+
+### Por qué una compra en cuotas se guarda así
+
+Comprar zapatillas a $78.000 en 6 cuotas genera **un movimiento y seis compromisos**, todos con
+el mismo `compraId`:
+
+- 1 movimiento de tipo `gasto` con fecha de hoy, categoría ropa, cuenta = la tarjeta.
+- 6 compromisos de tipo `cuota`, $13.000 cada uno, con `fechaVencimiento` en meses distintos
+  y `cuotaNumero` 1 a 6.
+
+Cuando el usuario paga la cuota 1, ese pago es una **transferencia** desde su cuenta hacia la
+tarjeta, y el compromiso pasa a `pagado` con su `compromisoId` apuntando al movimiento. Así
+nunca se cuenta dos veces el mismo peso, y el motor puede responder "cuánto debo en marzo"
+mirando solo compromisos pendientes.
+
+## Motor de compromisos
+
+Debe poder responder todo esto **sin IA**, con funciones puras y desglosables:
+
+- ¿Cuánto de mi ingreso de un mes determinado ya está comprometido?
+- ¿Cuál es mi sueldo libre mes a mes en los próximos 12 meses?
+- ¿Qué mes de los próximos 12 es el más apretado y por qué?
+- Si agrego una compra de $X en N cuotas, ¿cómo cambia cada uno de esos 12 meses?
+- ¿En qué fecha termino de pagar todo lo que debo hoy? (fecha de liberación)
+- ¿Qué pasa si adelanto cuotas en un mes específico?
+
+Fórmula base:
+
+```
+sueldo libre = ingresos previstos del mes
+             − cuotas que vencen ese mes
+             − compromisos fijos del mes
+             − gastos estacionales previstos del mes
+             − aporte a metas del mes
+```
+
+Todo resultado debe poder desglosarse línea por línea para que el usuario vea de dónde salió
+cada peso. Un número sin desglose no cumple la regla 5 de [VOZ.md](VOZ.md).
+
+## Persistencia y migraciones
+
+- Objeto raíz versionado con `meta.schemaVersion`.
+- Cada salto de esquema es una función explícita `migrate_1_to_2(estado)`, aplicadas en cadena.
+- **Antes de migrar, la app genera automáticamente una copia de seguridad exportable** con el
+  esquema anterior intacto. Si la migración falla, se restaura esa copia y no se pierde nada.
+- El import de un respaldo pasa por la misma cadena de migraciones que los datos locales.
+
+## Privacidad e IA — decisión ya tomada
+
+- **Por defecto todo es local.** La app funciona completa y sin internet, sin enviar un dato a
+  ningún servidor. Esto es propuesta de valor, no detalle técnico: el usuario objetivo no le va
+  a entregar sus datos bancarios a una app desconocida.
+- **La IA es opcional**, con un interruptor visible **apagado de fábrica**.
+- **Cuando esté activada, solo salen datos agregados y anonimizados**: montos por categoría,
+  totales, saldos, fechas de compromisos. **Nunca** descripciones libres, notas, nombres de
+  cuentas ni etiquetas escritas por el usuario.
+- **La llamada pasa siempre por un backend propio** (función serverless mínima), nunca directo
+  desde el navegador. Ese backend no existe hasta la Fase 6.
+- Antes de la primera llamada, la app muestra exactamente qué se envía y pide consentimiento.
+
+Consecuencia: **de la Fase 0 a la Fase 5 no se usa IA en absoluto.** Todo el valor del producto,
+incluida la función estrella, se construye con lógica determinística.
+
+## Distribución
+
+PWA servida por GitHub Pages. `sw.js` cachea la app para que abra sin internet; su constante
+`VERSION` debe subir en cada release o el celular sigue mostrando la copia vieja.
