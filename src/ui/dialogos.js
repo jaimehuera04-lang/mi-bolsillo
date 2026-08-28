@@ -51,7 +51,7 @@ const Dialogos = (() => {
                    class="dialogo-monto">` : ''}
           <div class="dialogo-botones">
             ${cancelar ? `<button type="button" class="boton secundario" data-no>${esc(cancelar)}</button>` : ''}
-            <button type="button" class="botón ${peligro ? 'peligro' : ''}" data-si>${esc(aceptar)}</button>
+            <button type="button" class="boton ${peligro ? 'peligro' : ''}" data-si>${esc(aceptar)}</button>
           </div>
         </div>`;
 

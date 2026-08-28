@@ -783,17 +783,11 @@
     boton.disabled = true;
     boton.textContent = vista.modoCuenta === 'crear' ? 'Creando…' : 'Entrando…';
 
+    let faltaConfirmar = false;
     try {
       if (vista.modoCuenta === 'crear') {
         const r = await Nube.crearCuenta(correo, clave);
-        if (r.confirmarCorreo) {
-          await Dialogos.avisar({
-            titulo: 'Revisa tu correo',
-            texto: 'Te mandamos un mensaje a ' + correo + ' para confirmar que la dirección '
-              + 'es tuya. Ábrelo y después vuelve acá a entrar.',
-          });
-          return;
-        }
+        faltaConfirmar = r.confirmarCorreo;
       } else {
         await Nube.entrar(correo, clave);
       }
@@ -803,6 +797,23 @@
     } finally {
       boton.disabled = false;
       boton.textContent = textoOriginal;
+    }
+
+    // El aviso va FUERA del try a propósito: así el botón vuelve a la
+    // normalidad antes de que aparezca, y nunca queda un "Creando…"
+    // colgado esperando un toque.
+    if (faltaConfirmar) {
+      await Dialogos.avisar({
+        titulo: 'Ya casi: confirma tu correo',
+        texto: 'Tu cuenta quedó creada. Te mandamos un mensaje a ' + correo + ' para confirmar '
+          + 'que la dirección es tuya.\n\n'
+          + 'Ábrelo, y después vuelve acá y toca Entrar con la misma contraseña. '
+          + 'Si no llega en unos minutos, revisa la carpeta de spam.',
+        aceptar: 'Entendido',
+      });
+      // la próxima vez lo que corresponde es entrar, no volver a crear
+      fijarModoCuenta('entrar');
+      return;
     }
 
     // Ya hay sesión. Ahora hay que decidir qué datos se quedan.

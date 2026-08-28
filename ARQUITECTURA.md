@@ -53,6 +53,7 @@ Lo que sigue no es decoración: cada punto tapa una filtración concreta del nav
 | **No se selecciona el texto de la interfaz** (`user-select: none`, `-webkit-touch-callout: none`), salvo en los campos. | El resaltado azul y el menú de "copiar / compartir" al dejar el dedo apretado. |
 | **Hay pantalla de arranque**, con estilos críticos escritos dentro de `index.html`. | El parpadeo blanco de "página cargando" al abrir. |
 | **Las hojas se deslizan** al entrar y al salir, y se cierran arrastrándolas hacia abajo. | Ventanas que aparecen y desaparecen de golpe. |
+| **Las ventanas de `Dialogos` van en `z-index: 120`**, sobre la bienvenida (100) y los avisos en 130. | Una ventana por debajo de la bienvenida es invisible e intocable: la app queda esperando para siempre un toque imposible. Pasó de verdad. |
 | **En el computador la app se dibuja dentro de un marco de teléfono**, no estirada a todo el ancho. | Que en pantalla grande parezca una sección de un sitio web. |
 | **El teclado no tapa los campos**: `interactive-widget=resizes-content` más `scrollIntoView` al enfocar. | Efecto secundario del marco fijo; sin esto el marco fijo sería peor que el scroll de documento. |
 
