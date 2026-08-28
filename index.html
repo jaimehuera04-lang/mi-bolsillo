@@ -7,7 +7,7 @@
        encoge en vez de quedar tapada. Es lo que hace una app nativa. -->
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, interactive-widget=resizes-content">
   <title>Mi Bolsillo - controla tus gastos</title>
-  <meta name="description" content="App simple para llevar tus ingresos, gastos y metas de ahorro, con graficos y consejos para aprender a manejar tu plata.">
+  <meta name="description" content="App simple para llevar tus ingresos, gastos y metas de ahorro, con gráficos y consejos para aprender a manejar tu plata.">
   <!-- El color de la barra de estado del celular, para que se funda con
        el encabezado en vez de quedar como una barra de navegador -->
   <meta name="theme-color" content="#10a072" media="(prefers-color-scheme: light)">
@@ -23,9 +23,9 @@
   <meta name="apple-mobile-web-app-title" content="Mi Bolsillo">
 
   <!-- ============================================================
-       Estilos minimos escritos aca adentro a proposito: el navegador
-       los aplica antes de bajar estilos.css, asi la app nunca muestra
-       el parpadeo blanco de "pagina cargando". Es lo que hace que
+       Estilos mínimos escritos acá adentro a propósito: el navegador
+       los aplica antes de bajar estilos.css, así la app nunca muestra
+       el parpadeo blanco de "página cargando". Es lo que hace que
        abrir se sienta como abrir una app y no como entrar a un sitio.
        ============================================================ -->
   <style>
@@ -55,7 +55,7 @@
 
 <!-- ============================================================
      .app es el marco de la aplicacion: ocupa la pantalla completa
-     y no se mueve. Adentro, lo unico que hace scroll es .contenido.
+     y no se mueve. Adentro, lo único que hace scroll es .contenido.
      Gracias a eso el encabezado y la barra de abajo quedan fijos
      como en una app de verdad, y el celular deja de hacer el rebote
      y el "deslizar para recargar" del navegador.
@@ -71,19 +71,19 @@
   <!-- ================= PANTALLA DE REGISTRO =================
        Se muestra una sola vez, la primera vez que se abre la app.
        Queda oculta por defecto y es app.js quien decide mostrarla,
-       asi nunca aparece de golpe a quien ya se registro.        -->
+       así nunca aparece de golpe a quien ya se registró.        -->
   <div class="bienvenida" id="bienvenida" hidden>
     <div class="bienvenida-caja">
       <div class="bienvenida-marca">
         <span class="bienvenida-emoji">💚</span>
         <h1>Mi Bolsillo</h1>
         <p class="bienvenida-bajada">
-          Ordena tus gastos, mira en que se te va la plata y aprende a ahorrar.
+          Ordena tus gastos, mira en qué se te va la plata y aprende a ahorrar.
         </p>
       </div>
 
       <form id="formRegistro" novalidate>
-        <label for="campoCorreo">Tu correo electronico</label>
+        <label for="campoCorreo">Tu correo electrónico</label>
         <input type="email" id="campoCorreo" inputmode="email" autocomplete="email"
                autocapitalize="off" spellcheck="false" placeholder="tucorreo@ejemplo.com"
                aria-describedby="errorCorreo">
@@ -94,9 +94,9 @@
 
       <div class="bienvenida-nota">
         <p>
-          <strong>🔒 Se guarda solo en este telefono.</strong>
-          No hay contrasena ni servidor: tu correo y tus datos no salen de aqui,
-          nadie mas los ve y no viajan a internet.
+          <strong>🔒 Se guarda solo en este teléfono.</strong>
+          No hay contraseña ni servidor: tu correo y tus datos no salen de aquí,
+          nadie más los ve y no viajan a internet.
         </p>
         <p style="margin-bottom:0">
           Por lo mismo, esto <strong>no es un respaldo</strong>. Si cambias de celular,
@@ -124,7 +124,7 @@
     </div>
   </header>
 
-  <!-- La unica zona que hace scroll en toda la app -->
+  <!-- La única zona que hace scroll en toda la app -->
   <div class="contenido" id="contenido">
 
   <!-- ================= 1. INICIO (dashboard) ================= -->
@@ -133,7 +133,7 @@
     <div class="aviso-instalar" id="avisoInstalar">
       <span style="font-size:22px">📲</span>
       <div style="flex:1">
-        <strong>Instalala en tu celular</strong>
+        <strong>Instálala en tu celular</strong>
         <div class="ayuda">Se abre como una app normal y funciona sin internet.</div>
       </div>
       <button class="boton chico" id="botonInstalar">Instalar</button>
@@ -147,11 +147,11 @@
       </div>
       <div class="par-cifras">
         <div class="cifra ingreso">
-          <div class="rotulo">⬆️ Entro</div>
+          <div class="rotulo">⬆️ Entró</div>
           <div class="valor" id="totalIngresos">$0</div>
         </div>
         <div class="cifra gasto">
-          <div class="rotulo">⬇️ Salio</div>
+          <div class="rotulo">⬇️ Salió</div>
           <div class="valor" id="totalGastos">$0</div>
         </div>
       </div>
@@ -169,27 +169,27 @@
             <span class="cifras" id="textoTasaAhorro">0%</span>
           </div>
           <div class="barra"><span id="barraTasaAhorro" style="width:0%; background:var(--verde)"></span></div>
-          <p class="ayuda">Es el porcentaje de lo que entro que NO se gasto. Sobre 20% es una muy buena senal.</p>
+          <p class="ayuda">Es el porcentaje de lo que entró que NO se gastó. Sobre 20% es una muy buena señal.</p>
         </div>
       </div>
     </section>
 
-    <!-- Aviso de una sola vez: migracion de datos o problema para guardar -->
+    <!-- Aviso de una sola vez: migración de datos o problema para guardar -->
     <div id="avisoArranque" hidden></div>
 
-    <!-- Consejos automaticos segun tus numeros -->
+    <!-- Consejos automáticos según tus números -->
     <div id="zonaConsejos"></div>
 
-    <!-- Grafico de dona -->
+    <!-- Gráfico de dona -->
     <section class="tarjeta">
       <div class="tarjeta-titulo">
-        <h2>En que se te fue</h2>
+        <h2>En qué se te fue</h2>
         <span class="ayuda" style="margin:0">este mes</span>
       </div>
       <div id="graficoDona"></div>
     </section>
 
-    <!-- Grafico de barras / linea -->
+    <!-- Gráfico de barras / línea -->
     <section class="tarjeta">
       <div class="tarjeta-titulo">
         <h2 id="tituloTendencia">Mes a mes</h2>
@@ -199,19 +199,19 @@
         </div>
       </div>
       <div id="graficoTendencia"></div>
-      <p class="ayuda" id="pieTendencia">Verde es lo que entro, rojo lo que salio. Si el rojo supera al verde, ese mes gastaste mas de lo que ganaste.</p>
+      <p class="ayuda" id="pieTendencia">Verde es lo que entró, rojo lo que salió. Si el rojo supera al verde, ese mes gastaste más de lo que ganaste.</p>
     </section>
 
     <!-- Regla 50/30/20 -->
     <section class="tarjeta">
       <div class="tarjeta-titulo">
         <h2>Tu reparto del mes</h2>
-        <button class="boton fantasma chico" data-ir="aprender">Que es esto?</button>
+        <button class="boton fantasma chico" data-ir="aprender">¿Qué es esto?</button>
       </div>
       <div id="graficoRegla"></div>
     </section>
 
-    <!-- Topes por categoria -->
+    <!-- Topes por categoría -->
     <section class="tarjeta" id="tarjetaTopes">
       <div class="tarjeta-titulo">
         <h2>Tus topes</h2>
@@ -220,7 +220,7 @@
       <div id="listaTopes"></div>
     </section>
 
-    <!-- Pildora educativa -->
+    <!-- Píldora educativa -->
     <div class="consejo" style="margin-bottom:14px">
       <strong>💡 Para tener en cuenta</strong>
       <span id="pildoraDia"></span>
@@ -246,7 +246,7 @@
   <!-- ================= 3. METAS ================= -->
   <main class="pantalla" id="pantalla-metas">
     <div class="consejo" style="margin-bottom:14px">
-      <strong>🎯 Por que sirven las metas</strong>
+      <strong>🎯 Por qué sirven las metas</strong>
       Ahorrar "por si acaso" cuesta. Ahorrar para algo con nombre y fecha cuesta mucho menos:
       tu cabeza deja de ver la plata guardada como algo que te falta y empieza a verla como algo que avanza.
     </div>
@@ -257,27 +257,27 @@
   <!-- ================= 4. APRENDER ================= -->
   <main class="pantalla" id="pantalla-aprender">
     <div class="tarjeta">
-      <h2>Tecnicas de ahorro</h2>
+      <h2>Técnicas de ahorro</h2>
       <p class="ayuda" style="margin-bottom:0">
-        Ninguna sirve para todo el mundo. Lee una, prueba la que te calce y quedate con esa.
-        Tocalas para abrirlas.
+        Ninguna sirve para todo el mundo. Lee una, prueba la que te calce y quédate con esa.
+        Tócalas para abrirlas.
       </p>
     </div>
     <div id="listaTecnicas"></div>
 
     <div class="tarjeta" style="margin-top:6px">
-      <h3>🧮 Calculadora: cuanto junto?</h3>
+      <h3>🧮 Calculadora: ¿cuánto junto?</h3>
       <p class="ayuda">Mira lo que pasa si guardas un monto fijo cada mes.</p>
       <label for="calcMonto">Guardo cada mes</label>
       <input type="number" id="calcMonto" value="50000" min="0" step="1000" inputmode="numeric">
-      <label for="calcAnios">Durante (anos)</label>
+      <label for="calcAnios">Durante (años)</label>
       <input type="number" id="calcAnios" value="5" min="1" max="40" inputmode="numeric">
       <label for="calcTasa">Rentabilidad anual estimada (%)</label>
       <input type="number" id="calcTasa" value="5" min="0" max="30" step="0.5" inputmode="decimal">
       <div class="consejo" style="margin-top:14px" id="resultadoCalc"></div>
       <p class="ayuda">
         Es un ejercicio educativo con una rentabilidad constante que en la vida real sube y baja.
-        Esta app no entrega recomendaciones de inversion.
+        Esta app no entrega recomendaciones de inversión.
       </p>
     </div>
   </main>
@@ -289,10 +289,10 @@
       <label for="campoCorreoAjustes">Tu correo</label>
       <input type="email" id="campoCorreoAjustes" inputmode="email" autocomplete="email"
              autocapitalize="off" spellcheck="false" placeholder="tucorreo@ejemplo.com">
-      <p class="ayuda">Guardado solo en este dispositivo. No se envia a ningun lado.</p>
-      <label for="campoNombre">Como quieres que te salude?</label>
+      <p class="ayuda">Guardado solo en este dispositivo. No se envía a ningún lado.</p>
+      <label for="campoNombre">¿Cómo quieres que te salude?</label>
       <input type="text" id="campoNombre" placeholder="Tu nombre" autocomplete="given-name">
-      <label for="campoIngresoEsperado">Cuanto esperas recibir al mes?</label>
+      <label for="campoIngresoEsperado">¿Cuánto esperas recibir al mes?</label>
       <input type="number" id="campoIngresoEsperado" placeholder="Ej: 750000" inputmode="numeric">
       <p class="ayuda">Opcional. Sirve para calcular tus topes sugeridos.</p>
       <button class="boton" id="botonGuardarAjustes" style="margin-top:14px">Guardar</button>
@@ -305,7 +305,7 @@
       </div>
       <p class="ayuda" style="margin-top:-4px">
         Una cuenta es cada lugar donde vive tu plata: la Cuenta RUT, el efectivo del bolsillo,
-        una billetera como MACH o Tenpo, la tarjeta de credito.
+        una billetera como MACH o Tenpo, la tarjeta de crédito.
       </p>
       <div id="listaCuentas"></div>
       <div class="par-cifras" style="margin-top:12px">
@@ -319,10 +319,10 @@
 
     <section class="tarjeta">
       <div class="tarjeta-titulo">
-        <h2>Topes por categoria</h2>
+        <h2>Topes por categoría</h2>
       </div>
       <p class="ayuda" style="margin-top:-4px">
-        Es el metodo de los sobres: le pones un maximo a lo que se te descontrola.
+        Es el método de los sobres: le pones un máximo a lo que se te descontrola.
         Deja en blanco lo que no quieras controlar.
       </p>
       <div id="editorTopes"></div>
@@ -331,7 +331,7 @@
     <section class="tarjeta">
       <h2>Copia de seguridad</h2>
       <p class="ayuda" style="margin-top:-4px">
-        Tus datos viven solo en este dispositivo: nadie mas los ve, pero tampoco se recuperan
+        Tus datos viven solo en este dispositivo: nadie más los ve, pero tampoco se recuperan
         solos si cambias de celular. Descarga una copia de vez en cuando.
       </p>
       <div class="fila-botones" style="margin-top:12px">
@@ -352,12 +352,12 @@
       <button class="boton peligro" id="botonBorrarTodo">🗑️ Borrar todos mis datos</button>
     </section>
 
-    <p class="ayuda" style="text-align:center">Mi Bolsillo · version 2.0</p>
+    <p class="ayuda" style="text-align:center">Mi Bolsillo · versión 2.0</p>
   </main>
 
   </div><!-- fin .contenido -->
 
-  <!-- ================= BOTON + Y NAVEGACION ================= -->
+  <!-- ================= BOTÓN + Y NAVEGACIÓN ================= -->
   <button class="boton-flotante" id="botonAgregar" aria-label="Agregar movimiento">+</button>
 
   <nav class="navegacion">
@@ -384,29 +384,29 @@
       </div>
 
       <form id="formMovimiento">
-        <label for="campoMonto">Cuanto?</label>
+        <label for="campoMonto">¿Cuánto?</label>
         <input type="number" id="campoMonto" inputmode="numeric" min="1" step="1" required
                placeholder="0" style="font-size:24px; font-weight:700; text-align:center">
 
         <div id="bloqueCategorias">
-          <label>Categoria</label>
+          <label>Categoría</label>
           <div class="rejilla-categorias" id="rejillaCategorias"></div>
         </div>
 
         <div id="filaCuentaOrigen">
-          <label for="campoCuentaOrigen" id="etiquetaCuentaOrigen">De que cuenta salio?</label>
+          <label for="campoCuentaOrigen" id="etiquetaCuentaOrigen">¿De qué cuenta salió?</label>
           <select id="campoCuentaOrigen"></select>
         </div>
 
         <div id="filaCuentaDestino">
-          <label for="campoCuentaDestino" id="etiquetaCuentaDestino">A que cuenta entro?</label>
+          <label for="campoCuentaDestino" id="etiquetaCuentaDestino">¿A qué cuenta entró?</label>
           <select id="campoCuentaDestino"></select>
         </div>
 
         <p class="consejo aviso" id="avisoUnaCuenta" hidden>
           <strong>Para mover plata necesitas dos cuentas</strong>
           Crea la segunda en Ajustes → Mis cuentas. Por ejemplo tu Cuenta RUT y el efectivo,
-          o tu Cuenta RUT y la tarjeta de credito.
+          o tu Cuenta RUT y la tarjeta de crédito.
         </p>
 
         <label for="campoNota">Nota (opcional)</label>
@@ -430,13 +430,13 @@
       </div>
 
       <form id="formCuenta">
-        <label for="cuentaNombre">Como se llama?</label>
+        <label for="cuentaNombre">¿Cómo se llama?</label>
         <input type="text" id="cuentaNombre" required maxlength="30" placeholder="Ej: Cuenta RUT">
 
-        <label for="cuentaTipo">Que tipo de cuenta es?</label>
+        <label for="cuentaTipo">¿Qué tipo de cuenta es?</label>
         <select id="cuentaTipo"></select>
 
-        <label for="cuentaSaldo">Cuanto hay ahora?</label>
+        <label for="cuentaSaldo">¿Cuánto hay ahora?</label>
         <input type="number" id="cuentaSaldo" step="1" inputmode="numeric" placeholder="0">
         <p class="ayuda" id="ayudaSaldoCuenta"></p>
 
@@ -459,9 +459,9 @@
         <button class="boton fantasma chico" data-cerrar="telonMeta">Cerrar</button>
       </div>
       <form id="formMeta">
-        <label for="metaNombre">Para que estas ahorrando?</label>
+        <label for="metaNombre">¿Para qué estás ahorrando?</label>
         <input type="text" id="metaNombre" required maxlength="40" placeholder="Ej: fondo de emergencia">
-        <label for="metaObjetivo">Cuanto necesitas juntar?</label>
+        <label for="metaObjetivo">¿Cuánto necesitas juntar?</label>
         <input type="number" id="metaObjetivo" required min="1" inputmode="numeric" placeholder="Ej: 900000">
         <label for="metaEmoji">Un emoji para reconocerla</label>
         <select id="metaEmoji">
@@ -469,13 +469,13 @@
           <option value="✈️">✈️ Viaje</option>
           <option value="🚗">🚗 Auto</option>
           <option value="🏠">🏠 Casa</option>
-          <option value="💻">💻 Tecnologia</option>
+          <option value="💻">💻 Tecnología</option>
           <option value="🎓">🎓 Estudios</option>
           <option value="🎁">🎁 Regalo</option>
           <option value="🏥">🏥 Salud</option>
           <option value="🎯">🎯 Otra cosa</option>
         </select>
-        <label for="metaFecha">Para cuando? (opcional)</label>
+        <label for="metaFecha">¿Para cuándo? (opcional)</label>
         <input type="date" id="metaFecha">
         <button class="boton" type="submit" style="margin-top:18px">Crear meta</button>
       </form>
@@ -489,7 +489,7 @@
       <h2 id="tutorialTitulo">Bienvenido 👋</h2>
       <div id="tutorialCuerpo" style="font-size:14.5px"></div>
       <div class="fila-botones" style="margin-top:18px">
-        <button class="boton secundario" id="tutorialAtras">Atras</button>
+        <button class="boton secundario" id="tutorialAtras">Atrás</button>
         <button class="boton" id="tutorialSiguiente">Siguiente</button>
       </div>
     </div>
@@ -499,7 +499,7 @@
 
 </div><!-- fin .app -->
 
-  <!-- El orden importa: cada archivo usa los de mas arriba.
+  <!-- El orden importa: cada archivo usa los de más arriba.
        datos fijos -> motor de calculo -> almacenamiento -> fachada -> pantalla -->
   <script src="src/data/categorias.js"></script>
   <script src="src/data/tecnicas.js"></script>

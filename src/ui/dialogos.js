@@ -5,27 +5,27 @@
    el navegador trae sus propios confirm() y prompt(), pero salen
    con el nombre del sitio arriba ("jaimehuera04-lang.github.io
    dice:") y con los botones del navegador. Eso delata al tiro que
-   esto es una pagina web. Aca dibujamos las mismas preguntas con
+   esto es una página web. Acá dibujamos las mismas preguntas con
    la cara de la app.
 
-   Como se usan (fijate en el "await": ahora hay que esperar la
-   respuesta, porque la ventana no congela el telefono):
+   Como se usan (fíjate en el "await": ahora hay que esperar la
+   respuesta, porque la ventana no congela el teléfono):
 
-     if (await Dialogos.confirmar({ titulo: 'Borrar esto?' })) { ... }
+     if (await Dialogos.confirmar({ título: 'Borrar esto?' })) { ... }
 
-     const monto = await Dialogos.pedirMonto({ titulo: 'Cuanto?' });
+     const monto = await Dialogos.pedirMonto({ título: 'Cuanto?' });
      if (monto !== null) { ... }
    ============================================================ */
 
 const Dialogos = (() => {
   'use strict';
 
-  // La pila guarda las ventanas abiertas. Sirve para que el boton
-  // "atras" del celular cierre la de mas arriba y no salga de la app.
+  // La pila guarda las ventanas abiertas. Sirve para que el botón
+  // "atrás" del celular cierre la de más arriba y no salga de la app.
   const pila = [];
 
   // app.js nos pasa dos funciones para que cada ventana deje (y quite)
-  // su huella en el historial del telefono. Ver Dialogos.conectarHistorial.
+  // su huella en el historial del teléfono. Ver Dialogos.conectarHistorial.
   let alAbrir = null;
   let alCerrar = null;
 
@@ -51,18 +51,18 @@ const Dialogos = (() => {
                    class="dialogo-monto">` : ''}
           <div class="dialogo-botones">
             ${cancelar ? `<button type="button" class="boton secundario" data-no>${esc(cancelar)}</button>` : ''}
-            <button type="button" class="boton ${peligro ? 'peligro' : ''}" data-si>${esc(aceptar)}</button>
+            <button type="button" class="botón ${peligro ? 'peligro' : ''}" data-si>${esc(aceptar)}</button>
           </div>
         </div>`;
 
-      // Va dentro del marco de la app, no del documento: asi en el
-      // computador la ventana aparece dentro del telefono dibujado.
+      // Va dentro del marco de la app, no del documento: así en el
+      // computador la ventana aparece dentro del teléfono dibujado.
       (document.getElementById('app') || document.body).appendChild(telon);
       // Leer una medida obliga al navegador a calcular el estado inicial;
-      // recien despues la clase "abierto" se anima en vez de aparecer de
+      // recién después la clase "abierto" se anima en vez de aparecer de
       // golpe. Usamos esto y no requestAnimationFrame porque aquel no
-      // corre si la ventana esta en segundo plano, y la ventana se
-      // quedaria invisible.
+      // corre si la ventana está en segundo plano, y la ventana se
+      // quedaría invisible.
       void telon.offsetHeight;
       telon.classList.add('abierto');
 
@@ -85,7 +85,7 @@ const Dialogos = (() => {
       function aceptado() {
         if (!campo) return cerrar(true);
         const valor = Math.round(Number(entrada.value));
-        // sin monto valido no cerramos: le marcamos el campo y lo dejamos corregir
+        // sin monto válido no cerramos: le marcamos el campo y lo dejamos corregir
         if (!Number.isFinite(valor) || valor <= 0) {
           entrada.classList.add('con-error');
           entrada.focus();
@@ -107,7 +107,7 @@ const Dialogos = (() => {
       if (entrada) entrada.addEventListener('input', () => entrada.classList.remove('con-error'));
       document.addEventListener('keydown', enTecla);
 
-      // guardamos la funcion de cierre por si el boton "atras" la necesita
+      // guardamos la función de cierre por si el botón "atrás" la necesita
       cerrar.cancelar = () => cerrar(campo ? null : false);
       pila.push(cerrar);
       if (alAbrir) alAbrir(cerrar.cancelar);
@@ -116,14 +116,14 @@ const Dialogos = (() => {
 
   return {
     /** Pregunta de si o no. Devuelve true o false. */
-    confirmar: ({ titulo, texto = '', aceptar = 'Si', cancelar = 'Cancelar', peligro = false }) =>
+    confirmar: ({ titulo, texto = '', aceptar = 'Sí', cancelar = 'Cancelar', peligro = false }) =>
       abrir({ titulo, texto, aceptar, cancelar, peligro }),
 
     /** Aviso de una sola salida. Devuelve true cuando cierran. */
     avisar: ({ titulo, texto = '', aceptar = 'Entendido' }) =>
       abrir({ titulo, texto, aceptar, cancelar: null }),
 
-    /** Pide un monto en pesos. Devuelve el numero, o null si cancelan. */
+    /** Pide un monto en pesos. Devuelve el número, o null si cancelan. */
     pedirMonto: ({ titulo, texto = '', etiqueta = 'Monto', placeholder = '0', aceptar = 'Guardar' }) =>
       abrir({ titulo, texto, campo: { etiqueta, placeholder }, aceptar, cancelar: 'Cancelar' }),
 
@@ -131,12 +131,12 @@ const Dialogos = (() => {
     hayAbierto: () => pila.length > 0,
 
     /**
-     * app.js conecta aca su manejo del boton "atras": le avisamos
+     * app.js conecta acá su manejo del botón "atrás": le avisamos
      * cuando se abre una ventana y cuando se cierra.
      */
     conectarHistorial(abre, cierra) { alAbrir = abre; alCerrar = cierra; },
 
-    /** Cierra la de mas arriba como si hubieran cancelado. */
+    /** Cierra la de más arriba como si hubieran cancelado. */
     cerrarUltimo() {
       if (!pila.length) return false;
       pila[pila.length - 1].cancelar();

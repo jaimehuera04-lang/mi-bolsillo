@@ -3,9 +3,9 @@
    Como pasan los datos de un esquema al siguiente sin perder nada.
 
    Reglas de la casa:
-     - Cada salto es una funcion explicita migrate_N_a_N+1.
+     - Cada salto es una función explícita migrate_N_a_N+1.
      - Se aplican en cadena: del 1 al 2, del 2 al 3, etc.
-     - NUNCA se borra informacion. Si un campo cambia de nombre,
+     - NUNCA se borra información. Si un campo cambia de nombre,
        se copia al nuevo; si algo sobra, se deja quieto.
      - Antes de correr la cadena, quien llama tiene que haber
        guardado un respaldo (de eso se encarga almacenamiento.js).
@@ -18,17 +18,17 @@ const Migraciones = (() => {
 
      Que cambia:
        - Aparecen las CUENTAS. Todo movimiento viejo queda apuntando
-         a una cuenta unica llamada "Mi cuenta", asi ningun peso
-         queda huerfano.
+         a una cuenta única llamada "Mi cuenta", así ningún peso
+         queda huérfano.
        - Los movimientos ganan cuentaOrigen / cuentaDestino,
-         descripcion, etiquetas, subcategoria y compromisoId.
+         descripción, etiquetas, subcategoría y compromisoId.
        - Las metas renombran objetivo -> montoObjetivo y
          ahorrado -> montoActual.
-       - Se abren los cajones vacios de compromisos, ingresos
+       - Se abren los cajones vacíos de compromisos, ingresos
          previstos, estacionales y simulaciones (Fase 2).
        - El ingreso esperado de ajustes se convierte en el primer
          ingreso previsto, para que el sueldo libre tenga con que
-         calcular desde el dia uno.
+         calcular desde el día uno.
        - Se va la moneda: Mi Bolsillo es solo CLP.
      ------------------------------------------------------------ */
   function migrate_1_a_2(viejo) {
@@ -39,7 +39,7 @@ const Migraciones = (() => {
     // --- Movimientos: se conservan tal cual y se les asigna la cuenta ---
     nuevo.movimientos = (viejo.movimientos || []).map(m => ({
       id: m.id || Esquema.nuevoId(),
-      tipo: m.tipo === 'ingreso' ? 'ingreso' : 'gasto',   // en el esquema 1 no habia transferencias
+      tipo: m.tipo === 'ingreso' ? 'ingreso' : 'gasto',   // en el esquema 1 no había transferencias
       monto: Dinero.entero(m.monto),
       fecha: m.fecha,
       categoria: m.categoria,
@@ -53,7 +53,7 @@ const Migraciones = (() => {
       creado: m.creado || new Date().toISOString(),
     }));
 
-    // --- Metas: mismos numeros, nombres nuevos ---
+    // --- Metas: mismos números, nombres nuevos ---
     nuevo.metas = (viejo.metas || []).map(m => ({
       id: m.id || Esquema.nuevoId(),
       nombre: m.nombre,
@@ -95,12 +95,12 @@ const Migraciones = (() => {
     return nuevo;
   }
 
-  /* La cadena. Para agregar el esquema 3, se suma una linea aqui. */
+  /* La cadena. Para agregar el esquema 3, se suma una línea aquí. */
   const CADENA = {
     1: migrate_1_a_2,
   };
 
-  /** Que version tiene este objeto. El esquema 1 usaba 'version' suelto. */
+  /** Que versión tiene este objeto. El esquema 1 usaba 'versión' suelto. */
   function versionDe(estado) {
     if (estado && estado.meta && Number(estado.meta.schemaVersion)) {
       return Number(estado.meta.schemaVersion);
@@ -109,7 +109,7 @@ const Migraciones = (() => {
   }
 
   /**
-   * Lleva cualquier estado hasta la version actual.
+   * Lleva cualquier estado hasta la versión actual.
    * Devuelve { estado, desde, hasta, migro } para que quien llama
    * sepa si hubo cambios y pueda avisarle al usuario.
    */
@@ -121,16 +121,16 @@ const Migraciones = (() => {
     while (v < Esquema.VERSION_ESQUEMA) {
       const paso = CADENA[v];
       if (!paso) {
-        throw new Error(`No se como pasar del esquema ${v} al ${v + 1}.`);
+        throw new Error(`No sé cómo pasar del esquema ${v} al ${v + 1}.`);
       }
       actual = paso(actual);
       v++;
     }
 
-    // Un archivo de una version MAS nueva que esta app: no se toca.
+    // Un archivo de una versión MÁS nueva que esta app: no se toca.
     if (desde > Esquema.VERSION_ESQUEMA) {
       throw new Error(
-        'Ese respaldo viene de una version mas nueva de Mi Bolsillo. Actualiza la app antes de restaurarlo.'
+        'Ese respaldo viene de una versión más nueva de Mi Bolsillo. Actualiza la app antes de restaurarlo.'
       );
     }
 

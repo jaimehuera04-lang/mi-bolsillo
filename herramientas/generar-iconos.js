@@ -54,7 +54,7 @@ function png(ancho, alto, pixeles /* Uint8Array RGBA */) {
 function dibujar(tam, margenSeguro) {
   const buf = Buffer.alloc(tam * tam * 4);
   const escala = tam / 512;
-  // el area util se encoge cuando el icono es "maskable" (Android recorta los bordes)
+  // el area útil se encoge cuando el icono es "maskable" (Android recorta los bordes)
   const k = margenSeguro ? 0.72 : 1;
   const cx = tam / 2, cy = tam / 2;
 
@@ -89,7 +89,7 @@ function dibujar(tam, margenSeguro) {
       // cuerpo blanco de la billetera
       if (dentroRect(x, y, bx, by, bw, bh, radio)) {
         r = 255; g = 255; b = 255;
-        // solapa superior mas clara
+        // solapa superior más clara
         if (y < by + 60 * escala * k) { r = 236; g = 253; b = 245; }
         // broche circular
         const dcx = bx + bw - 62 * escala * k, dcy = by + bh / 2;

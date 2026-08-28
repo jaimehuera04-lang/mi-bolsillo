@@ -2,9 +2,9 @@
    src/core/dinero.js
    Mi Bolsillo trabaja SOLO con pesos chilenos enteros.
    Nunca decimales, nunca float: los centavos que en Chile no
-   existen terminan generando diferencias de un peso que despues
+   existen terminan generando diferencias de un peso que después
    nadie sabe explicar.
-   Formatear con puntos es cosa de la pantalla, jamas del calculo.
+   Formatear con puntos es cosa de la pantalla, jamás del calculo.
    ============================================================ */
 
 const Dinero = (() => {

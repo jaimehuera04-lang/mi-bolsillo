@@ -4,11 +4,11 @@
    de la app en el celular. Gracias a el, Mi Bolsillo abre aunque
    estes sin internet.
 
-   IMPORTANTE: cuando cambies archivos, sube el numero de VERSION.
-   Asi el celular sabe que tiene que bajar la version nueva.
+   IMPORTANTE: cuando cambies archivos, sube el número de VERSIÓN.
+   Así el celular sabe que tiene que bajar la versión nueva.
    ============================================================ */
 
-const VERSION = 'mi-bolsillo-v4';
+const VERSION = 'mi-bolsillo-v5';
 
 const ARCHIVOS = [
   './',
@@ -52,7 +52,7 @@ self.addEventListener('activate', evento => {
   );
 });
 
-// 3. Al pedir un archivo: primero intentamos la red (asi ves los
+// 3. Al pedir un archivo: primero intentamos la red (así ves los
 //    cambios al tiro cuando estas desarrollando) y si no hay
 //    internet, servimos la copia guardada.
 self.addEventListener('fetch', evento => {

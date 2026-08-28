@@ -2,7 +2,7 @@
   "id": "./",
   "name": "Mi Bolsillo - control de gastos",
   "short_name": "Mi Bolsillo",
-  "description": "Lleva tus ingresos, gastos y metas de ahorro con graficos simples y tecnicas para aprender a manejar tu plata.",
+  "description": "Lleva tus ingresos, gastos y metas de ahorro con gráficos simples y técnicas para aprender a manejar tu plata.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -26,7 +26,7 @@
     {
       "name": "Ver mis movimientos",
       "short_name": "Movimientos",
-      "description": "Abre la lista de lo que entro y salio",
+      "description": "Abre la lista de lo que entró y salió",
       "url": "./index.html?ir=movimientos",
       "icons": [{ "src": "iconos/icono-192.png", "sizes": "192x192" }]
     }

@@ -1,6 +1,6 @@
 /* ============================================================
    src/core/fechas.js
-   Todo lo que tiene que ver con dias y meses.
+   Todo lo que tiene que ver con días y meses.
 
    Regla: las fechas se guardan y se comparan como texto ISO
    'AAAA-MM-DD' en la zona horaria LOCAL del usuario.
@@ -19,7 +19,7 @@ const Fechas = (() => {
     return `${d.getFullYear()}-${dosDigitos(d.getMonth() + 1)}-${dosDigitos(d.getDate())}`;
   }
 
-  /** ISO de un anio/mes/dia concretos. mes va de 0 a 11. */
+  /** ISO de un anio/mes/día concretos. mes va de 0 a 11. */
   const aISO = (anio, mes, dia) => `${anio}-${dosDigitos(mes + 1)}-${dosDigitos(dia)}`;
 
   /** 'AAAA-MM' del mes. mes va de 0 a 11. */
@@ -41,7 +41,7 @@ const Fechas = (() => {
     return `${f.getDate()} de ${NOMBRES_MES[f.getMonth()]}`;
   }
 
-  /** Cuantos dias tiene ese mes. mes va de 0 a 11. */
+  /** Cuantos días tiene ese mes. mes va de 0 a 11. */
   const diasDelMes = (anio, mes) => new Date(anio, mes + 1, 0).getDate();
 
   /** Suma meses y devuelve { anio, mes }. Sirve para proyectar hacia adelante. */

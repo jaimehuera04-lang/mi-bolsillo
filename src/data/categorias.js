@@ -1,16 +1,16 @@
 /* ============================================================
-   src/data/categorias.js
-   Listas fijas: categorias de gasto, de ingreso y tipos de cuenta.
-   Son DATOS, no logica. No calculan ni dibujan nada.
+   src/data/categorías.js
+   Listas fijas: categorías de gasto, de ingreso y tipos de cuenta.
+   Son DATOS, no lógica. No calculan ni dibujan nada.
    ============================================================ */
 
 const Categorias = (() => {
 
-  /* Cada categoria tiene emoji, nombre, color y "tipo", que sirve
+  /* Cada categoría tiene emoji, nombre, color y "tipo", que sirve
      para la regla 50/30/20:
        'necesidad' = techo, comida, transporte, salud, deudas.
        'deseo'     = salidas, ropa, antojos.
-       'ahorro'    = ahorro e inversion.                          */
+       'ahorro'    = ahorro e inversión.                          */
   const GASTO = [
     { id: 'comida',      emoji: '🛒', nombre: 'Supermercado', color: '#e8a33d', tipo: 'necesidad' },
     { id: 'restaurante', emoji: '🍔', nombre: 'Comer fuera',  color: '#ef7f4e', tipo: 'deseo' },
@@ -18,8 +18,8 @@ const Categorias = (() => {
     { id: 'vivienda',    emoji: '🏠', nombre: 'Arriendo/Casa',color: '#5b6b7c', tipo: 'necesidad' },
     { id: 'servicios',   emoji: '💡', nombre: 'Cuentas',      color: '#38a3c9', tipo: 'necesidad' },
     { id: 'salud',       emoji: '💊', nombre: 'Salud',        color: '#43b5a0', tipo: 'necesidad' },
-    { id: 'educacion',   emoji: '📚', nombre: 'Educacion',    color: '#7c5cd6', tipo: 'necesidad' },
-    { id: 'ocio',        emoji: '🎬', nombre: 'Entretencion', color: '#c455a5', tipo: 'deseo' },
+    { id: 'educacion',   emoji: '📚', nombre: 'Educación',    color: '#7c5cd6', tipo: 'necesidad' },
+    { id: 'ocio',        emoji: '🎬', nombre: 'Entretención', color: '#c455a5', tipo: 'deseo' },
     { id: 'ropa',        emoji: '👕', nombre: 'Ropa',         color: '#d96a8a', tipo: 'deseo' },
     { id: 'suscripcion', emoji: '📱', nombre: 'Suscripciones',color: '#6f7fd6', tipo: 'deseo' },
     // Las cuotas y las deudas son obligaciones, no ahorro: van en necesidad.
@@ -47,7 +47,7 @@ const Categorias = (() => {
 
   /* ---------- Tipos de cuenta ----------
      "deuda: true" marca las cuentas donde un saldo negativo significa
-     que debes plata (la tarjeta de credito), no que algo se calculo mal. */
+     que debes plata (la tarjeta de crédito), no que algo se calculo mal. */
   const TIPOS_CUENTA = [
     { id: 'cuenta_rut', emoji: '🏧', nombre: 'Cuenta RUT',         deuda: false },
     { id: 'corriente',  emoji: '🏦', nombre: 'Cuenta corriente',   deuda: false },
@@ -56,7 +56,7 @@ const Categorias = (() => {
     { id: 'efectivo',   emoji: '💵', nombre: 'Efectivo',           deuda: false },
     // MACH, Tenpo, BE Pay, Mercado Pago
     { id: 'billetera',  emoji: '📲', nombre: 'Billetera digital',  deuda: false },
-    { id: 'credito',    emoji: '💳', nombre: 'Tarjeta de credito', deuda: true },
+    { id: 'credito',    emoji: '💳', nombre: 'Tarjeta de crédito', deuda: true },
   ];
 
   const tipoCuenta = id =>

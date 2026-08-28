@@ -1,12 +1,12 @@
 /* ============================================================
    src/storage/almacenamiento.js
-   Leer y escribir en el dispositivo. Nada mas.
+   Leer y escribir en el dispositivo. Nada más.
    No calcula (eso es /src/core) y no dibuja (eso es /src/ui).
 
-   Lo delicado de este archivo es el arranque, porque es el unico
+   Lo delicado de este archivo es el arranque, porque es el único
    momento en que se pueden perder datos. El orden es siempre:
      1. leer lo que hay
-     2. si esta viejo, GUARDAR UN RESPALDO
+     2. si está viejo, GUARDAR UN RESPALDO
      3. migrar en memoria
      4. escribir el resultado de una sola vez
    Si el paso 4 falla, lo viejo sigue intacto donde estaba.
@@ -17,7 +17,7 @@ const Almacenamiento = (() => {
   let estado = null;
   let hayEspacio = true;          // false si el navegador nos bloqueo la escritura
 
-  /* Que paso en el ultimo arranque. La interfaz lo usa para avisar. */
+  /* Que paso en el último arranque. La interfaz lo usa para avisar. */
   const arranque = {
     migro: false,
     desde: null,
@@ -51,7 +51,7 @@ const Almacenamiento = (() => {
     const ok = escribirCrudo(Esquema.LLAVE, JSON.stringify(estado));
     if (!ok) {
       arranque.error = 'No pudimos guardar en este dispositivo. '
-        + 'Suele pasar en modo incognito o cuando la memoria del navegador esta llena. '
+        + 'Suele pasar en modo incógnito o cuando la memoria del navegador está llena. '
         + 'Descarga una copia de seguridad antes de cerrar.';
     }
     return ok;
@@ -63,7 +63,7 @@ const Almacenamiento = (() => {
 
   /* ---------- Arranque ---------- */
   function cargar() {
-    // 1. Buscamos primero la llave actual; si no esta, la del esquema 1.
+    // 1. Buscamos primero la llave actual; si no está, la del esquema 1.
     let crudo = leerCrudo(Esquema.LLAVE);
     let veniaDeLlaveVieja = false;
 
@@ -72,7 +72,7 @@ const Almacenamiento = (() => {
       veniaDeLlaveVieja = Boolean(crudo);
     }
 
-    // 2. Instalacion nueva: estado limpio con su cuenta por defecto.
+    // 2. Instalación nueva: estado limpio con su cuenta por defecto.
     if (!crudo) {
       estado = Esquema.estadoNuevo();
       estado.cuentas = [Esquema.cuentaPorDefecto()];
@@ -80,21 +80,21 @@ const Almacenamiento = (() => {
       return estado;
     }
 
-    // 3. Leemos. Si el JSON esta roto NO borramos nada: dejamos el texto
-    //    donde esta para poder rescatarlo a mano y partimos de cero.
+    // 3. Leemos. Si el JSON está roto NO borramos nada: dejamos el texto
+    //    donde está para poder rescatarlo a mano y partimos de cero.
     let guardado;
     try {
       guardado = JSON.parse(crudo);
     } catch (e) {
       console.error('Los datos guardados no se pudieron leer.', e);
       arranque.error = 'No pudimos leer tus datos guardados. '
-        + 'No los borramos: siguen en este dispositivo. Escribenos antes de anotar cosas nuevas.';
+        + 'No los borramos: siguen en este dispositivo. Escríbenos antes de anotar cosas nuevas.';
       estado = Esquema.estadoNuevo();
       estado.cuentas = [Esquema.cuentaPorDefecto()];
       return estado;
     }
 
-    // 4. Si hay que migrar, primero el respaldo. Siempre, sin excepcion.
+    // 4. Si hay que migrar, primero el respaldo. Siempre, sin excepción.
     const version = Migraciones.versionDe(guardado);
     if (version !== Esquema.VERSION_ESQUEMA) {
       arranque.respaldoGuardado = escribirCrudo(Esquema.LLAVE_RESPALDO, crudo);
@@ -103,7 +103,7 @@ const Almacenamiento = (() => {
         // Sin respaldo no migramos. Preferimos una app que no arranca
         // a una app que arranca habiendo perdido los datos de alguien.
         arranque.error = 'No pudimos guardar una copia de seguridad antes de actualizar tus datos, '
-          + 'asi que no los tocamos. Libera espacio en el navegador y vuelve a abrir la app.';
+          + 'así que no los tocamos. Libera espacio en el navegador y vuelve a abrir la app.';
         estado = normalizar(guardado);
         return estado;
       }
@@ -116,11 +116,11 @@ const Almacenamiento = (() => {
         arranque.hasta = r.hasta;
         guardar();                       // se escribe entero, de una sola vez
         if (veniaDeLlaveVieja) {
-          // La llave antigua se deja donde esta hasta la proxima apertura:
-          // si algo salio mal, todavia se puede recuperar a mano.
+          // La llave antigua se deja donde está hasta la próxima apertura:
+          // si algo salió mal, todavía se puede recuperar a mano.
         }
       } catch (e) {
-        console.error('Fallo la migracion.', e);
+        console.error('Fallo la migración.', e);
         arranque.error = e.message || 'No pudimos actualizar el formato de tus datos.';
         estado = normalizar(guardado);
       }
@@ -133,8 +133,8 @@ const Almacenamiento = (() => {
 
   /**
    * Rellena las llaves que falten sin pisar las que vienen.
-   * Es un cinturon de seguridad, no un reemplazo de las migraciones:
-   * aqui solo se agregan cajones vacios, nunca se transforma nada.
+   * Es un cinturón de seguridad, no un reemplazo de las migraciones:
+   * aquí solo se agregan cajones vacíos, nunca se transforma nada.
    */
   function normalizar(entrante) {
     const base = Esquema.estadoNuevo();
@@ -149,7 +149,7 @@ const Almacenamiento = (() => {
                          'ingresosPrevistos', 'estacionales', 'simulaciones', 'metas']) {
       if (!Array.isArray(salida[lista])) salida[lista] = [];
     }
-    // Nadie puede quedarse sin ninguna cuenta: los movimientos quedarian sueltos.
+    // Nadie puede quedarse sin ninguna cuenta: los movimientos quedarían sueltos.
     if (!salida.cuentas.length) salida.cuentas = [Esquema.cuentaPorDefecto()];
     return salida;
   }
@@ -159,11 +159,11 @@ const Almacenamiento = (() => {
     return JSON.stringify(estado, null, 2);
   }
 
-  /** El respaldo automatico que se guardo antes de migrar, o null. */
+  /** El respaldo automático que se guardo antes de migrar, o null. */
   const respaldoPrevio = () => leerCrudo(Esquema.LLAVE_RESPALDO);
 
   /**
-   * Restaura un archivo. Valida antes de tocar nada y lo pasa por la
+   * Restaura un archivo. Válida antes de tocar nada y lo pasa por la
    * misma cadena de migraciones que los datos locales, para que un
    * respaldo de hace seis meses entre igual de bien que uno de ayer.
    */
@@ -178,7 +178,7 @@ const Almacenamiento = (() => {
       throw new Error('Ese archivo no es un respaldo de Mi Bolsillo.');
     }
     if (!Array.isArray(entrante.movimientos)) {
-      throw new Error('Ese archivo no tiene la lista de movimientos, asi que no es un respaldo valido.');
+      throw new Error('Ese archivo no tiene la lista de movimientos, así que no es un respaldo válido.');
     }
 
     const r = Migraciones.aplicar(entrante);   // tira error si viene del futuro
