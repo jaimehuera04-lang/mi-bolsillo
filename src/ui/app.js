@@ -819,14 +819,158 @@
   /* ---------------- 12. Copia de seguridad ---------------- */
   function exportarArchivo() {
     const blob = new Blob([Datos.exportar()], { type: 'application/json' });
+    descargar(blob, `mi-bolsillo-${Datos.hoyISO()}.json`);
+    Datos.marcarRespaldo();
+    avisar('Copia descargada ✅');
+  }
+
+  /**
+   * Arma la planilla de Excel con todo lo anotado y la descarga.
+   * Son cinco hojas: los movimientos uno por uno, las cuentas con su
+   * saldo de hoy, las metas, los topes, y un resumen mes a mes.
+   * A diferencia de la copia de seguridad (el .json), esto es para
+   * mirar y hacer cuentas aparte: la app no lo vuelve a leer.
+   */
+  function exportarExcel() {
+    const estado = Datos.obtener();
+    const movimientos = estado.movimientos || [];
+
+    if (!movimientos.length && !(estado.cuentas || []).length) {
+      avisar('Todavía no hay nada que exportar');
+      return;
+    }
+
+    const nombreCuenta = id => {
+      const c = Datos.cuentaPorId(id);
+      return c ? c.nombre : '';
+    };
+    const ROTULO_TIPO = { ingreso: 'Ingreso', gasto: 'Gasto', transferencia: 'Movida entre cuentas' };
+
+    // ---- Hoja 1: cada movimiento, del más nuevo al más viejo ----
+    const hojaMovimientos = {
+      nombre: 'Movimientos',
+      columnas: [
+        { titulo: 'Fecha', ancho: 12, tipo: 'fecha' },
+        { titulo: 'Tipo', ancho: 20 },
+        { titulo: 'Categoría', ancho: 20 },
+        { titulo: 'Monto', ancho: 14, tipo: 'pesos' },
+        { titulo: 'Sale de', ancho: 20 },
+        { titulo: 'Entra a', ancho: 20 },
+        { titulo: 'Nota', ancho: 34 },
+      ],
+      filas: [...movimientos]
+        .sort((a, b) => (a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : 0))
+        .map(m => [
+          m.fecha,
+          ROTULO_TIPO[m.tipo] || m.tipo,
+          m.tipo === 'transferencia' ? '' : Datos.categoriaPorId(m.categoria).nombre,
+          m.monto,
+          nombreCuenta(m.cuentaOrigen),
+          nombreCuenta(m.cuentaDestino),
+          m.nota || m.descripcion || '',
+        ]),
+    };
+
+    // ---- Hoja 2: dónde está la plata hoy ----
+    const hojaCuentas = {
+      nombre: 'Cuentas',
+      columnas: [
+        { titulo: 'Cuenta', ancho: 24 },
+        { titulo: 'Tipo', ancho: 22 },
+        { titulo: 'Saldo inicial', ancho: 16, tipo: 'pesos' },
+        { titulo: 'Saldo hoy', ancho: 16, tipo: 'pesos' },
+        { titulo: 'Estado', ancho: 14 },
+      ],
+      filas: (estado.cuentas || []).map(c => [
+        c.nombre,
+        Datos.tipoCuenta(c.tipo).nombre,
+        c.saldoInicial,
+        Datos.saldoDeCuenta(c.id),
+        c.activa === false ? 'Archivada' : 'Activa',
+      ]),
+    };
+
+    // ---- Hoja 3: metas de ahorro ----
+    const hojaMetas = {
+      nombre: 'Metas',
+      columnas: [
+        { titulo: 'Meta', ancho: 26 },
+        { titulo: 'Objetivo', ancho: 16, tipo: 'pesos' },
+        { titulo: 'Llevas', ancho: 16, tipo: 'pesos' },
+        { titulo: 'Falta', ancho: 16, tipo: 'pesos' },
+        { titulo: 'Avance', ancho: 12, tipo: 'porcentaje' },
+        { titulo: 'Para cuándo', ancho: 14, tipo: 'fecha' },
+      ],
+      filas: (estado.metas || []).map(m => [
+        ((m.emoji ? m.emoji + ' ' : '') + m.nombre),
+        m.montoObjetivo,
+        m.montoActual,
+        Math.max(0, m.montoObjetivo - m.montoActual),
+        // el porcentaje va de 0 a 1: Excel le pone el % al mostrarlo
+        m.montoObjetivo > 0 ? Math.min(1, m.montoActual / m.montoObjetivo) : 0,
+        m.fechaObjetivo || '',
+      ]),
+    };
+
+    // ---- Hoja 4: topes por categoría ----
+    const topes = Datos.estadoPresupuestos(vista.anio, vista.mes);
+    const hojaTopes = {
+      nombre: 'Topes',
+      columnas: [
+        { titulo: 'Categoría', ancho: 24 },
+        { titulo: 'Tope del mes', ancho: 16, tipo: 'pesos' },
+        { titulo: 'Gastado', ancho: 16, tipo: 'pesos' },
+        { titulo: 'Queda', ancho: 16, tipo: 'pesos' },
+      ],
+      filas: topes.map(t => [
+        (t.emoji ? t.emoji + ' ' : '') + t.nombre,
+        t.tope,
+        t.usado,
+        t.tope - t.usado,
+      ]),
+    };
+
+    // ---- Hoja 5: los últimos 12 meses ----
+    const hojaResumen = {
+      nombre: 'Resumen mensual',
+      columnas: [
+        { titulo: 'Mes', ancho: 18 },
+        { titulo: 'Entró', ancho: 16, tipo: 'pesos' },
+        { titulo: 'Salió', ancho: 16, tipo: 'pesos' },
+        { titulo: 'Diferencia', ancho: 16, tipo: 'pesos' },
+        { titulo: 'Tasa de ahorro', ancho: 16, tipo: 'porcentaje' },
+        { titulo: 'Movimientos', ancho: 14, tipo: 'numero' },
+      ],
+      filas: Datos.historialMeses(vista.anio, vista.mes, 12).map(m => [
+        Datos.nombreMes(m.anio, m.mes),
+        m.ingresos,
+        m.gastos,
+        m.saldo,
+        m.tasaAhorro / 100,
+        m.cantidad,
+      ]),
+    };
+
+    let archivo;
+    try {
+      archivo = Excel.crear([hojaMovimientos, hojaCuentas, hojaMetas, hojaTopes, hojaResumen]);
+    } catch (error) {
+      avisar('No se pudo armar la planilla. Prueba con la copia en .json.');
+      return;
+    }
+
+    descargar(archivo, `mi-bolsillo-${Datos.hoyISO()}.xlsx`);
+    avisar('Planilla descargada 📊');
+  }
+
+  /** Le pasa un archivo al navegador para que la persona lo guarde. */
+  function descargar(blob, nombre) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `mi-bolsillo-${Datos.hoyISO()}.json`;
+    a.download = nombre;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    Datos.marcarRespaldo();
-    avisar('Copia descargada ✅');
   }
 
   function importarArchivo(archivo) {
@@ -1131,6 +1275,7 @@
     });
 
     $$$('botonExportar').addEventListener('click', exportarArchivo);
+    $$$('botonExcel').addEventListener('click', exportarExcel);
     $$$('botonImportar').addEventListener('click', () => $$$('archivoImportar').click());
     $$$('archivoImportar').addEventListener('change', e => {
       if (e.target.files[0]) importarArchivo(e.target.files[0]);

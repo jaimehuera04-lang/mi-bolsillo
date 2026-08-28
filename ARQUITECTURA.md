@@ -19,7 +19,7 @@ Meta de estructura (se llega ahí por fases, no de un salto):
 ```
 /src/core       calculos puros: sueldoLibre, compromisos, simulador, liberacion
 /src/storage    esquema, migraciones, respaldo, import/export
-/src/ui         pantallas, componentes, gráficos, diálogos propios
+/src/ui         pantallas, componentes, gráficos, diálogos propios, planilla Excel
 /src/data       categorías, calendario estacional chileno
 ```
 
@@ -58,6 +58,21 @@ Lo que sigue no es decoración: cada punto tapa una filtración concreta del nav
 
 Al tocar `index.html`, `estilos.css`, `app.js` o `dialogos.js` hay que subir `VERSION` en `sw.js`,
 o el teléfono sigue mostrando la copia guardada anterior.
+
+## Salidas de datos
+
+Son dos, y no hay que confundirlas:
+
+| | Qué es | Para qué | La app la vuelve a leer |
+|---|---|---|---|
+| **`.json`** (Ajustes → Descargar) | copia fiel del objeto guardado, con `schemaVersion` | respaldar y restaurar | **sí**, con Restaurar |
+| **`.xlsx`** (Ajustes → Descargar en Excel) | cinco hojas legibles: movimientos, cuentas, metas, topes y resumen mensual | mirar, hacer cuentas aparte, mandársela a alguien | **no**, es de ida |
+
+`/src/ui/excel.js` escribe el `.xlsx` a mano, sin librerías: un `.xlsx` es un ZIP con XML
+adentro, así que el archivo arma el ZIP byte a byte (método *store*, sin comprimir) y genera
+el XML de cada hoja. Da montos con formato de pesos, fechas de verdad y porcentajes, no texto.
+Bajar una librería de cientos de kilobytes para esto habría roto la regla de "sin librerías
+ni compilación".
 
 ## Modelo de datos
 
