@@ -50,7 +50,9 @@ const Dialogos = (() => {
           </div>
         </div>`;
 
-      document.body.appendChild(telon);
+      // Va dentro del marco de la app, no del documento: asi en el
+      // computador la ventana aparece dentro del telefono dibujado.
+      (document.getElementById('app') || document.body).appendChild(telon);
       // el navegador necesita un respiro antes de animar la entrada
       requestAnimationFrame(() => telon.classList.add('abierto'));
 

@@ -16,6 +16,15 @@
 </head>
 <body>
 
+<!-- ============================================================
+     .app es el marco de la aplicacion: ocupa la pantalla completa
+     y no se mueve. Adentro, lo unico que hace scroll es .contenido.
+     Gracias a eso el encabezado y la barra de abajo quedan fijos
+     como en una app de verdad, y el celular deja de hacer el rebote
+     y el "deslizar para recargar" del navegador.
+     ============================================================ -->
+<div class="app" id="app">
+
   <!-- ================= PANTALLA DE REGISTRO =================
        Se muestra una sola vez, la primera vez que se abre la app.
        Queda oculta por defecto y es app.js quien decide mostrarla,
@@ -71,6 +80,9 @@
       </div>
     </div>
   </header>
+
+  <!-- La unica zona que hace scroll en toda la app -->
+  <div class="contenido" id="contenido">
 
   <!-- ================= 1. INICIO (dashboard) ================= -->
   <main class="pantalla activa" id="pantalla-inicio">
@@ -300,6 +312,8 @@
     <p class="ayuda" style="text-align:center">Mi Bolsillo · version 2.0</p>
   </main>
 
+  </div><!-- fin .contenido -->
+
   <!-- ================= BOTON + Y NAVEGACION ================= -->
   <button class="boton-flotante" id="botonAgregar" aria-label="Agregar movimiento">+</button>
 
@@ -439,6 +453,8 @@
   </div>
 
   <div class="mensajito" id="mensajito"></div>
+
+</div><!-- fin .app -->
 
   <!-- El orden importa: cada archivo usa los de mas arriba.
        datos fijos -> motor de calculo -> almacenamiento -> fachada -> pantalla -->

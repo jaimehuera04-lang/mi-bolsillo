@@ -51,14 +51,57 @@
     vista.anio === hoy.getFullYear() && vista.mes === hoy.getMonth();
 
   /* ---------------- 3. Navegacion ---------------- */
+
+  // Cada pestana recuerda donde la dejaste, como en cualquier app del
+  // telefono. Volver a Inicio no te devuelve al principio de la lista.
+  const scrollDeCadaPantalla = {};
+
   function irA(nombre) {
+    const contenido = $$$('contenido');
+    const repetida = vista.pantalla === nombre;
+
+    // antes de cambiar, anotamos donde iba la pestana que dejamos
+    if (!repetida && vista.pantalla) scrollDeCadaPantalla[vista.pantalla] = contenido.scrollTop;
+
     vista.pantalla = nombre;
     $$('.pantalla').forEach(p => p.classList.toggle('activa', p.id === `pantalla-${nombre}`));
     $$('.navegacion button').forEach(b => b.classList.toggle('activa', b.dataset.pantalla === nombre));
     // el boton + solo tiene sentido en las pantallas de plata
     $$$('botonAgregar').style.display = ['inicio', 'movimientos'].includes(nombre) ? '' : 'none';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+
     dibujar();
+
+    // tocar la pestana en la que ya estas te sube al principio;
+    // cambiar de pestana te deja donde la habias dejado
+    contenido.scrollTop = repetida ? 0 : (scrollDeCadaPantalla[nombre] || 0);
+    marcarDesplazamiento();
+  }
+
+  /** Una vibracion cortita al tocar. Si el aparato no puede, no pasa nada. */
+  function vibrar(ms) {
+    try { navigator.vibrate && navigator.vibrate(ms); } catch (_) {}
+  }
+
+  /** Le pone sombra al encabezado cuando hay contenido pasando por debajo. */
+  function marcarDesplazamiento() {
+    $$$('app').classList.toggle('desplazado', $$$('contenido').scrollTop > 4);
+  }
+
+  /**
+   * Ajusta el marco al aparato real: mide la barra de abajo para que el
+   * boton + quede justo encima, pase lo que pase con el tamano de letra
+   * del sistema o con la barra de gestos del celular.
+   */
+  function prepararMarco() {
+    const medir = () => {
+      const alto = $('.navegacion').offsetHeight;
+      document.documentElement.style.setProperty('--alto-barra-inferior', alto + 'px');
+    };
+    medir();
+    window.addEventListener('resize', medir);
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', medir);
+
+    $$$('contenido').addEventListener('scroll', marcarDesplazamiento, { passive: true });
   }
 
   function cambiarMes(delta) {
@@ -714,7 +757,7 @@
 
     // Navegacion inferior
     $$('.navegacion button').forEach(b =>
-      b.addEventListener('click', () => irA(b.dataset.pantalla)));
+      b.addEventListener('click', () => { vibrar(6); irA(b.dataset.pantalla); }));
 
     // Botones internos que llevan a otra pantalla
     document.addEventListener('click', e => {
@@ -730,7 +773,7 @@
     $$$('mesSiguiente').addEventListener('click', () => cambiarMes(1));
 
     // Boton +
-    $$$('botonAgregar').addEventListener('click', abrirFormularioMovimiento);
+    $$$('botonAgregar').addEventListener('click', () => { vibrar(9); abrirFormularioMovimiento(); });
 
     // Cerrar ventanas tocando el fondo oscuro
     $$('.telon').forEach(t =>
@@ -795,7 +838,7 @@
       dibujarMovimientos();
     });
 
-    $$('listaMovimientos').addEventListener('click', async e => {
+    $$$('listaMovimientos').addEventListener('click', async e => {
       const b = e.target.closest('[data-borrar]');
       if (!b) return;
       const seguro = await Dialogos.confirmar({
@@ -841,7 +884,7 @@
       avisar('Meta creada 🎯');
     });
 
-    $$('listaMetas').addEventListener('click', async e => {
+    $$$('listaMetas').addEventListener('click', async e => {
       const abonar  = e.target.closest('[data-abonar]');
       const retirar = e.target.closest('[data-retirar]');
       const borrar  = e.target.closest('[data-borrar-meta]');
@@ -934,7 +977,7 @@
       avisar('Cuenta reactivada');
     });
 
-    $$('botonBorrarCuenta').addEventListener('click', async () => {
+    $$$('botonBorrarCuenta').addEventListener('click', async () => {
       const id = vista.cuentaEditando;
       if (!id) return;
       const usados = Datos.movimientosDeCuenta(id);
@@ -978,7 +1021,7 @@
       e.target.value = '';
     });
 
-    $$('botonEjemplo').addEventListener('click', async () => {
+    $$$('botonEjemplo').addEventListener('click', async () => {
       const seguro = await Dialogos.confirmar({
         titulo: 'Cargar datos de ejemplo?',
         texto: 'Reemplaza los movimientos del mes actual por datos de prueba, para que veas como se ve la app llena.',
@@ -993,7 +1036,7 @@
 
     $$$('botonTutorial').addEventListener('click', abrirTutorial);
 
-    $$('botonBorrarTodo').addEventListener('click', async () => {
+    $$$('botonBorrarTodo').addEventListener('click', async () => {
       const primera = await Dialogos.confirmar({
         titulo: 'Borrar todos tus datos?',
         texto: 'Se van tus movimientos, cuentas, metas y topes. No se puede deshacer.',
@@ -1074,6 +1117,7 @@
 
   function iniciar() {
     Datos.cargar();
+    prepararMarco();
     conectarEventos();
     actualizarSaludo();
     cargarAjustesEnFormulario();
