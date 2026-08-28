@@ -44,8 +44,37 @@
     temporizadorMensaje = setTimeout(() => caja.classList.remove('visible'), 2600);
   }
 
-  const abrirHoja  = id => $$$(id).classList.add('abierto');
-  const cerrarHoja = id => $$$(id).classList.remove('abierto');
+  /* --- Ventanas abiertas y el boton "atras" del celular ---
+     En una app, "atras" cierra lo que tengas abierto; nunca te saca a
+     la calle. Para conseguirlo llevamos una pila de lo que hay abierto
+     y una entrada de historial por cada cosa. */
+  const capas = [];            // funciones que cierran; la ultima es la de arriba
+  let atrasProgramado = false; // true cuando el "atras" lo pedimos nosotros
+  let cerrandoPorAtras = false;
+
+  /** Anota una ventana recien abierta para que "atras" la cierre. */
+  function anotarCapa(cerrar) {
+    capas.push(cerrar);
+    history.pushState({ capa: capas.length }, '');
+  }
+
+  /** La cerro el usuario con un boton: devolvemos su entrada de historial. */
+  function olvidarCapa() {
+    if (cerrandoPorAtras || !capas.length) return;
+    capas.pop();
+    atrasProgramado = true;
+    history.back();
+  }
+
+  const abrirHoja = id => {
+    $$$(id).classList.add('abierto');
+    anotarCapa(() => $$$(id).classList.remove('abierto'));
+  };
+  const cerrarHoja = id => {
+    if (!$$$(id).classList.contains('abierto')) return;
+    $$$(id).classList.remove('abierto');
+    olvidarCapa();
+  };
 
   const esMesActual = () =>
     vista.anio === hoy.getFullYear() && vista.mes === hoy.getMonth();
@@ -56,9 +85,13 @@
   // telefono. Volver a Inicio no te devuelve al principio de la lista.
   const scrollDeCadaPantalla = {};
 
-  function irA(nombre) {
+  function irA(nombre, sinHistorial) {
     const contenido = $$$('contenido');
     const repetida = vista.pantalla === nombre;
+
+    // cada cambio de pestana deja huella, para que "atras" te devuelva
+    // a la anterior en vez de sacarte de la app
+    if (!repetida && !sinHistorial) history.pushState({ tab: nombre }, '');
 
     // antes de cambiar, anotamos donde iba la pestana que dejamos
     if (!repetida && vista.pantalla) scrollDeCadaPantalla[vista.pantalla] = contenido.scrollTop;
@@ -80,6 +113,37 @@
   /** Una vibracion cortita al tocar. Si el aparato no puede, no pasa nada. */
   function vibrar(ms) {
     try { navigator.vibrate && navigator.vibrate(ms); } catch (_) {}
+  }
+
+  /**
+   * Deja el boton "atras" del celular funcionando como en una app:
+   * primero cierra lo que este abierto, despues te devuelve a Inicio,
+   * y recien ahi, estando en Inicio y sin nada abierto, sale.
+   */
+  function prepararBotonAtras() {
+    history.replaceState({ tab: 'inicio' }, '');
+
+    window.addEventListener('popstate', evento => {
+      // este "atras" lo pedimos nosotros al cerrar algo: ya esta hecho
+      if (atrasProgramado) { atrasProgramado = false; return; }
+
+      // 1. hay algo abierto encima (una hoja o una ventana de confirmar)?
+      //    se cierra lo de mas arriba y nos quedamos donde estabamos
+      if (capas.length) {
+        cerrandoPorAtras = true;
+        capas.pop()();
+        cerrandoPorAtras = false;
+        return;
+      }
+
+      // 2. estabamos en otra pestana: volvemos a la anterior
+      if (evento.state && evento.state.tab) irA(evento.state.tab, true);
+
+      // 3. Inicio y nada abierto: dejamos que el celular cierre la app
+    });
+
+    // las ventanas de confirmar usan la misma pila de capas
+    Dialogos.conectarHistorial(anotarCapa, olvidarCapa);
   }
 
   /** Le pone sombra al encabezado cuando hay contenido pasando por debajo. */
@@ -777,7 +841,7 @@
 
     // Cerrar ventanas tocando el fondo oscuro
     $$('.telon').forEach(t =>
-      t.addEventListener('click', e => { if (e.target === t) t.classList.remove('abierto'); }));
+      t.addEventListener('click', e => { if (e.target === t) cerrarHoja(t.id); }));
 
     // ---- Formulario de movimiento ----
     $$$('tipoGasto').addEventListener('click', () => fijarTipo('gasto'));
@@ -1118,6 +1182,7 @@
   function iniciar() {
     Datos.cargar();
     prepararMarco();
+    prepararBotonAtras();
     conectarEventos();
     actualizarSaludo();
     cargarAjustesEnFormulario();

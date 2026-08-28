@@ -24,6 +24,11 @@ const Dialogos = (() => {
   // "atras" del celular cierre la de mas arriba y no salga de la app.
   const pila = [];
 
+  // app.js nos pasa dos funciones para que cada ventana deje (y quite)
+  // su huella en el historial del telefono. Ver Dialogos.conectarHistorial.
+  let alAbrir = null;
+  let alCerrar = null;
+
   const esc = t => String(t ?? '').replace(/[&<>"']/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -53,8 +58,13 @@ const Dialogos = (() => {
       // Va dentro del marco de la app, no del documento: asi en el
       // computador la ventana aparece dentro del telefono dibujado.
       (document.getElementById('app') || document.body).appendChild(telon);
-      // el navegador necesita un respiro antes de animar la entrada
-      requestAnimationFrame(() => telon.classList.add('abierto'));
+      // Leer una medida obliga al navegador a calcular el estado inicial;
+      // recien despues la clase "abierto" se anima en vez de aparecer de
+      // golpe. Usamos esto y no requestAnimationFrame porque aquel no
+      // corre si la ventana esta en segundo plano, y la ventana se
+      // quedaria invisible.
+      void telon.offsetHeight;
+      telon.classList.add('abierto');
 
       const entrada = telon.querySelector('#dialogoCampo');
       if (entrada) setTimeout(() => entrada.focus(), 180);
@@ -65,6 +75,7 @@ const Dialogos = (() => {
         yaCerro = true;
         const i = pila.indexOf(cerrar);
         if (i !== -1) pila.splice(i, 1);
+        if (alCerrar) alCerrar();
         document.removeEventListener('keydown', enTecla);
         telon.classList.remove('abierto');
         setTimeout(() => telon.remove(), 200);
@@ -99,6 +110,7 @@ const Dialogos = (() => {
       // guardamos la funcion de cierre por si el boton "atras" la necesita
       cerrar.cancelar = () => cerrar(campo ? null : false);
       pila.push(cerrar);
+      if (alAbrir) alAbrir(cerrar.cancelar);
     });
   }
 
@@ -117,6 +129,12 @@ const Dialogos = (() => {
 
     /** true si hay alguna ventana de estas abierta. */
     hayAbierto: () => pila.length > 0,
+
+    /**
+     * app.js conecta aca su manejo del boton "atras": le avisamos
+     * cuando se abre una ventana y cuando se cierra.
+     */
+    conectarHistorial(abre, cierra) { alAbrir = abre; alCerrar = cierra; },
 
     /** Cierra la de mas arriba como si hubieran cancelado. */
     cerrarUltimo() {
