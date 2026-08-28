@@ -6,12 +6,47 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
   <title>Mi Bolsillo - controla tus gastos</title>
   <meta name="description" content="App simple para llevar tus ingresos, gastos y metas de ahorro, con graficos y consejos para aprender a manejar tu plata.">
-  <meta name="theme-color" content="#10a072">
+  <!-- El color de la barra de estado del celular, para que se funda con
+       el encabezado en vez de quedar como una barra de navegador -->
+  <meta name="theme-color" content="#10a072" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0b7554" media="(prefers-color-scheme: dark)">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="iconos/icono-192.png">
   <link rel="apple-touch-icon" href="iconos/icono-192.png">
+  <!-- En iPhone: abrir sin la barra de Safari, y dejar que el encabezado
+       de la app se pinte por debajo de la hora y la bateria -->
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Mi Bolsillo">
+
+  <!-- ============================================================
+       Estilos minimos escritos aca adentro a proposito: el navegador
+       los aplica antes de bajar estilos.css, asi la app nunca muestra
+       el parpadeo blanco de "pagina cargando". Es lo que hace que
+       abrir se sienta como abrir una app y no como entrar a un sitio.
+       ============================================================ -->
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #f4f6f8; }
+    @media (prefers-color-scheme: dark) { html, body { background: #12171d; } }
+    .app { position: fixed; inset: 0; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* La pantalla de arranque: se ve desde el primer instante y se
+       desvanece sola cuando la app ya esta lista. */
+    #arranque {
+      position: absolute; inset: 0; z-index: 200;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 10px;
+      background: linear-gradient(160deg, #10a072, #0b7554);
+      color: #fff;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      transition: opacity .32s ease;
+    }
+    #arranque.listo { opacity: 0; pointer-events: none; }
+    #arranque .simbolo { font-size: 52px; line-height: 1; }
+    #arranque .nombre { font-size: 19px; font-weight: 700; letter-spacing: .2px; }
+  </style>
+
   <link rel="stylesheet" href="src/ui/estilos.css">
 </head>
 <body>
@@ -24,6 +59,12 @@
      y el "deslizar para recargar" del navegador.
      ============================================================ -->
 <div class="app" id="app">
+
+  <!-- Pantalla de arranque. La saca app.js cuando termina de cargar. -->
+  <div id="arranque">
+    <span class="simbolo">💚</span>
+    <span class="nombre">Mi Bolsillo</span>
+  </div>
 
   <!-- ================= PANTALLA DE REGISTRO =================
        Se muestra una sola vez, la primera vez que se abre la app.

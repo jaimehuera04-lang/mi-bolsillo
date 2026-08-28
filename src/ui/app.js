@@ -803,7 +803,8 @@
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     promesaInstalacion = e;
-    $$$('avisoInstalar').classList.add('visible');
+    // si ya corre instalada no tiene sentido ofrecerle instalarla
+    if (!estaInstalada()) $$$('avisoInstalar').classList.add('visible');
   });
 
   window.addEventListener('appinstalled', () => {
@@ -1196,6 +1197,8 @@
     // Quien ya se registro entra directo, sin instrucciones.
     if (!Datos.estaRegistrado()) {
       mostrarRegistro();
+    } else if (atenderAtajo()) {
+      // entro por un atajo del icono: ya lo dejamos donde queria
     } else if (!Datos.obtener().ajustes.tutorialVisto) {
       setTimeout(abrirTutorial, 450);
     }
@@ -1210,6 +1213,57 @@
       window.matchMedia('(prefers-color-scheme: dark)')
         .addEventListener('change', () => dibujar());
     }
+
+    apagarArranque();
+  }
+
+  /**
+   * Saca la pantalla de arranque. La dejamos un momento minimo: un
+   * destello de 40 milisegundos se ve como un error, no como una app
+   * abriendo.
+   */
+  function apagarArranque() {
+    const arranque = $$$('arranque');
+    if (!arranque) return;
+    const yaPasado = performance.now();
+    const espera = Math.max(0, 520 - yaPasado);
+    setTimeout(() => {
+      arranque.classList.add('listo');
+      setTimeout(() => arranque.remove(), 400);
+    }, espera);
+  }
+
+  /**
+   * Atajos del icono: en el celular, dejar apretado el icono de la app
+   * muestra "Anotar un gasto" y "Ver mis movimientos". Cada uno abre la
+   * app con una marca en la direccion, y aca la atendemos.
+   * Devuelve true si venia por un atajo.
+   */
+  function atenderAtajo() {
+    const parametros = new URLSearchParams(location.search);
+    const pantalla = parametros.get('ir');
+    const accion = parametros.get('accion');
+    if (!pantalla && !accion) return false;
+
+    // Primero limpiamos la marca de la direccion, para que recargar no
+    // repita el atajo. Va antes de abrir nada: si no, borrariamos la
+    // huella que el boton "atras" necesita para cerrar la ventana.
+    history.replaceState({ tab: 'inicio' }, '', location.pathname);
+
+    if (['inicio', 'movimientos', 'metas', 'aprender', 'ajustes'].includes(pantalla)) {
+      irA(pantalla);
+    }
+    if (accion === 'gasto') {
+      fijarTipo('gasto');
+      abrirFormularioMovimiento();
+    }
+    return true;
+  }
+
+  /** true cuando la app corre instalada, fuera del navegador. */
+  function estaInstalada() {
+    return window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true;
   }
 
   document.addEventListener('DOMContentLoaded', iniciar);
