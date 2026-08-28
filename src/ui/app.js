@@ -166,6 +166,57 @@
     if (window.visualViewport) window.visualViewport.addEventListener('resize', medir);
 
     $$$('contenido').addEventListener('scroll', marcarDesplazamiento, { passive: true });
+    prepararArrastreDeHojas();
+
+    // Con el marco fijo, el navegador ya no acomoda solo el campo que
+    // estas llenando. Lo hacemos nosotros: al tocar un campo, lo
+    // subimos al centro de lo que quede visible sobre el teclado.
+    document.addEventListener('focusin', evento => {
+      const campo = evento.target;
+      if (!campo.matches || !campo.matches('input, select, textarea')) return;
+      setTimeout(() => campo.scrollIntoView({ block: 'center', behavior: 'smooth' }), 250);
+    });
+  }
+
+  /**
+   * Deja cerrar las hojas arrastrandolas hacia abajo con el dedo, como
+   * en cualquier app del telefono. Solo empieza a arrastrar si la hoja
+   * ya esta arriba del todo; si no, el dedo esta haciendo scroll dentro
+   * de ella y no hay que quitarselo.
+   */
+  function prepararArrastreDeHojas() {
+    $$('.hoja').forEach(hoja => {
+      let partida = null;
+      let recorrido = 0;
+
+      hoja.addEventListener('touchstart', e => {
+        if (hoja.scrollTop > 0 || e.touches.length !== 1) return;
+        partida = e.touches[0].clientY;
+        recorrido = 0;
+        hoja.classList.add('arrastrando');
+      }, { passive: true });
+
+      hoja.addEventListener('touchmove', e => {
+        if (partida === null) return;
+        recorrido = Math.max(0, e.touches[0].clientY - partida);
+        hoja.style.transform = 'translateY(' + recorrido + 'px)';
+      }, { passive: true });
+
+      const soltar = () => {
+        if (partida === null) return;
+        partida = null;
+        hoja.classList.remove('arrastrando');
+        hoja.style.transform = '';
+        // pasado el tercio de la hoja, se cierra; si no, vuelve a su sitio
+        if (recorrido > Math.min(120, hoja.offsetHeight / 3)) {
+          vibrar(6);
+          cerrarHoja(hoja.closest('.telon').id);
+        }
+      };
+
+      hoja.addEventListener('touchend', soltar);
+      hoja.addEventListener('touchcancel', soltar);
+    });
   }
 
   function cambiarMes(delta) {

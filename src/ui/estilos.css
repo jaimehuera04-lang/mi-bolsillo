@@ -256,8 +256,15 @@ input.con-error:focus { outline-color: var(--rojo); }
   display: flex; flex-direction: column; align-items: center; gap: 3px;
   font-size: 10.5px; font-weight: 600;
 }
-.navegacion button .icono { font-size: 20px; line-height: 1; }
+.navegacion button .icono {
+  font-size: 20px; line-height: 1;
+  transition: transform .2s cubic-bezier(.2, .85, .25, 1);
+}
 .navegacion button.activa { color: var(--verde); }
+/* el icono de la pestana en la que estas se levanta un poco: es la
+   senal chiquitita que separa una app de una barra de enlaces */
+.navegacion button.activa .icono { transform: translateY(-2px) scale(1.12); }
+.navegacion button:active .icono { transform: scale(.88); }
 
 /* ---------- Boton flotante (+) ---------- */
 .boton-flotante {
@@ -348,18 +355,39 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--verde); out
 .rejilla-categorias button.activa { border-color: var(--verde); background: var(--verde-suave); font-weight: 700; }
 
 /* ---------- Ventana emergente (modal) ---------- */
+/* La hoja entra y sale deslizandose, como las de cualquier app. Antes
+   aparecia y desaparecia de golpe, que es lo que hace un sitio web. */
 .telon {
-  position: absolute; inset: 0; background: rgba(12, 20, 28, .5); z-index: 50;
-  display: none; align-items: flex-end; justify-content: center;
+  position: absolute; inset: 0; z-index: 50;
+  display: flex; align-items: flex-end; justify-content: center;
+  background: rgba(12, 20, 28, 0);
+  visibility: hidden;
+  transition: background .26s ease, visibility 0s linear .3s;
 }
-.telon.abierto { display: flex; }
+.telon.abierto {
+  background: rgba(12, 20, 28, .5);
+  visibility: visible;
+  transition: background .26s ease, visibility 0s;
+}
+
 .hoja {
   background: var(--tarjeta); width: 100%; max-width: 520px;
   border-radius: 24px 24px 0 0; padding: 18px 18px calc(20px + env(safe-area-inset-bottom));
-  max-height: 92vh; overflow-y: auto; animation: subir .25s ease;
+  max-height: 92%; overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  transform: translateY(101%);
+  transition: transform .3s cubic-bezier(.2, .85, .25, 1);
 }
-@keyframes subir { from { transform: translateY(100%); } to { transform: none; } }
-.hoja-agarradera { width: 42px; height: 4px; border-radius: 3px; background: var(--borde); margin: 0 auto 12px; }
+.hoja::-webkit-scrollbar { width: 0; display: none; }
+.telon.abierto .hoja { transform: none; }
+/* mientras el dedo la arrastra no queremos animacion: debe seguir al dedo */
+.hoja.arrastrando { transition: none; }
+
+.hoja-agarradera {
+  width: 42px; height: 4px; border-radius: 3px; background: var(--borde);
+  margin: 0 auto 12px;
+}
 
 /* ---------- Barras de progreso ---------- */
 .barra { height: 9px; border-radius: 6px; background: var(--borde); overflow: hidden; }
