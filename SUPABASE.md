@@ -76,20 +76,28 @@ De esa pantalla necesitas dos cosas:
 | **Project URL** | `https://algolargo.supabase.co` | `url` |
 | **anon** `public` | una cadena larguísima que parte con `eyJ...` | `llavePublica` |
 
-Abre el archivo `src/config-nube.js` y pégalas entre las comillas:
+> ⚠️ **Nunca uses la llave que dice `service_role`.** Esa se salta las reglas de arriba y, en un
+> sitio público, le entrega tus datos a cualquiera. La que va es la que dice **anon**.
 
-```js
-const CONFIG_NUBE = {
-  url: 'https://algolargo.supabase.co',
-  llavePublica: 'eyJhbGciOiJIUzI1NiIsInR5cCI6...',
-};
-```
+### Pégalas en la app, desde el celular
 
-> ⚠️ **Nunca pegues aquí la llave que dice `service_role`.** Esa se salta las reglas de arriba
-> y, en un sitio público, le entrega tus datos a cualquiera. La que va es la que dice **anon**.
+No hay que tocar código ni publicar nada. Abre Mi Bolsillo, anda a
+**Ajustes → Conectar tu nube**, pega los dos datos y toca **Probar y conectar**.
 
-Guarda el archivo, sube el cambio (`git add -A && git commit -m "encender la nube" && git push`)
-y en un par de minutos la app publicada ya tiene cuenta.
+Antes de guardar nada, la app revisa dos cosas y te dice cuál falló:
+
+- que la dirección responda y acepte la llave;
+- que la tabla exista. Si te saltaste el paso 2, te lo dice con esas palabras.
+
+Cuando ambas pasan, la conexión queda guardada en ese teléfono y la app se recarga sola,
+ya con cuenta y contraseña.
+
+### O déjalas fijas en el repositorio (opcional)
+
+Si prefieres que la app venga conectada de fábrica para cualquiera que la abra, pega los dos
+valores en `src/config-nube.js` y sube el cambio con
+`git add -A && git commit -m "encender la nube" && git push`. Lo que pegues en Ajustes manda
+por sobre este archivo.
 
 ---
 
@@ -134,8 +142,14 @@ Hay un Supabase de mentira para probar en tu computador, sin internet y sin ensu
 node herramientas/nube-de-prueba.js
 ```
 
-Después pon en `src/config-nube.js` la url `http://localhost:5174` y cualquier cosa como
-llave. **Acuérdate de dejarlo vacío antes de subir el cambio.**
+Después, en *Ajustes → Conectar tu nube*, pon la dirección `http://localhost:5174` y cualquier
+cosa como llave. Como queda guardado solo en el navegador, no ensucia el repositorio.
+
+Para probar el caso de alguien que se saltó el paso del SQL:
+
+```bash
+SIN_TABLA=1 node herramientas/nube-de-prueba.js
+```
 
 ## Lo que esto NO es
 

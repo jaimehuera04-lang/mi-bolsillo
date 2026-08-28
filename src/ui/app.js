@@ -1568,6 +1568,49 @@
     $$$('campoCorreo').addEventListener('input', () => mostrarErrorCorreo(''));
     $$$('campoClave').addEventListener('input', () => mostrarErrorClave(''));
 
+    // ---- Conectar una nube ----
+    $$$('botonConectarNube').addEventListener('click', async () => {
+      const caja = $$$('errorNube');
+      const mostrarError = t => { caja.textContent = t; caja.hidden = !t; };
+      mostrarError('');
+
+      const boton = $$$('botonConectarNube');
+      boton.disabled = true;
+      boton.textContent = 'Probando…';
+
+      let r;
+      try {
+        r = await Nube.probarConexion($$$('campoNubeUrl').value, $$$('campoNubeLlave').value);
+      } finally {
+        boton.disabled = false;
+        boton.textContent = 'Probar y conectar';
+      }
+
+      if (!r.ok) { mostrarError('⚠️ ' + r.mensaje); return; }
+
+      Nube.guardarConfig(r.url, r.llavePublica);
+      await Dialogos.avisar({
+        titulo: 'Tu nube quedó conectada',
+        texto: 'Ahora vas a poder crear tu cuenta con correo y contraseña. Tus datos de este '
+          + 'teléfono no se tocaron: cuando entres, te vamos a preguntar qué hacer con ellos.',
+        aceptar: 'Entendido',
+      });
+      // recargamos para que todo arranque con la conexión nueva
+      location.reload();
+    });
+
+    $$$('botonDesconectarNube').addEventListener('click', async () => {
+      const seguro = await Dialogos.confirmar({
+        titulo: '¿Desconectar esta nube?',
+        texto: 'Tus datos se quedan en este teléfono tal como están. Lo que se olvida es la '
+          + 'dirección del proyecto y tu sesión, así que la app vuelve a guardar solo acá.',
+        aceptar: 'Desconectar',
+      });
+      if (!seguro) return;
+      Nube.borrarConfig();
+      location.reload();
+    });
+
     // ---- Nube ----
     $$$('botonCambiarModo').addEventListener('click', () =>
       fijarModoCuenta(vista.modoCuenta === 'crear' ? 'entrar' : 'crear'));
@@ -2109,7 +2152,14 @@
     $$$('opcionesCuenta').hidden = !hay;
     $$$('notaSoloTelefono').hidden = hay;
     $$$('notaConNube').hidden = !hay;
+
+    // ---- Ajustes: o se conecta una nube, o se administra la que hay ----
     $$$('tarjetaNube').hidden = !hay;
+    $$$('tarjetaConectarNube').hidden = hay;
+    $$$('zonaDesconectar').hidden = !Nube.configEsDelTelefono();
+    if (Nube.configEsDelTelefono()) {
+      $$$('detalleProyecto').textContent = 'Conectado a ' + Nube.direccionDelProyecto();
+    }
 
     if (!hay) return;
 

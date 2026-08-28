@@ -122,10 +122,34 @@ const servidor = http.createServer(async (req, res) => {
     return responder(res, 200, {});
   }
 
+  /* ---------- Lo que consulta "Probar y conectar" ---------- */
+
+  // Supabase de verdad responde acá con la configuración pública del
+  // proyecto. Nos sirve para saber si la dirección y la llave sirven.
+  if (ruta === '/auth/v1/settings' && req.method === 'GET') {
+    if (!req.headers.apikey) return responder(res, 401, { message: 'No API key found in request' });
+    return responder(res, 200, { external: {}, disable_signup: false });
+  }
+
   /* ---------- La tabla ---------- */
   if (ruta === '/rest/v1/estados') {
+    // Para simular que a alguien se le olvidó crear la tabla:
+    //   SIN_TABLA=1 node herramientas/nube-de-prueba.js
+    if (process.env.SIN_TABLA) {
+      return responder(res, 404, {
+        message: 'relation "public.estados" does not exist', code: '42P01',
+      });
+    }
+
     const id = usuarioDe(req);
-    if (!id) return responder(res, 401, { message: 'JWT expired' });
+
+    // Sin sesión válida pero con la llave pública: es el rol anónimo.
+    // Con las reglas RLS puestas, Supabase devuelve una lista vacía,
+    // y eso es justo lo que revisa "Probar y conectar".
+    if (!id) {
+      if (req.method === 'GET' && req.headers.apikey) return responder(res, 200, []);
+      return responder(res, 401, { message: 'JWT expired' });
+    }
 
     if (req.method === 'GET') {
       const fila = filas.get(id);
