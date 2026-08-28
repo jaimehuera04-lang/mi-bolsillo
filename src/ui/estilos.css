@@ -528,3 +528,18 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--verde); out
 
 .dialogo-botones { display: flex; gap: 10px; margin-top: 20px; }
 .dialogo-botones .boton { flex: 1; padding: 12px 10px; }
+
+/* ---------- La pastilla que dice cómo va la sincronización ---------- */
+.pastilla-nube {
+  font-size: 11px; font-weight: 700; letter-spacing: .02em;
+  padding: 4px 10px; border-radius: 999px; white-space: nowrap;
+  background: var(--fondo); color: var(--texto-suave);
+  border: 1px solid var(--borde);
+}
+.pastilla-nube.al-dia    { background: var(--verde-suave); color: var(--verde-oscuro); border-color: var(--verde); }
+.pastilla-nube.subiendo  { background: var(--verde-suave); color: var(--verde-oscuro); border-color: var(--verde); }
+.pastilla-nube.pendiente { background: #fff6e6; color: #8a6212; border-color: var(--amarillo); }
+.pastilla-nube.error     { background: var(--rojo-suave); color: var(--rojo); border-color: var(--rojo); }
+@media (prefers-color-scheme: dark) {
+  .pastilla-nube.pendiente { background: #33280f; color: var(--amarillo); }
+}

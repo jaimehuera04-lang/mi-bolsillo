@@ -18,7 +18,7 @@ Meta de estructura (se llega ahí por fases, no de un salto):
 
 ```
 /src/core       calculos puros: sueldoLibre, compromisos, simulador, liberacion
-/src/storage    esquema, migraciones, respaldo, import/export
+/src/storage    esquema, migraciones, respaldo, import/export, nube
 /src/ui         pantallas, componentes, gráficos, diálogos propios, planilla Excel
 /src/data       categorías, calendario estacional chileno
 ```
@@ -73,6 +73,27 @@ adentro, así que el archivo arma el ZIP byte a byte (método *store*, sin compr
 el XML de cada hoja. Da montos con formato de pesos, fechas de verdad y porcentajes, no texto.
 Bajar una librería de cientos de kilobytes para esto habría roto la regla de "sin librerías
 ni compilación".
+
+## La nube
+
+`/src/storage/nube.js` habla con Supabase por `fetch` pelado, sin su SDK. Se guarda **el objeto
+completo** en una fila por persona (`estados`), igual que el respaldo `.json`: así las
+migraciones siguen sirviendo tal cual. Los pasos para encenderla están en
+[SUPABASE.md](SUPABASE.md).
+
+Cuatro decisiones que conviene no reabrir:
+
+1. **El teléfono manda para lo inmediato.** Se guarda primero en `localStorage` y la pantalla
+   responde; la subida va después, sin bloquear. Sin señal queda pendiente y sube sola.
+2. **Nace apagada.** Si `config-nube.js` está vacío, no hay cuenta, ni contraseña, ni nada que
+   sincronizar, y la app es exactamente la de antes.
+3. **Ante un choque, no elige sola.** Se guarda una marca del último momento en que los dos
+   lados coincidieron. Si al abrir los dos cambiaron desde entonces, la app dice cuántos
+   movimientos hay en cada lado y decide la persona.
+4. **El service worker no toca lo que no es nuestro.** Solo atiende peticiones del propio
+   origen. Cuando atendía todo, respondía las consultas a la nube con una copia guardada, la
+   app creía que la nube estaba vacía y le pasaba por encima. Ese bug costó datos en las
+   pruebas; la guarda está en `sw.js` y no hay que quitarla.
 
 ## Modelo de datos
 

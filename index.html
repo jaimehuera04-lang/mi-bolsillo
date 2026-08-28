@@ -89,10 +89,34 @@
                aria-describedby="errorCorreo">
         <p class="error-campo" id="errorCorreo" hidden></p>
 
-        <button class="boton" type="submit" style="margin-top:16px">Entrar</button>
+        <!-- La contraseña solo aparece si hay nube configurada.
+             Sin nube no existe cuenta que proteger. -->
+        <div id="bloqueClave" hidden>
+          <label for="campoClave">Tu contraseña</label>
+          <input type="password" id="campoClave" autocomplete="current-password"
+                 placeholder="Al menos 6 caracteres" aria-describedby="errorClave">
+          <p class="error-campo" id="errorClave" hidden></p>
+          <p class="ayuda" id="ayudaClave">
+            Es la llave de tus datos. Si la pierdes, te mandamos un correo para cambiarla.
+          </p>
+        </div>
+
+        <button class="boton" type="submit" style="margin-top:16px" id="botonEntrar">Entrar</button>
+
+        <div id="opcionesCuenta" hidden>
+          <button class="boton fantasma" type="button" id="botonCambiarModo"
+                  style="width:100%; margin-top:10px">
+            ¿Primera vez? Crea tu cuenta
+          </button>
+          <button class="boton fantasma chico" type="button" id="botonOlvideClave"
+                  style="width:100%">
+            Olvidé mi contraseña
+          </button>
+        </div>
       </form>
 
-      <div class="bienvenida-nota">
+      <!-- Nota de privacidad cuando NO hay nube: todo vive en el teléfono -->
+      <div class="bienvenida-nota" id="notaSoloTelefono">
         <p>
           <strong>🔒 Se guarda solo en este teléfono.</strong>
           No hay contraseña ni servidor: tu correo y tus datos no salen de aquí,
@@ -102,6 +126,20 @@
           Por lo mismo, esto <strong>no es un respaldo</strong>. Si cambias de celular,
           tus datos no se recuperan solos. Para eso usa
           <em>Ajustes → Descargar copia</em>.
+        </p>
+      </div>
+
+      <!-- Nota de privacidad cuando SÍ hay nube -->
+      <div class="bienvenida-nota" id="notaConNube" hidden>
+        <p>
+          <strong>☁️ Tus datos te siguen.</strong>
+          Se guardan en este teléfono y también en tu propia nube. Si cambias de
+          celular, entras con tu correo y tu contraseña y está todo.
+        </p>
+        <p style="margin-bottom:0">
+          Para ser exactos: los datos viajan por internet a <strong>tu</strong> proyecto y
+          se abren con tu contraseña. No es cifrado de punta a punta, así que quien
+          administre ese proyecto —o sea, tú— puede verlos.
         </p>
       </div>
     </div>
@@ -328,6 +366,36 @@
       <div id="editorTopes"></div>
     </section>
 
+    <!-- Toda esta sección aparece solo si config-nube.js tiene valores -->
+    <section class="tarjeta" id="tarjetaNube" hidden>
+      <div class="tarjeta-titulo">
+        <h2>Tu cuenta en la nube</h2>
+        <span class="pastilla-nube" id="pastillaNube">—</span>
+      </div>
+      <p class="ayuda" id="detalleNube" style="margin-top:-4px"></p>
+
+      <div id="zonaNubeConSesion" hidden>
+        <div class="fila-botones" style="margin-top:14px">
+          <button class="boton secundario" id="botonSubirNube">☁️ Subir ahora</button>
+          <button class="boton secundario" id="botonBajarNube">⬇️ Traer de la nube</button>
+        </div>
+        <button class="boton fantasma" id="botonSalirNube" style="width:100%; margin-top:8px">
+          Cerrar sesión en este dispositivo
+        </button>
+        <p class="ayuda">
+          Cerrar sesión no borra nada de este teléfono: solo deja de sincronizar.
+        </p>
+      </div>
+
+      <div id="zonaNubeSinSesion" hidden>
+        <p class="ayuda" style="margin-top:0">
+          Todavía no has entrado a tu cuenta, así que tus datos viven solo en este
+          teléfono. Entra para que te sigan a cualquier dispositivo.
+        </p>
+        <button class="boton" id="botonEntrarNube" style="margin-top:10px">Entrar a mi cuenta</button>
+      </div>
+    </section>
+
     <section class="tarjeta">
       <h2>Copia de seguridad</h2>
       <p class="ayuda" style="margin-top:-4px">
@@ -517,6 +585,7 @@
 
   <!-- El orden importa: cada archivo usa los de más arriba.
        datos fijos -> motor de calculo -> almacenamiento -> fachada -> pantalla -->
+  <script src="src/config-nube.js"></script>
   <script src="src/data/categorias.js"></script>
   <script src="src/data/tecnicas.js"></script>
   <script src="src/core/fechas.js"></script>
@@ -526,6 +595,7 @@
   <script src="src/storage/esquema.js"></script>
   <script src="src/storage/migraciones.js"></script>
   <script src="src/storage/almacenamiento.js"></script>
+  <script src="src/storage/nube.js"></script>
   <script src="src/datos.js"></script>
   <script src="src/ui/dialogos.js"></script>
   <script src="src/ui/excel.js"></script>

@@ -30,6 +30,9 @@ const Esquema = (() => {
         schemaVersion: VERSION_ESQUEMA,
         creado: Fechas.hoyISO(),
         ultimoRespaldo: '',
+        // Cuándo se guardó por última vez en este dispositivo. Lo usa la
+        // nube para saber si acá hay algo más nuevo que allá.
+        actualizado: '',
       },
 
       /* cuentas: donde vive la plata.
