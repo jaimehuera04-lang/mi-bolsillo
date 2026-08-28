@@ -583,3 +583,14 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--verde); out
   -webkit-user-select: text;
   user-select: text;
 }
+
+/* Los campos de solo lectura con los datos de conexión: se pueden
+   seleccionar con el dedo, porque justamente hay que copiarlos. */
+input[readonly] {
+  background: var(--fondo);
+  color: var(--texto-suave);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  -webkit-user-select: text;
+  user-select: text;
+}
