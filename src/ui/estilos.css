@@ -184,8 +184,20 @@ input.con-error:focus { outline-color: var(--rojo); }
 .chip-mes button {
   background: none; border: 0; color: #fff; font-size: 15px;
   cursor: pointer; padding: 0 2px; line-height: 1; opacity: .85;
+  font-family: inherit;
 }
 .chip-mes button:hover { opacity: 1; }
+
+/* El botón que baja el análisis del mes. Va separado por una línea
+   para que se lea como otra cosa y no como una tercera flecha. */
+.chip-mes button.analisis {
+  font-size: 13px;
+  margin-left: 4px;
+  padding-left: 8px;
+  border-left: 1px solid rgba(255, 255, 255, .35);
+  transition: transform .12s ease;
+}
+.chip-mes button.analisis:active { transform: scale(.85); }
 
 /* ---------- Contenedores ---------- */
 /* El espacio de abajo es para que el botón + no tape la última tarjeta */
