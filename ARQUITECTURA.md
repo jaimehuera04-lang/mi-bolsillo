@@ -19,7 +19,7 @@ Meta de estructura (se llega ahí por fases, no de un salto):
 ```
 /src/core       calculos puros: sueldoLibre, compromisos, simulador, liberacion
 /src/storage    esquema, migraciones, respaldo, import/export
-/src/ui         pantallas, componentes, gráficos
+/src/ui         pantallas, componentes, gráficos, diálogos propios
 /src/data       categorías, calendario estacional chileno
 ```
 
@@ -37,6 +37,27 @@ Meta de estructura (se llega ahí por fases, no de un salto):
 8. **Gasto con tarjeta ≠ pago de tarjeta.** El gasto se contabiliza al comprar; el pago de la
    tarjeta es una transferencia. Contar los dos como gasto duplica el monto.
 9. **Sin secretos en el frontend.** Ninguna API key ni token en el cliente ni en el repositorio.
+10. **Esto es una app, no una página.** Ver la sección siguiente. Todo lo que delate al
+    navegador se considera un error, no un detalle estético.
+
+## La cáscara de app
+
+Mi Bolsillo se instala en el teléfono y tiene que comportarse como cualquier otra app de ahí.
+Lo que sigue no es decoración: cada punto tapa una filtración concreta del navegador.
+
+| Regla | Qué tapa |
+|---|---|
+| **Nunca `alert`, `confirm` ni `prompt`.** Se usa `Dialogos` (`/src/ui/dialogos.js`). | Los diálogos del navegador salen rotulados con el dominio: *"jaimehuera04-lang.github.io dice:"*. |
+| **El documento no hace scroll.** `html, body { overflow: hidden }` y un único contenedor `#contenido` que sí scrollea, dentro del marco `.app`. | El rebote elástico al llegar al final y el gesto de "deslizar para recargar" de Android. |
+| **El botón atrás del teléfono cierra capas.** Cada hoja o diálogo empuja una entrada de historial; `popstate` cierra la de más arriba, después vuelve a Inicio, y recién entonces sale. | Que "atrás" te expulse de la app apenas tienes algo abierto. |
+| **No se selecciona el texto de la interfaz** (`user-select: none`, `-webkit-touch-callout: none`), salvo en los campos. | El resaltado azul y el menú de "copiar / compartir" al dejar el dedo apretado. |
+| **Hay pantalla de arranque**, con estilos críticos escritos dentro de `index.html`. | El parpadeo blanco de "página cargando" al abrir. |
+| **Las hojas se deslizan** al entrar y al salir, y se cierran arrastrándolas hacia abajo. | Ventanas que aparecen y desaparecen de golpe. |
+| **En el computador la app se dibuja dentro de un marco de teléfono**, no estirada a todo el ancho. | Que en pantalla grande parezca una sección de un sitio web. |
+| **El teclado no tapa los campos**: `interactive-widget=resizes-content` más `scrollIntoView` al enfocar. | Efecto secundario del marco fijo; sin esto el marco fijo sería peor que el scroll de documento. |
+
+Al tocar `index.html`, `estilos.css`, `app.js` o `dialogos.js` hay que subir `VERSION` en `sw.js`,
+o el teléfono sigue mostrando la copia guardada anterior.
 
 ## Modelo de datos
 

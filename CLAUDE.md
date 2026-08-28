@@ -17,6 +17,9 @@ estacionales − aportes a metas. Si una función no ayuda a entender o proteger
 7. **Las transferencias no son ingresos ni gastos.**
 8. **Gasto con tarjeta ≠ pago de tarjeta.** Nunca contabilizar dos veces.
 9. **Sin secretos en el frontend.** Ninguna API key ni token en el cliente ni en el repo.
+10. **Esto es una app, no una página web.** Nada de `alert`/`confirm`/`prompt`, el documento no
+    scrollea, y el botón atrás cierra capas antes de salir. Las ocho reglas de la cáscara están
+    en [ARQUITECTURA.md](ARQUITECTURA.md#la-cáscara-de-app).
 
 ## Los demás documentos
 - [PRODUCTO.md](PRODUCTO.md) — idea central, las tres funciones, no-goals, contexto chileno.
