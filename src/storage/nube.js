@@ -21,16 +21,124 @@
 const Nube = (() => {
   'use strict';
 
-  const conf = (typeof CONFIG_NUBE !== 'undefined') ? CONFIG_NUBE : {};
   const LLAVE_SESION = 'mi-bolsillo:sesion';
+  const LLAVE_CONFIG = 'mi-bolsillo:nube';
   const TABLA = 'estados';
 
   // Cuánto esperamos, después del último cambio, antes de subir.
   // Anotar tres gastos seguidos sube una vez, no tres.
   const ESPERA_ANTES_DE_SUBIR = 2500;
 
+  /* ---------------- 0. De dónde salen la dirección y la llave ----------------
+
+     Hay dos caminos y el orden importa:
+
+       1. Lo que la persona pegó en Ajustes, guardado en este teléfono.
+          Es el camino normal: no hay que tocar código ni publicar nada.
+       2. `config-nube.js`, para dejarlo fijo en el repositorio.
+
+     Si no hay ninguno de los dos, la nube no existe y la app funciona
+     igual que siempre, guardando solo en el teléfono. */
+
+  function configGuardada() {
+    try {
+      const crudo = localStorage.getItem(LLAVE_CONFIG);
+      if (!crudo) return null;
+      const c = JSON.parse(crudo);
+      return (c && c.url && c.llavePublica) ? c : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  const configDelArchivo = () =>
+    (typeof CONFIG_NUBE !== 'undefined' && CONFIG_NUBE.url && CONFIG_NUBE.llavePublica)
+      ? CONFIG_NUBE : null;
+
+  let conf = configGuardada() || configDelArchivo() || {};
+
   /** true si hay un proyecto configurado. Si no, la nube ni existe. */
   const configurada = () => Boolean(conf.url && conf.llavePublica);
+
+  /** true si la conexión la pegó la persona desde Ajustes. */
+  const configEsDelTelefono = () => Boolean(configGuardada());
+
+  const direccionDelProyecto = () => conf.url || '';
+
+  /** Limpia la dirección: sin barra final y siempre con https. */
+  function ordenarUrl(texto) {
+    let url = String(texto || '').trim().replace(/\/+$/, '');
+    if (!url) return '';
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    return url;
+  }
+
+  /**
+   * Revisa que la dirección y la llave sirvan de verdad, y de paso que
+   * la tabla exista. Devuelve { ok: true } o { ok: false, mensaje }.
+   * Vale la pena hacer las dos preguntas por separado: así podemos
+   * decir "te faltó el paso del SQL" en vez de un error genérico.
+   */
+  async function probarConexion(urlCruda, llave) {
+    const url = ordenarUrl(urlCruda);
+    const apikey = String(llave || '').trim();
+
+    if (!url) return { ok: false, mensaje: 'Falta la dirección del proyecto.' };
+    if (!apikey) return { ok: false, mensaje: 'Falta la llave pública.' };
+    if (/^ey/.test(apikey) === false && !/localhost/.test(url)) {
+      return { ok: false, mensaje: 'Esa no parece la llave. La correcta es larga y empieza con "eyJ".' };
+    }
+
+    // 1. ¿Responde el proyecto y acepta la llave?
+    let respuesta;
+    try {
+      respuesta = await fetch(url + '/auth/v1/settings', { headers: { apikey } });
+    } catch (_) {
+      return { ok: false, mensaje: 'No se pudo llegar a esa dirección. Revísala, o revisa tu internet.' };
+    }
+    if (respuesta.status === 401 || respuesta.status === 403) {
+      return { ok: false, mensaje: 'El proyecto responde, pero rechaza la llave. Copia la que dice "anon public".' };
+    }
+    if (!respuesta.ok) {
+      return { ok: false, mensaje: 'Esa dirección no parece un proyecto de Supabase.' };
+    }
+
+    // 2. ¿Existe la tabla? Sin sesión, con las reglas puestas, esto
+    //    devuelve una lista vacía. Si la tabla no existe, da 404.
+    let tabla;
+    try {
+      tabla = await fetch(url + '/rest/v1/' + TABLA + '?select=usuario_id&limit=1',
+        { headers: { apikey, Authorization: 'Bearer ' + apikey } });
+    } catch (_) {
+      return { ok: false, mensaje: 'El proyecto responde, pero no pudimos revisar la tabla.' };
+    }
+    if (tabla.status === 404) {
+      return {
+        ok: false,
+        mensaje: 'Falta crear la tabla. Es el paso 2 de SUPABASE.md: pegar el SQL en el editor de Supabase.',
+      };
+    }
+
+    return { ok: true, url, llavePublica: apikey };
+  }
+
+  /** Guarda la conexión en este teléfono y la deja andando. */
+  function guardarConfig(url, llavePublica) {
+    conf = { url, llavePublica };
+    try {
+      localStorage.setItem(LLAVE_CONFIG, JSON.stringify(conf));
+    } catch (_) { /* si no se puede guardar, dura lo que dure la pestaña */ }
+    avisarCambio(haySesion() ? 'pendiente' : 'sin-sesion');
+  }
+
+  /** Olvida la conexión. Los datos del teléfono no se tocan. */
+  function borrarConfig() {
+    try { localStorage.removeItem(LLAVE_CONFIG); } catch (_) { /* da lo mismo */ }
+    guardarSesion(null);
+    conf = configDelArchivo() || {};
+    ultimoSubido = '';
+    avisarCambio(configurada() ? 'sin-sesion' : 'apagada');
+  }
 
   /* ---------------- 1. La sesión ---------------- */
 
@@ -410,7 +518,9 @@ const Nube = (() => {
   }
 
   return {
-    configurada, iniciar,
+    configurada, configEsDelTelefono, direccionDelProyecto,
+    probarConexion, guardarConfig, borrarConfig,
+    iniciar,
     crearCuenta, entrar, salir, recuperarClave,
     haySesion, correoDeLaSesion,
     bajar, subir, anotarCambio, subirAhora,

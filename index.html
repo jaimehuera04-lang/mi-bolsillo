@@ -370,7 +370,39 @@
       <div id="editorTopes"></div>
     </section>
 
-    <!-- Toda esta sección aparece solo si config-nube.js tiene valores -->
+    <!-- Aparece mientras NO haya una nube conectada -->
+    <section class="tarjeta" id="tarjetaConectarNube" hidden>
+      <h2>Conectar tu nube</h2>
+      <p class="ayuda" style="margin-top:-4px">
+        Hoy tus datos viven solo en este teléfono. Si conectas una nube, te siguen a
+        cualquier dispositivo y no se pierden si pierdes el celular.
+      </p>
+
+      <label for="campoNubeUrl">Dirección del proyecto</label>
+      <input type="url" id="campoNubeUrl" inputmode="url" autocapitalize="off"
+             spellcheck="false" placeholder="https://algolargo.supabase.co">
+
+      <label for="campoNubeLlave">Llave pública</label>
+      <input type="text" id="campoNubeLlave" autocapitalize="off" spellcheck="false"
+             placeholder="eyJhbGciOiJIUzI1NiIs...">
+      <p class="error-campo" id="errorNube" hidden></p>
+
+      <button class="boton" id="botonConectarNube" style="margin-top:14px">
+        Probar y conectar
+      </button>
+
+      <p class="ayuda">
+        Los dos datos salen de tu proyecto en Supabase, en <em>Project Settings → API</em>.
+        Los pasos completos están en el archivo <strong>SUPABASE.md</strong> del proyecto.
+        Antes de conectar revisamos que la dirección responda y que la tabla exista.
+      </p>
+      <p class="ayuda">
+        <strong>Ojo:</strong> la llave que va acá es la que dice <em>anon public</em>.
+        Nunca la que dice <em>service_role</em>.
+      </p>
+    </section>
+
+    <!-- Aparece cuando ya hay una nube conectada -->
     <section class="tarjeta" id="tarjetaNube" hidden>
       <div class="tarjeta-titulo">
         <h2>Tu cuenta en la nube</h2>
@@ -389,6 +421,14 @@
         <p class="ayuda">
           Cerrar sesión no borra nada de este teléfono: solo deja de sincronizar.
         </p>
+      </div>
+
+      <div id="zonaDesconectar" hidden>
+        <button class="boton fantasma chico" id="botonDesconectarNube"
+                style="width:100%; margin-top:6px">
+          Desconectar esta nube
+        </button>
+        <p class="ayuda" id="detalleProyecto"></p>
       </div>
 
       <div id="zonaNubeSinSesion" hidden>

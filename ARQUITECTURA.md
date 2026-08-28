@@ -111,8 +111,11 @@ Cuatro decisiones que conviene no reabrir:
 
 1. **El teléfono manda para lo inmediato.** Se guarda primero en `localStorage` y la pantalla
    responde; la subida va después, sin bloquear. Sin señal queda pendiente y sube sola.
-2. **Nace apagada.** Si `config-nube.js` está vacío, no hay cuenta, ni contraseña, ni nada que
-   sincronizar, y la app es exactamente la de antes.
+2. **Nace apagada.** Sin conexión configurada no hay cuenta, ni contraseña, ni nada que
+   sincronizar, y la app es exactamente la de antes. La conexión puede venir de dos lados y en
+   este orden: lo que la persona pegó en *Ajustes → Conectar tu nube* (guardado en su teléfono),
+   o `src/config-nube.js`. Lo primero manda sobre lo segundo. Antes de guardarla, la app la
+   prueba de verdad contra Supabase y distingue "la llave no sirve" de "falta crear la tabla".
 3. **Ante un choque, no elige sola.** Se guarda una marca del último momento en que los dos
    lados coincidieron. Si al abrir los dos cambiaron desde entonces, la app dice cuántos
    movimientos hay en cada lado y decide la persona.
