@@ -133,11 +133,11 @@ function main() {
   revisar('Ingresos y gastos de cada mes dan lo mismo', mesesOk,
     detalles.join(' | ') || `${Object.keys(antes).length} meses revisados`);
 
-  /* --- 3. Ningún movimiento quedo sin cuenta --- */
+  /* --- 3. Ningún movimiento quedó sin cuenta --- */
   const huerfanos = nuevo.movimientos.filter(m =>
     (m.tipo === 'gasto'   && !m.cuentaOrigen) ||
     (m.tipo === 'ingreso' && !m.cuentaDestino));
-  revisar('Cada movimiento quedo apuntando a una cuenta',
+  revisar('Cada movimiento quedó apuntando a una cuenta',
     huerfanos.length === 0, `${huerfanos.length} sueltos`);
 
   /* --- 4. Las metas conservan sus montos --- */
@@ -148,8 +148,8 @@ function main() {
   });
   revisar('Las metas conservan objetivo y ahorrado', metasOk);
 
-  /* --- 5. El esquema quedo marcado --- */
-  revisar('El objeto quedo marcado como esquema 2',
+  /* --- 5. El esquema quedó marcado --- */
+  revisar('El objeto quedó marcado como esquema 2',
     nuevo.meta.schemaVersion === 2, `es ${nuevo.meta.schemaVersion}`);
 
   /* --- 6. El registro y el nombre siguen ahí --- */

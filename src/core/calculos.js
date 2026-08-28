@@ -6,7 +6,7 @@
 
    Dos reglas que se respetan en todo este archivo:
      - Las transferencias NO son ingresos ni gastos. Mover plata
-       entre dos cuentas tuyas no te hace mas rico ni mas pobre,
+       entre dos cuentas tuyas no te hace más rico ni más pobre,
        así que no aparece en ningún total ni en ningún gráfico.
      - Un gasto con tarjeta se cuenta al comprar. Pagar después la
        tarjeta es una transferencia, no un segundo gasto.
@@ -17,7 +17,7 @@ const Calculos = (() => {
   const esIngreso = m => m.tipo === 'ingreso';
   const esGasto   = m => m.tipo === 'gasto';
 
-  /** Movimientos de un mes, del mas nuevo al mas viejo. mes va de 0 a 11. */
+  /** Movimientos de un mes, del más nuevo al más viejo. mes va de 0 a 11. */
   function movimientosDelMes(estado, anio, mes) {
     const clave = Fechas.claveMes(anio, mes);
     return estado.movimientos
@@ -36,7 +36,7 @@ const Calculos = (() => {
       else if (esGasto(m)) gastos += m.monto;   // las transferencias quedan fuera
     }
     const saldo = ingresos - gastos;
-    // Tasa de ahorro = que porcentaje de lo que entro NO se gasto
+    // Tasa de ahorro = que porcentaje de lo que entró NO se gasto
     const tasaAhorro = ingresos > 0 ? Math.round((saldo / ingresos) * 100) : 0;
     return { ingresos, gastos, saldo, tasaAhorro, cantidad: movs.length };
   }
@@ -104,7 +104,7 @@ const Calculos = (() => {
       const cat = Categorias.porId(m.categoria);
       grupos[cat.tipo || 'deseo'] += m.monto;
     }
-    // el dinero que quedo sin gastar también cuenta como ahorro
+    // el dinero que quedó sin gastar también cuenta como ahorro
     const { ingresos, saldo } = resumenDelMes(estado, anio, mes);
     if (saldo > 0) grupos.ahorro += saldo;
 

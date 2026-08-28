@@ -4,7 +4,7 @@
 
    Aquí NO hay cuentas matemáticas (esas viven en /src/core) ni
    código de localStorage (ese vive en /src/storage). Este archivo
-   solo ordena: valida lo que llega, llama a quien corresponde y
+   solo ordena: válida lo que llega, llama a quien corresponde y
    guarda.
    ============================================================ */
 
@@ -123,9 +123,9 @@ const Datos = (() => {
         throw new Error('El origen y el destino tienen que ser cuentas distintas.');
       }
     } else if (tipo === 'gasto' && !cuentaOrigen) {
-      throw new Error('Elige de que cuenta salio esta plata.');
+      throw new Error('Elige de qué cuenta salió esta plata.');
     } else if (tipo === 'ingreso' && !cuentaDestino) {
-      throw new Error('Elige a que cuenta entro esta plata.');
+      throw new Error('Elige a qué cuenta entró esta plata.');
     }
 
     const mov = {
@@ -248,7 +248,7 @@ const Datos = (() => {
   const borrarTodo = () => Almacenamiento.borrarTodo();
 
   /* ---------- Datos de ejemplo ----------
-     Muestran a propósito los dos casos que mas se confunden:
+     Muestran a propósito los dos casos que más se confunden:
      una compra con tarjeta (gasto) y el pago de esa tarjeta
      (transferencia, no un segundo gasto).                      */
   function cargarEjemplo() {
@@ -281,7 +281,7 @@ const Datos = (() => {
     e.movimientos = [];
     for (const m of ejemplos) agregarMovimiento(m);
 
-    // La cuenta vacía con que venia la app estorba en el ejemplo: se va,
+    // La cuenta vacía con que venía la app estorba en el ejemplo: se va,
     // pero solo si no tiene ni un movimiento anotado.
     e.cuentas = e.cuentas.filter(c =>
       c.id === rut.id || c.id === cmr.id || movimientosDeCuenta(c.id) > 0);

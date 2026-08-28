@@ -121,16 +121,16 @@ const Migraciones = (() => {
     while (v < Esquema.VERSION_ESQUEMA) {
       const paso = CADENA[v];
       if (!paso) {
-        throw new Error(`No se como pasar del esquema ${v} al ${v + 1}.`);
+        throw new Error(`No sé cómo pasar del esquema ${v} al ${v + 1}.`);
       }
       actual = paso(actual);
       v++;
     }
 
-    // Un archivo de una versión MAS nueva que esta app: no se toca.
+    // Un archivo de una versión MÁS nueva que esta app: no se toca.
     if (desde > Esquema.VERSION_ESQUEMA) {
       throw new Error(
-        'Ese respaldo viene de una versión mas nueva de Mi Bolsillo. Actualiza la app antes de restaurarlo.'
+        'Ese respaldo viene de una versión más nueva de Mi Bolsillo. Actualiza la app antes de restaurarlo.'
       );
     }
 

@@ -1,6 +1,7 @@
+@charset "UTF-8";
 /* ============================================================
    Mi Bolsillo - hoja de estilos
-   Todo esta comentado para que puedas cambiar colores y tamaños
+   Todo está comentado para que puedas cambiar colores y tamaños
    sin miedo. Los "--nombre" de abajo son variables: cambias el
    valor una sola vez y se actualiza en toda la app.
    ============================================================ */
@@ -33,7 +34,7 @@
   --fondo-escritorio: #dfe5ea;
 }
 
-/* Modo oscuro: se activa solo si el celular esta en modo oscuro */
+/* Modo oscuro: se activa solo si el celular está en modo oscuro */
 @media (prefers-color-scheme: dark) {
   :root {
     --fondo:       #12171d;
@@ -86,7 +87,7 @@ body {
 /* ---------- El marco de la app ----------
    Ocupa la pantalla entera y no se mueve nunca. Adentro hay tres
    piezas: el encabezado arriba, el contenido que hace scroll al
-   medio, y la barra de navegacion abajo. */
+   medio, y la barra de navegación abajo. */
 .app {
   position: fixed; inset: 0;
   display: flex; flex-direction: column;
@@ -187,7 +188,7 @@ input.con-error:focus { outline-color: var(--rojo); }
 .chip-mes button:hover { opacity: 1; }
 
 /* ---------- Contenedores ---------- */
-/* El espacio de abajo es para que el boton + no tape la última tarjeta */
+/* El espacio de abajo es para que el botón + no tape la última tarjeta */
 .pantalla { padding: 16px 16px 92px; display: none; animation: aparecer .26s cubic-bezier(.2, .8, .3, 1); }
 .pantalla.activa { display: block; }
 @keyframes aparecer { from { opacity: 0; transform: translateY(10px) scale(.995); } to { opacity: 1; transform: none; } }
@@ -239,7 +240,7 @@ input.con-error:focus { outline-color: var(--rojo); }
 /* "chico" sigue siendo comodo de tocar con el dedo (unos 39px de alto) */
 .boton.chico      { padding: 10px 13px; font-size: 13px; width: auto; }
 
-/* ---------- Barra de navegacion inferior ---------- */
+/* ---------- Barra de navegación inferior ---------- */
 /* Ya no va "flotando" sobre el contenido: es una pieza real del marco,
    como la barra de pestañas de cualquier app del teléfono. */
 .navegacion {
@@ -261,12 +262,12 @@ input.con-error:focus { outline-color: var(--rojo); }
   transition: transform .2s cubic-bezier(.2, .85, .25, 1);
 }
 .navegacion button.activa { color: var(--verde); }
-/* el icono de la pestaña en la que estas se levanta un poco: es la
+/* el icono de la pestaña en la que estás se levanta un poco: es la
    señal chiquitita que separa una app de una barra de enlaces */
 .navegacion button.activa .icono { transform: translateY(-2px) scale(1.12); }
 .navegacion button:active .icono { transform: scale(.88); }
 
-/* ---------- Boton flotante (+) ---------- */
+/* ---------- Botón flotante (+) ---------- */
 .boton-flotante {
   position: absolute; right: 18px;
   bottom: calc(var(--alto-barra-inferior) + 16px);

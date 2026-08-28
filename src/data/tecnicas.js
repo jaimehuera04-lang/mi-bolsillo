@@ -16,22 +16,22 @@ const Tecnicas = (() => {
     {
       emoji: '⚖️',
       titulo: 'La regla 50 / 30 / 20',
-      nivel: 'facil',
+      nivel: 'fácil',
       resumen: 'Reparte tu sueldo en tres bolsillos y deja de improvisar.',
       cuerpo: `
         <p>De cada 100 pesos que entran:</p>
         <ul>
           <li><strong>50 van a necesidades</strong>: arriendo, comida, transporte, cuentas, salud. Lo que no puedes dejar de pagar.</li>
           <li><strong>30 van a gustos</strong>: salidas, ropa, delivery, streaming. Vivir también cuenta.</li>
-          <li><strong>20 van a ti</strong>: ahorro, fondo de emergencia o pagar deudas mas rápido.</li>
+          <li><strong>20 van a ti</strong>: ahorro, fondo de emergencia o pagar deudas más rápido.</li>
         </ul>
-        <p><strong>Por que funciona:</strong> no te obliga a llevar cuentas de cada peso, solo a mirar tres números. Y te avisa temprano si tus gastos fijos se comieron el sueldo.</p>
-        <p><strong>Como partir hoy:</strong> mira la barra "Tu reparto del mes" en Inicio. Si necesidades pasa el 50%, el problema no es el café: es un gasto fijo grande.</p>`,
+        <p><strong>Por qué funciona:</strong> no te obliga a llevar cuentas de cada peso, solo a mirar tres números. Y te avisa temprano si tus gastos fijos se comieron el sueldo.</p>
+        <p><strong>Cómo partir hoy:</strong> mira la barra "Tu reparto del mes" en Inicio. Si necesidades pasa el 50%, el problema no es el café: es un gasto fijo grande.</p>`,
     },
     {
       emoji: '🐷',
-      titulo: 'Paguese a usted primero',
-      nivel: 'facil',
+      titulo: 'Páguese a usted primero',
+      nivel: 'fácil',
       resumen: 'Ahorra apenas te pagan, no con lo que sobra a fin de mes.',
       cuerpo: `
         <p>La mayoría ahorra lo que sobra. El problema: casi nunca sobra.</p>
@@ -46,24 +46,24 @@ const Tecnicas = (() => {
     {
       emoji: '🛟',
       titulo: 'Fondo de emergencia',
-      nivel: 'facil',
+      nivel: 'fácil',
       resumen: 'Tu colchón para que un imprevisto no se convierta en deuda.',
       cuerpo: `
-        <p>Es plata guardada con un solo trabajo: cubrir lo inesperado. Se te echo a perder el refrigerador, te quedaste sin pega, una urgencia médica.</p>
+        <p>Es plata guardada con un solo trabajo: cubrir lo inesperado. Se te echó a perder el refrigerador, te quedaste sin pega, una urgencia médica.</p>
         <ul>
           <li><strong>Meta inicial:</strong> un mes de tus gastos básicos.</li>
           <li><strong>Meta ideal:</strong> de 3 a 6 meses.</li>
           <li>Debe estar disponible (no en algo que tarde días en rescatarse) pero no <em>demasiado</em> a mano.</li>
         </ul>
-        <p><strong>Por que primero esto y no invertir:</strong> sin colchón, cualquier imprevisto te empuja a la tarjeta de crédito, y ahí pagas intereses altísimos. Evitar un interés es tan valioso como ganarlo.</p>`,
+        <p><strong>Por qué primero esto y no invertir:</strong> sin colchón, cualquier imprevisto te empuja a la tarjeta de crédito, y ahí pagas intereses altísimos. Evitar un interés es tan valioso como ganarlo.</p>`,
     },
     {
       emoji: '✉️',
       titulo: 'Método de los sobres',
-      nivel: 'facil',
-      resumen: 'Un tope por categoría. Cuando se acaba, se acabo.',
+      nivel: 'fácil',
+      resumen: 'Un tope por categoría. Cuando se acaba, se acabó.',
       cuerpo: `
-        <p>Antiguamente se repartia el sueldo en sobres de papel: uno para la feria, otro para bencina, otro para salidas. Cuando el sobre quedaba vacío, esa categoría se cerraba hasta el próximo mes.</p>
+        <p>Antiguamente se repartía el sueldo en sobres de papel: uno para la feria, otro para bencina, otro para salidas. Cuando el sobre quedaba vacío, esa categoría se cerraba hasta el próximo mes.</p>
         <p>Hoy no necesitas papel: le pones un tope a cada categoría y lo respetas.</p>
         <ul>
           <li>Funciona muy bien para gastos que se descontrolan: delivery, salidas, compras online.</li>
@@ -74,21 +74,21 @@ const Tecnicas = (() => {
     {
       emoji: '🐜',
       titulo: 'Cazar gastos hormiga',
-      nivel: 'facil',
+      nivel: 'fácil',
       resumen: 'Compras chicas que no duelen una por una, pero suman una fortuna.',
       cuerpo: `
         <p>El café de $2.500, el delivery de $7.000, la app de $4.990. Cada uno parece nada. Doce veces al mes, ya no.</p>
-        <p><strong>Ejercicio de una semana:</strong> anota <em>todo</em>, hasta la moneda mas chica. Al séptimo día mira el total. Casi siempre sorprende.</p>
+        <p><strong>Ejercicio de una semana:</strong> anota <em>todo</em>, hasta la moneda más chica. Al séptimo día mira el total. Casi siempre sorprende.</p>
         <ul>
-          <li>No se trata de eliminarlos: se trata de <strong>elegir cual vale la pena</strong>.</li>
-          <li>Revisa tus suscripciones una vez al año. Es el gasto hormiga mas silencioso.</li>
+          <li>No se trata de eliminarlos: se trata de <strong>elegir cuál vale la pena</strong>.</li>
+          <li>Revisa tus suscripciones una vez al año. Es el gasto hormiga más silencioso.</li>
         </ul>
         <p><strong>En la app:</strong> Inicio te avisa cuando detecta muchos gastos chicos en el mes.</p>`,
     },
     {
       emoji: '⏳',
       titulo: 'La regla de las 24 horas (y los 30 días)',
-      nivel: 'facil',
+      nivel: 'fácil',
       resumen: 'Poner tiempo entre las ganas y la compra.',
       cuerpo: `
         <p>Antes de una compra por impulso, espera:</p>
@@ -96,8 +96,8 @@ const Tecnicas = (() => {
           <li><strong>24 horas</strong> si es un monto chico.</li>
           <li><strong>30 días</strong> si es un monto grande.</li>
         </ul>
-        <p>Anótalo en una lista de "lo quiero". Cuando pase el plazo, vuelve a mirar. Buena parte de las veces las ganas ya se fueron, y esa plata se quedo contigo.</p>
-        <p><strong>Por que funciona:</strong> la compra impulsiva es emocional. El tiempo le devuelve el turno a la parte de tu cabeza que hace cuentas.</p>`,
+        <p>Anótalo en una lista de "lo quiero". Cuando pase el plazo, vuelve a mirar. Buena parte de las veces las ganas ya se fueron, y esa plata se quedó contigo.</p>
+        <p><strong>Por qué funciona:</strong> la compra impulsiva es emocional. El tiempo le devuelve el turno a la parte de tu cabeza que hace cuentas.</p>`,
     },
     {
       emoji: '📅',
@@ -109,7 +109,7 @@ const Tecnicas = (() => {
         <p>Al final del año juntaste <strong>1.378.000</strong> sin haber sentido un golpe fuerte en ningún mes.</p>
         <ul>
           <li>Si diciembre te queda apretado, dalo vuelta: parte por la semana 52 y termina con la 1.</li>
-          <li>Versión mas suave: monto fijo semanal. Menos épico, igual de efectivo.</li>
+          <li>Versión más suave: monto fijo semanal. Menos épico, igual de efectivo.</li>
         </ul>
         <p><strong>En la app:</strong> créalo como Meta con objetivo 1.378.000 y anota tu abono cada semana. Ver la barra avanzar es la mitad del truco.</p>`,
     },
@@ -122,26 +122,26 @@ const Tecnicas = (() => {
         <p>Kakebo significa "libro de cuentas del hogar". Su idea central no son las matemáticas, es la <strong>conciencia</strong>.</p>
         <p>Al empezar el mes te preguntas:</p>
         <ul>
-          <li>Cuanta plata tengo disponible?</li>
-          <li>Cuanto quiero ahorrar?</li>
-          <li>Cuanto voy a gastar realmente?</li>
-          <li>Como puedo mejorar el próximo mes?</li>
+          <li>¿Cuánta plata tengo disponible?</li>
+          <li>¿Cuánto quiero ahorrar?</li>
+          <li>¿Cuánto voy a gastar realmente?</li>
+          <li>¿Cómo puedo mejorar el próximo mes?</li>
         </ul>
         <p>Y ordenas cada gasto en cuatro grupos: <em>supervivencia</em> (comida, techo), <em>opcional</em> (salidas), <em>cultura</em> (libros, cursos) y <em>extras</em> (regalos, imprevistos).</p>
-        <p><strong>La cuarta pregunta es la importante.</strong> Revisar el mes que paso, sin culpa, es lo que hace que el siguiente sea mejor.</p>`,
+        <p><strong>La cuarta pregunta es la importante.</strong> Revisar el mes que pasó, sin culpa, es lo que hace que el siguiente sea mejor.</p>`,
     },
     {
       emoji: '❄️',
       titulo: 'Bola de nieve vs. avalancha (deudas)',
       nivel: 'medio',
-      resumen: 'Dos formas de salir de deudas: una motiva, la otra ahorra mas.',
+      resumen: 'Dos formas de salir de deudas: una motiva, la otra ahorra más.',
       cuerpo: `
-        <p>Si tienes varias deudas, paga el mínimo en todas y mete todo lo extra en <strong>una sola</strong>. Cual eliges cambia la estrategia:</p>
+        <p>Si tienes varias deudas, paga el mínimo en todas y mete todo lo extra en <strong>una sola</strong>. Cuál eliges cambia la estrategia:</p>
         <ul>
-          <li><strong>Bola de nieve:</strong> ataca primero la deuda <em>mas chica</em>. La liquidas rápido, sientes el avance y esa energía te mantiene. Cuando la cierras, ese pago completo pasa a la siguiente.</li>
-          <li><strong>Avalancha:</strong> ataca primero la de <em>interés mas alto</em>. Matemáticamente pagas menos intereses en total.</li>
+          <li><strong>Bola de nieve:</strong> ataca primero la deuda <em>más chica</em>. La liquidas rápido, sientes el avance y esa energía te mantiene. Cuando la cierras, ese pago completo pasa a la siguiente.</li>
+          <li><strong>Avalancha:</strong> ataca primero la de <em>interés más alto</em>. Matemáticamente pagas menos intereses en total.</li>
         </ul>
-        <p><strong>Cual elegir:</strong> la avalancha te ahorra mas plata, pero la bola de nieve la termina mas gente. Si te cuesta mantener el hábito, empieza con bola de nieve.</p>
+        <p><strong>Cuál elegir:</strong> la avalancha te ahorra más plata, pero la bola de nieve la termina más gente. Si te cuesta mantener el hábito, empieza con bola de nieve.</p>
         <p><strong>Ojo:</strong> pagar una deuda con 30% de interés es como ganar 30% garantizado. Casi siempre viene antes que invertir.</p>`,
     },
     {
@@ -150,19 +150,19 @@ const Tecnicas = (() => {
       nivel: 'avanzado',
       resumen: 'Cada peso que entra tiene un trabajo asignado antes del mes.',
       cuerpo: `
-        <p>En vez de gastar y ver que queda, le asignas un destino a cada peso <em>antes</em> de que empiece el mes. Ingresos menos asignaciones tiene que dar exactamente cero.</p>
+        <p>En vez de gastar y ver qué queda, le asignas un destino a cada peso <em>antes</em> de que empiece el mes. Ingresos menos asignaciones tiene que dar exactamente cero.</p>
         <p>Ojo: "cero" no significa gastarlo todo. El ahorro también es una asignación.</p>
         <ul>
-          <li>Es el método mas exigente y también el mas efectivo.</li>
+          <li>Es el método más exigente y también el más efectivo.</li>
           <li>Ideal si tus ingresos son variables: asignas al empezar el mes con lo que realmente tienes.</li>
-          <li>Reasignar durante el mes esta permitido. Ignorar el plan, no.</li>
+          <li>Reasignar durante el mes está permitido. Ignorar el plan, no.</li>
         </ul>`,
     },
     {
       emoji: '📈',
-      titulo: 'El interés compuesto (por que partir hoy)',
+      titulo: 'El interés compuesto (por qué partir hoy)',
       nivel: 'avanzado',
-      resumen: 'Tu ahorro genera ahorro. El tiempo pesa mas que el monto.',
+      resumen: 'Tu ahorro genera ahorro. El tiempo pesa más que el monto.',
       cuerpo: `
         <p>Interés compuesto significa que tus intereses también generan intereses. Al principio es aburrido; después de unos años se pone interesante.</p>
         <p><strong>Ejemplo:</strong> 50.000 al mes al 6% anual.</p>
@@ -171,7 +171,7 @@ const Tecnicas = (() => {
           <li>A los 20 años: aportaste 12.000.000 y tienes cerca de 23.000.000.</li>
           <li>A los 30 años: aportaste 18.000.000 y tienes cerca de 50.000.000.</li>
         </ul>
-        <p>El aporte se duplico entre los 10 y 20 años; el resultado se triplico. <strong>Lo que hace la diferencia es el tiempo, no el monto.</strong></p>
+        <p>El aporte se duplicó entre los 10 y 20 años; el resultado se triplicó. <strong>Lo que hace la diferencia es el tiempo, no el monto.</strong></p>
         <p class="ayuda">Los números son un ejemplo educativo con rentabilidad constante. La realidad sube y baja, y esta app no da recomendaciones de inversión.</p>`,
     },
     {
@@ -182,9 +182,9 @@ const Tecnicas = (() => {
       cuerpo: `
         <p>Una vez al mes, con calma:</p>
         <ul>
-          <li>Mira tu gráfico de categorías. Hubo alguna sorpresa?</li>
+          <li>Mira tu gráfico de categorías. ¿Hubo alguna sorpresa?</li>
           <li>Compara con el mes anterior en el gráfico de barras.</li>
-          <li>Ajusta un solo tope. Uno. El que mas se desvío.</li>
+          <li>Ajusta un solo tope. Uno. El que más se desvió.</li>
           <li>Abona a tu meta lo que hayas podido.</li>
         </ul>
         <p><strong>Sin culpa.</strong> Un mes malo es información, no un fracaso. La gente que logra ordenarse no es la que nunca se pasa: es la que vuelve a mirar.</p>`,
@@ -195,9 +195,9 @@ const Tecnicas = (() => {
   const PILDORAS = [
     'Anotar un gasto toma 5 segundos. Reconstruir el mes de memoria, imposible.',
     'Un tope que rompes todos los meses no es disciplina que falta: es un tope mal puesto.',
-    'Revisa tus suscripciones una vez al año. Es el gasto que mas se olvida.',
+    'Revisa tus suscripciones una vez al año. Es el gasto que más se olvida.',
     'Antes de una compra grande, espera 30 días. Si a los 30 días la sigues queriendo, cómprala tranquilo.',
-    'Pagar una deuda cara rinde mas que casi cualquier inversión.',
+    'Pagar una deuda cara rinde más que casi cualquier inversión.',
     'Tu fondo de emergencia no tiene que ser rentable. Tiene que estar disponible.',
     'Comparar tu mes con el anterior sirve. Compararte con otras personas, casi nunca.',
     'El sueldo que no ves, no lo gastas: automatiza la transferencia el día del pago.',

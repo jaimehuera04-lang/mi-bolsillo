@@ -60,7 +60,7 @@ const Esquema = (() => {
         nombre: '',
         ingresoEsperado: 0,
         tutorialVisto: false,
-        iaActivada: false,        // apagada de fabrica, se enciende en la Fase 6
+        iaActivada: false,        // apagada de fábrica, se enciende en la Fase 6
       },
     };
   }

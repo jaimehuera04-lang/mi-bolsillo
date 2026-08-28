@@ -20,8 +20,8 @@
 const Dialogos = (() => {
   'use strict';
 
-  // La pila guarda las ventanas abiertas. Sirve para que el boton
-  // "atrás" del celular cierre la de mas arriba y no salga de la app.
+  // La pila guarda las ventanas abiertas. Sirve para que el botón
+  // "atrás" del celular cierre la de más arriba y no salga de la app.
   const pila = [];
 
   // app.js nos pasa dos funciones para que cada ventana deje (y quite)
@@ -51,7 +51,7 @@ const Dialogos = (() => {
                    class="dialogo-monto">` : ''}
           <div class="dialogo-botones">
             ${cancelar ? `<button type="button" class="boton secundario" data-no>${esc(cancelar)}</button>` : ''}
-            <button type="button" class="boton ${peligro ? 'peligro' : ''}" data-si>${esc(aceptar)}</button>
+            <button type="button" class="botón ${peligro ? 'peligro' : ''}" data-si>${esc(aceptar)}</button>
           </div>
         </div>`;
 
@@ -61,7 +61,7 @@ const Dialogos = (() => {
       // Leer una medida obliga al navegador a calcular el estado inicial;
       // recién después la clase "abierto" se anima en vez de aparecer de
       // golpe. Usamos esto y no requestAnimationFrame porque aquel no
-      // corre si la ventana esta en segundo plano, y la ventana se
+      // corre si la ventana está en segundo plano, y la ventana se
       // quedaría invisible.
       void telon.offsetHeight;
       telon.classList.add('abierto');
@@ -85,7 +85,7 @@ const Dialogos = (() => {
       function aceptado() {
         if (!campo) return cerrar(true);
         const valor = Math.round(Number(entrada.value));
-        // sin monto valido no cerramos: le marcamos el campo y lo dejamos corregir
+        // sin monto válido no cerramos: le marcamos el campo y lo dejamos corregir
         if (!Number.isFinite(valor) || valor <= 0) {
           entrada.classList.add('con-error');
           entrada.focus();
@@ -107,7 +107,7 @@ const Dialogos = (() => {
       if (entrada) entrada.addEventListener('input', () => entrada.classList.remove('con-error'));
       document.addEventListener('keydown', enTecla);
 
-      // guardamos la función de cierre por si el boton "atrás" la necesita
+      // guardamos la función de cierre por si el botón "atrás" la necesita
       cerrar.cancelar = () => cerrar(campo ? null : false);
       pila.push(cerrar);
       if (alAbrir) alAbrir(cerrar.cancelar);
@@ -116,7 +116,7 @@ const Dialogos = (() => {
 
   return {
     /** Pregunta de si o no. Devuelve true o false. */
-    confirmar: ({ titulo, texto = '', aceptar = 'Si', cancelar = 'Cancelar', peligro = false }) =>
+    confirmar: ({ titulo, texto = '', aceptar = 'Sí', cancelar = 'Cancelar', peligro = false }) =>
       abrir({ titulo, texto, aceptar, cancelar, peligro }),
 
     /** Aviso de una sola salida. Devuelve true cuando cierran. */
@@ -131,12 +131,12 @@ const Dialogos = (() => {
     hayAbierto: () => pila.length > 0,
 
     /**
-     * app.js conecta acá su manejo del boton "atrás": le avisamos
+     * app.js conecta acá su manejo del botón "atrás": le avisamos
      * cuando se abre una ventana y cuando se cierra.
      */
     conectarHistorial(abre, cierra) { alAbrir = abre; alCerrar = cierra; },
 
-    /** Cierra la de mas arriba como si hubieran cancelado. */
+    /** Cierra la de más arriba como si hubieran cancelado. */
     cerrarUltimo() {
       if (!pila.length) return false;
       pila[pila.length - 1].cancelar();

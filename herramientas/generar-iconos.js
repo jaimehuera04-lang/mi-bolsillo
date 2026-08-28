@@ -89,7 +89,7 @@ function dibujar(tam, margenSeguro) {
       // cuerpo blanco de la billetera
       if (dentroRect(x, y, bx, by, bw, bh, radio)) {
         r = 255; g = 255; b = 255;
-        // solapa superior mas clara
+        // solapa superior más clara
         if (y < by + 60 * escala * k) { r = 236; g = 253; b = 245; }
         // broche circular
         const dcx = bx + bw - 62 * escala * k, dcy = by + bh / 2;

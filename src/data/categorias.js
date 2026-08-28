@@ -18,8 +18,8 @@ const Categorias = (() => {
     { id: 'vivienda',    emoji: '🏠', nombre: 'Arriendo/Casa',color: '#5b6b7c', tipo: 'necesidad' },
     { id: 'servicios',   emoji: '💡', nombre: 'Cuentas',      color: '#38a3c9', tipo: 'necesidad' },
     { id: 'salud',       emoji: '💊', nombre: 'Salud',        color: '#43b5a0', tipo: 'necesidad' },
-    { id: 'educacion',   emoji: '📚', nombre: 'Educacion',    color: '#7c5cd6', tipo: 'necesidad' },
-    { id: 'ocio',        emoji: '🎬', nombre: 'Entretencion', color: '#c455a5', tipo: 'deseo' },
+    { id: 'educacion',   emoji: '📚', nombre: 'Educación',    color: '#7c5cd6', tipo: 'necesidad' },
+    { id: 'ocio',        emoji: '🎬', nombre: 'Entretención', color: '#c455a5', tipo: 'deseo' },
     { id: 'ropa',        emoji: '👕', nombre: 'Ropa',         color: '#d96a8a', tipo: 'deseo' },
     { id: 'suscripcion', emoji: '📱', nombre: 'Suscripciones',color: '#6f7fd6', tipo: 'deseo' },
     // Las cuotas y las deudas son obligaciones, no ahorro: van en necesidad.

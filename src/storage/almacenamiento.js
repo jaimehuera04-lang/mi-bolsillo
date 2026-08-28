@@ -1,12 +1,12 @@
 /* ============================================================
    src/storage/almacenamiento.js
-   Leer y escribir en el dispositivo. Nada mas.
+   Leer y escribir en el dispositivo. Nada más.
    No calcula (eso es /src/core) y no dibuja (eso es /src/ui).
 
    Lo delicado de este archivo es el arranque, porque es el único
    momento en que se pueden perder datos. El orden es siempre:
      1. leer lo que hay
-     2. si esta viejo, GUARDAR UN RESPALDO
+     2. si está viejo, GUARDAR UN RESPALDO
      3. migrar en memoria
      4. escribir el resultado de una sola vez
    Si el paso 4 falla, lo viejo sigue intacto donde estaba.
@@ -51,7 +51,7 @@ const Almacenamiento = (() => {
     const ok = escribirCrudo(Esquema.LLAVE, JSON.stringify(estado));
     if (!ok) {
       arranque.error = 'No pudimos guardar en este dispositivo. '
-        + 'Suele pasar en modo incognito o cuando la memoria del navegador esta llena. '
+        + 'Suele pasar en modo incógnito o cuando la memoria del navegador está llena. '
         + 'Descarga una copia de seguridad antes de cerrar.';
     }
     return ok;
@@ -63,7 +63,7 @@ const Almacenamiento = (() => {
 
   /* ---------- Arranque ---------- */
   function cargar() {
-    // 1. Buscamos primero la llave actual; si no esta, la del esquema 1.
+    // 1. Buscamos primero la llave actual; si no está, la del esquema 1.
     let crudo = leerCrudo(Esquema.LLAVE);
     let veniaDeLlaveVieja = false;
 
@@ -80,8 +80,8 @@ const Almacenamiento = (() => {
       return estado;
     }
 
-    // 3. Leemos. Si el JSON esta roto NO borramos nada: dejamos el texto
-    //    donde esta para poder rescatarlo a mano y partimos de cero.
+    // 3. Leemos. Si el JSON está roto NO borramos nada: dejamos el texto
+    //    donde está para poder rescatarlo a mano y partimos de cero.
     let guardado;
     try {
       guardado = JSON.parse(crudo);
@@ -116,8 +116,8 @@ const Almacenamiento = (() => {
         arranque.hasta = r.hasta;
         guardar();                       // se escribe entero, de una sola vez
         if (veniaDeLlaveVieja) {
-          // La llave antigua se deja donde esta hasta la próxima apertura:
-          // si algo salio mal, todavía se puede recuperar a mano.
+          // La llave antigua se deja donde está hasta la próxima apertura:
+          // si algo salió mal, todavía se puede recuperar a mano.
         }
       } catch (e) {
         console.error('Fallo la migración.', e);
@@ -163,7 +163,7 @@ const Almacenamiento = (() => {
   const respaldoPrevio = () => leerCrudo(Esquema.LLAVE_RESPALDO);
 
   /**
-   * Restaura un archivo. Valida antes de tocar nada y lo pasa por la
+   * Restaura un archivo. Válida antes de tocar nada y lo pasa por la
    * misma cadena de migraciones que los datos locales, para que un
    * respaldo de hace seis meses entre igual de bien que uno de ayer.
    */
@@ -178,7 +178,7 @@ const Almacenamiento = (() => {
       throw new Error('Ese archivo no es un respaldo de Mi Bolsillo.');
     }
     if (!Array.isArray(entrante.movimientos)) {
-      throw new Error('Ese archivo no tiene la lista de movimientos, así que no es un respaldo valido.');
+      throw new Error('Ese archivo no tiene la lista de movimientos, así que no es un respaldo válido.');
     }
 
     const r = Migraciones.aplicar(entrante);   // tira error si viene del futuro

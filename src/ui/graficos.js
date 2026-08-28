@@ -65,7 +65,7 @@ const Graficos = (() => {
         </text>
         ${principal ? `<text x="${centro}" y="${centro + 28}" text-anchor="middle"
               font-size="9.5" style="fill:var(--texto-suave)">
-          Lo mas alto: ${esc(principal.nombre)}</text>` : ''}
+          Lo más alto: ${esc(principal.nombre)}</text>` : ''}
       </svg>
       <div class="leyenda">
         ${visibles.map(d => `
@@ -132,8 +132,8 @@ const Graficos = (() => {
       <svg class="grafico" viewBox="0 0 ${A} ${H}" style="max-height:190px" role="img"
            aria-label="Ingresos y gastos de los últimos meses">${cuerpo}</svg>
       <div class="leyenda">
-        <span class="item"><span class="punto" style="background:var(--verde)"></span>Entro</span>
-        <span class="item"><span class="punto" style="background:var(--rojo)"></span>Salio</span>
+        <span class="item"><span class="punto" style="background:var(--verde)"></span>Entró</span>
+        <span class="item"><span class="punto" style="background:var(--rojo)"></span>Salió</span>
       </div>`;
   }
 
