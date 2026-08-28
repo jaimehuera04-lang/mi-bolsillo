@@ -85,9 +85,9 @@ const Nube = (() => {
 
     if (!url) return { ok: false, mensaje: 'Falta la dirección del proyecto.' };
     if (!apikey) return { ok: false, mensaje: 'Falta la llave pública.' };
-    if (/^ey/.test(apikey) === false && !/localhost/.test(url)) {
-      return { ok: false, mensaje: 'Esa no parece la llave. La correcta es larga y empieza con "eyJ".' };
-    }
+
+    const revision = revisarLlave(apikey, url);
+    if (revision) return revision;
 
     // 1. ¿Responde el proyecto y acepta la llave?
     let respuesta;
@@ -123,6 +123,61 @@ const Nube = (() => {
     }
 
     return { ok: true, url, llavePublica: apikey };
+  }
+
+  /**
+   * Se fija en la llave ANTES de mandarla a ninguna parte.
+   *
+   * Supabase tiene dos generaciones de llaves y las dos sirven:
+   *   - las viejas son un JWT y empiezan con "eyJ" (dicen "anon public");
+   *   - las nuevas empiezan con "sb_publishable_".
+   *
+   * Lo que NO puede pasar es que alguien pegue la llave secreta: esa se
+   * salta las reglas de seguridad de la tabla y, en una app que vive en
+   * el navegador, le abriría los datos a cualquiera. Por eso la
+   * reconocemos y la rechazamos antes de guardarla.
+   *
+   * Devuelve null si la llave se ve bien, o el error si no.
+   */
+  function revisarLlave(apikey, url) {
+    if (apikey.startsWith('sb_secret_')) {
+      return {
+        ok: false,
+        mensaje: 'Esa es la llave secreta. En una app que corre en el navegador le abriría '
+          + 'tus datos a cualquiera. Usa la que dice "publishable" o "anon public".',
+      };
+    }
+
+    // Las llaves viejas son un JWT: tres partes separadas por punto, y
+    // en la del medio viene escrito para qué rol sirve.
+    if (apikey.startsWith('ey')) {
+      const partes = apikey.split('.');
+      if (partes.length === 3) {
+        try {
+          const relleno = partes[1].replace(/-/g, '+').replace(/_/g, '/');
+          const contenido = JSON.parse(atob(relleno + '==='.slice((relleno.length + 3) % 4)));
+          if (contenido && contenido.role === 'service_role') {
+            return {
+              ok: false,
+              mensaje: 'Esa es la llave "service_role", la que se salta todas las reglas de '
+                + 'seguridad. Nunca va en una app. Usa la que dice "anon public".',
+            };
+          }
+        } catch (_) { /* si no se puede leer, que decida la prueba de verdad */ }
+      }
+      return null;
+    }
+
+    if (apikey.startsWith('sb_publishable_')) return null;
+
+    // El simulador de pruebas usa llaves inventadas
+    if (/localhost|127\.0\.0\.1/.test(url)) return null;
+
+    return {
+      ok: false,
+      mensaje: 'Esa no parece una llave de Supabase. Las buenas empiezan con "sb_publishable_" '
+        + 'o con "eyJ".',
+    };
   }
 
   /** Guarda la conexión en este teléfono y la deja andando. */

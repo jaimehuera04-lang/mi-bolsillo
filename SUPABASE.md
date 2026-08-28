@@ -69,15 +69,21 @@ la creaste.
 
 En el menú de la izquierda: **Project Settings** (el engranaje) → **API**.
 
-De esa pantalla necesitas dos cosas:
+De esa pantalla necesitas dos cosas: la **dirección** del proyecto y la **llave pública**.
 
-| En Supabase dice | Se ve así | Va en |
+Supabase tiene dos generaciones de llaves y **las dos sirven**. Según cuándo hayas creado el
+proyecto vas a ver una u otra:
+
+| Generación | En Supabase dice | Se ve así |
 |---|---|---|
-| **Project URL** | `https://algolargo.supabase.co` | `url` |
-| **anon** `public` | una cadena larguísima que parte con `eyJ...` | `llavePublica` |
+| Nueva | **Publishable key** | `sb_publishable_...` |
+| Antigua | **anon** `public` | una cadena larguísima que parte con `eyJ...` |
 
-> ⚠️ **Nunca uses la llave que dice `service_role`.** Esa se salta las reglas de arriba y, en un
-> sitio público, le entrega tus datos a cualquiera. La que va es la que dice **anon**.
+> ⚠️ **Nunca uses la llave secreta** — la que dice `service_role` o `sb_secret_...`. Esa se
+> salta las reglas de arriba y, en un sitio público, le entrega tus datos a cualquiera.
+>
+> La app se defiende sola: reconoce las dos formas de la llave secreta (incluso lee por dentro el
+> `eyJ...` para ver qué rol trae) y **se niega a guardarla**, diciéndote por qué.
 
 ### Pégalas en la app, desde el celular
 
