@@ -460,6 +460,38 @@ create policy "cada quien actualiza lo suyo"
         </p>
       </div>
 
+      <!-- Para no tener que ir a buscar los datos a Supabase cada vez
+           que quieras usar la app en otro aparato. -->
+      <details class="tecnica" id="otroDispositivo" style="margin-top:14px" hidden>
+        <summary>
+          <span class="emoji">💻</span>
+          Usarla en otro aparato
+          <span class="flecha">&#9654;</span>
+        </summary>
+        <div class="cuerpo">
+          <p class="ayuda" style="margin-top:0">
+            Abre la app en el computador o en el otro teléfono, anda a
+            <strong>Ajustes → Conectar tu nube</strong> y pega estos dos datos. Después entra
+            con tu mismo correo y tu misma contraseña, y vas a ver lo mismo en los dos lados.
+          </p>
+
+          <label for="verUrlNube">Dirección del proyecto</label>
+          <input type="text" id="verUrlNube" readonly>
+          <button class="boton secundario chico" id="copiarUrlNube"
+                  style="width:100%; margin-top:6px">📋 Copiar la dirección</button>
+
+          <label for="verLlaveNube">Llave pública</label>
+          <input type="text" id="verLlaveNube" readonly>
+          <button class="boton secundario chico" id="copiarLlaveNube"
+                  style="width:100%; margin-top:6px">📋 Copiar la llave</button>
+
+          <p class="ayuda">
+            Esta llave es pública: va dentro de la app y cualquiera que la abra puede verla.
+            Lo que protege tus datos es tu contraseña y las reglas de tu proyecto, no ocultarla.
+          </p>
+        </div>
+      </details>
+
       <div id="zonaDesconectar" hidden>
         <button class="boton fantasma chico" id="botonDesconectarNube"
                 style="width:100%; margin-top:6px">

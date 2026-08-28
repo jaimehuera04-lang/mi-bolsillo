@@ -1619,6 +1619,22 @@
       location.reload();
     });
 
+    /** Copia un campo al portapapeles; si no se puede, lo deja seleccionado. */
+    async function copiarCampo(id, comoSeLlama) {
+      const campo = $$$(id);
+      try {
+        await navigator.clipboard.writeText(campo.value);
+        avisar(comoSeLlama + ' copiada ✅');
+      } catch (_) {
+        campo.select();
+        campo.setSelectionRange(0, 99999);   // en iPhone hace falta el rango
+        avisar('Quedó seleccionada: cópiala tú');
+      }
+    }
+
+    $$$('copiarUrlNube').addEventListener('click', () => copiarCampo('verUrlNube', 'La dirección'));
+    $$$('copiarLlaveNube').addEventListener('click', () => copiarCampo('verLlaveNube', 'La llave'));
+
     $$$('botonCopiarSql').addEventListener('click', async () => {
       const sql = $$$('bloqueSql').textContent;
       try {
@@ -2196,6 +2212,13 @@
     $$$('zonaDesconectar').hidden = !Nube.configEsDelTelefono();
     if (Nube.configEsDelTelefono()) {
       $$$('detalleProyecto').textContent = 'Conectado a ' + Nube.direccionDelProyecto();
+    }
+
+    // los datos para llevarse la conexión a otro aparato
+    $$$('otroDispositivo').hidden = !hay;
+    if (hay) {
+      $$$('verUrlNube').value = Nube.direccionDelProyecto();
+      $$$('verLlaveNube').value = Nube.llaveDelProyecto();
     }
 
     if (!hay) return;

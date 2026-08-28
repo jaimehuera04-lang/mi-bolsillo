@@ -65,6 +65,9 @@ const Nube = (() => {
 
   const direccionDelProyecto = () => conf.url || '';
 
+  /** La llave pública, para poder copiarla a otro aparato. */
+  const llaveDelProyecto = () => conf.llavePublica || '';
+
   /** Limpia la dirección: sin barra final y siempre con https. */
   function ordenarUrl(texto) {
     let url = String(texto || '').trim().replace(/\/+$/, '');
@@ -576,7 +579,7 @@ const Nube = (() => {
   }
 
   return {
-    configurada, configEsDelTelefono, direccionDelProyecto,
+    configurada, configEsDelTelefono, direccionDelProyecto, llaveDelProyecto,
     probarConexion, guardarConfig, borrarConfig,
     iniciar,
     crearCuenta, entrar, salir, recuperarClave,

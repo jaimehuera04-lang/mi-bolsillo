@@ -115,7 +115,19 @@ correo **y contraseña**:
 
 - **¿Primera vez? Crea tu cuenta** → elige una contraseña de al menos 6 caracteres.
 - Supabase te va a mandar un correo para confirmar la dirección. Ábrelo y vuelve a entrar.
-- En el otro dispositivo, entra con el mismo correo y contraseña, y tus datos aparecen.
+
+### Usarla en el computador (o en otro teléfono)
+
+La conexión se guarda en cada aparato por separado, así que hay que dárselas una vez a cada uno:
+
+1. En el aparato que ya funciona, anda a **Ajustes → Tu cuenta en la nube → Usarla en otro
+   aparato**. Ahí están la dirección y la llave, con botones para copiarlas. No tienes que
+   volver a Supabase.
+2. Abre la app en el otro aparato, **Ajustes → Conectar tu nube**, y pégalas.
+3. Entra con el mismo correo y la misma contraseña.
+
+Desde ahí los dos se mantienen solos. Si anotas en el computador, al abrir el teléfono aparece,
+y al revés.
 
 En **Ajustes → Tu cuenta en la nube** ves cómo va: *al día*, *por subir* o *no subió*, más los
 botones para forzar una subida, traer lo de la nube, o cerrar sesión.
