@@ -26,7 +26,11 @@
   --sombra:       0 2px 10px rgba(20, 35, 50, .06);
   --sombra-alta:  0 8px 28px rgba(20, 35, 50, .14);
 
-  --alto-barra-inferior: 68px;
+  /* La mide app.js al arrancar; este valor es solo el de partida */
+  --alto-barra-inferior: 62px;
+
+  /* El fondo de escritorio: lo que rodea al marco del telefono */
+  --fondo-escritorio: #dfe5ea;
 }
 
 /* Modo oscuro: se activa solo si el celular esta en modo oscuro */
@@ -40,10 +44,34 @@
     --verde-suave: #12352a;
     --rojo-suave:  #3a1f1d;
     --sombra:      0 2px 10px rgba(0, 0, 0, .3);
+    --fondo-escritorio: #090c10;
   }
 }
 
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+/* Nada de seleccionar texto arrastrando el dedo, ni del menu de
+   "copiar / compartir" al dejar el dedo apretado: eso es de paginas
+   web. En los campos donde SI se escribe, lo devolvemos.
+   touch-action: manipulation apaga el zoom al tocar dos veces. */
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+input, textarea, select, [contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* El navegador ya no maneja el scroll de la pagina: lo maneja la app.
+   Esto es lo que elimina el rebote elastico al llegar al final y el
+   gesto de "deslizar hacia abajo para recargar" de Android. */
+html, body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
 
 body {
   margin: 0;
@@ -52,9 +80,32 @@ body {
   color: var(--texto);
   font-size: 16px;
   line-height: 1.5;
-  /* respeta el "notch" y la barra de gestos del celular */
-  padding-bottom: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom));
+  touch-action: manipulation;
 }
+
+/* ---------- El marco de la app ----------
+   Ocupa la pantalla entera y no se mueve nunca. Adentro hay tres
+   piezas: el encabezado arriba, el contenido que hace scroll al
+   medio, y la barra de navegacion abajo. */
+.app {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  background: var(--fondo);
+}
+
+/* La UNICA zona que hace scroll en toda la app.
+   overscroll-behavior: contain evita que el scroll se "escape"
+   hacia la pagina cuando llegas al final de la lista. */
+.contenido {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.contenido::-webkit-scrollbar { width: 0; height: 0; display: none; }
 
 h1, h2, h3 { margin: 0 0 8px; line-height: 1.25; }
 h1 { font-size: 22px; }
@@ -64,7 +115,7 @@ p  { margin: 0 0 10px; }
 
 /* ---------- Pantalla de registro (solo la primera vez) ---------- */
 .bienvenida {
-  position: fixed; inset: 0; z-index: 100;
+  position: absolute; inset: 0; z-index: 100;
   background: linear-gradient(160deg, var(--verde), var(--verde-oscuro));
   display: flex; align-items: center; justify-content: center;
   padding: calc(env(safe-area-inset-top) + 20px) 18px calc(env(safe-area-inset-bottom) + 20px);
@@ -104,11 +155,17 @@ input.con-error:focus { outline-color: var(--rojo); }
 
 /* ---------- Encabezado ---------- */
 .cabecera {
+  flex: 0 0 auto;
+  position: relative; z-index: 5;
   padding: calc(env(safe-area-inset-top) + 18px) 18px 14px;
   background: linear-gradient(135deg, var(--verde), var(--verde-oscuro));
   color: #fff;
   border-radius: 0 0 26px 26px;
+  transition: box-shadow .22s ease;
 }
+/* Al bajar por el contenido, el encabezado levanta una sombra:
+   es la senal de que hay algo pasando por debajo. */
+.app.desplazado .cabecera { box-shadow: 0 8px 20px rgba(10, 25, 40, .22); }
 .cabecera .saludo { font-size: 14px; opacity: .9; margin: 0; }
 .cabecera .titulo { font-size: 20px; font-weight: 700; margin: 2px 0 0; }
 .cabecera-fila { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -130,9 +187,10 @@ input.con-error:focus { outline-color: var(--rojo); }
 .chip-mes button:hover { opacity: 1; }
 
 /* ---------- Contenedores ---------- */
-.pantalla { padding: 16px 16px 24px; display: none; animation: aparecer .22s ease; }
+/* El espacio de abajo es para que el boton + no tape la ultima tarjeta */
+.pantalla { padding: 16px 16px 92px; display: none; animation: aparecer .26s cubic-bezier(.2, .8, .3, 1); }
 .pantalla.activa { display: block; }
-@keyframes aparecer { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes aparecer { from { opacity: 0; transform: translateY(10px) scale(.995); } to { opacity: 1; transform: none; } }
 
 .tarjeta {
   background: var(--tarjeta);
@@ -182,8 +240,11 @@ input.con-error:focus { outline-color: var(--rojo); }
 .boton.chico      { padding: 10px 13px; font-size: 13px; width: auto; }
 
 /* ---------- Barra de navegacion inferior ---------- */
+/* Ya no va "flotando" sobre el contenido: es una pieza real del marco,
+   como la barra de pestanas de cualquier app del telefono. */
 .navegacion {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+  flex: 0 0 auto;
+  position: relative; z-index: 40;
   display: grid; grid-template-columns: repeat(5, 1fr);
   background: var(--tarjeta);
   border-top: 1px solid var(--borde);
@@ -195,13 +256,20 @@ input.con-error:focus { outline-color: var(--rojo); }
   display: flex; flex-direction: column; align-items: center; gap: 3px;
   font-size: 10.5px; font-weight: 600;
 }
-.navegacion button .icono { font-size: 20px; line-height: 1; }
+.navegacion button .icono {
+  font-size: 20px; line-height: 1;
+  transition: transform .2s cubic-bezier(.2, .85, .25, 1);
+}
 .navegacion button.activa { color: var(--verde); }
+/* el icono de la pestana en la que estas se levanta un poco: es la
+   senal chiquitita que separa una app de una barra de enlaces */
+.navegacion button.activa .icono { transform: translateY(-2px) scale(1.12); }
+.navegacion button:active .icono { transform: scale(.88); }
 
 /* ---------- Boton flotante (+) ---------- */
 .boton-flotante {
-  position: fixed; right: 18px;
-  bottom: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom) + 16px);
+  position: absolute; right: 18px;
+  bottom: calc(var(--alto-barra-inferior) + 16px);
   width: 58px; height: 58px; border-radius: 50%;
   background: var(--verde); color: #fff; border: 0;
   font-size: 30px; line-height: 1; cursor: pointer; z-index: 41;
@@ -287,18 +355,39 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--verde); out
 .rejilla-categorias button.activa { border-color: var(--verde); background: var(--verde-suave); font-weight: 700; }
 
 /* ---------- Ventana emergente (modal) ---------- */
+/* La hoja entra y sale deslizandose, como las de cualquier app. Antes
+   aparecia y desaparecia de golpe, que es lo que hace un sitio web. */
 .telon {
-  position: fixed; inset: 0; background: rgba(12, 20, 28, .5); z-index: 50;
-  display: none; align-items: flex-end; justify-content: center;
+  position: absolute; inset: 0; z-index: 50;
+  display: flex; align-items: flex-end; justify-content: center;
+  background: rgba(12, 20, 28, 0);
+  visibility: hidden;
+  transition: background .26s ease, visibility 0s linear .3s;
 }
-.telon.abierto { display: flex; }
+.telon.abierto {
+  background: rgba(12, 20, 28, .5);
+  visibility: visible;
+  transition: background .26s ease, visibility 0s;
+}
+
 .hoja {
   background: var(--tarjeta); width: 100%; max-width: 520px;
   border-radius: 24px 24px 0 0; padding: 18px 18px calc(20px + env(safe-area-inset-bottom));
-  max-height: 92vh; overflow-y: auto; animation: subir .25s ease;
+  max-height: 92%; overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  transform: translateY(101%);
+  transition: transform .3s cubic-bezier(.2, .85, .25, 1);
 }
-@keyframes subir { from { transform: translateY(100%); } to { transform: none; } }
-.hoja-agarradera { width: 42px; height: 4px; border-radius: 3px; background: var(--borde); margin: 0 auto 12px; }
+.hoja::-webkit-scrollbar { width: 0; display: none; }
+.telon.abierto .hoja { transform: none; }
+/* mientras el dedo la arrastra no queremos animacion: debe seguir al dedo */
+.hoja.arrastrando { transition: none; }
+
+.hoja-agarradera {
+  width: 42px; height: 4px; border-radius: 3px; background: var(--borde);
+  margin: 0 auto 12px;
+}
 
 /* ---------- Barras de progreso ---------- */
 .barra { height: 9px; border-radius: 6px; background: var(--borde); overflow: hidden; }
@@ -369,8 +458,8 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--verde); out
 .aviso-instalar.visible { display: flex; }
 
 .mensajito {
-  position: fixed; left: 50%; transform: translateX(-50%);
-  bottom: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom) + 84px);
+  position: absolute; left: 50%; transform: translateX(-50%);
+  bottom: calc(var(--alto-barra-inferior) + 84px);
   background: var(--texto); color: var(--fondo);
   padding: 11px 18px; border-radius: 999px; font-size: 13.5px; font-weight: 600;
   z-index: 60; opacity: 0; pointer-events: none; transition: opacity .25s ease;
@@ -380,7 +469,61 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--verde); out
 
 .fila-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-@media (min-width: 700px) {
-  .pantalla { max-width: 620px; margin: 0 auto; }
-  .cabecera > div { max-width: 620px; margin: 0 auto; }
+/* ---------- En el computador ----------
+   Una app de telefono estirada a 1400px de ancho se ve como un sitio
+   web. Asi que en pantallas grandes la dibujamos dentro de un marco
+   de telefono, centrado. Adentro funciona exactamente igual. */
+@media (min-width: 760px) and (min-height: 620px) {
+  body {
+    display: grid;
+    place-items: center;
+    background: var(--fondo-escritorio);
+  }
+  .app {
+    position: relative; inset: auto;
+    width: 400px;
+    height: min(860px, 94vh);
+    border-radius: 42px;
+    overflow: hidden;
+    box-shadow:
+      0 0 0 11px #14181d,          /* el "borde" del telefono */
+      0 0 0 12px rgba(255,255,255,.10),
+      0 34px 70px rgba(8, 16, 26, .45);
+  }
 }
+
+/* Pantallas anchas pero bajitas (un notebook acostado, por ejemplo):
+   no cabe el marco completo, asi que solo centramos y limitamos. */
+@media (min-width: 760px) and (max-height: 619px) {
+  .app { max-width: 520px; margin: 0 auto; }
+}
+
+/* ---------- Ventanas de confirmar y preguntar (dialogos.js) ----------
+   Reemplazan al confirm() y al prompt() del navegador, que salian con
+   el nombre del sitio arriba y delataban que esto era una pagina web. */
+.telon-dialogo {
+  position: absolute; inset: 0; z-index: 70;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  background: rgba(12, 20, 28, 0);
+  transition: background .18s ease;
+}
+.telon-dialogo.abierto { background: rgba(12, 20, 28, .55); }
+
+.dialogo {
+  background: var(--tarjeta); color: var(--texto);
+  width: 100%; max-width: 340px;
+  border-radius: 22px; padding: 22px 20px 18px;
+  box-shadow: var(--sombra-alta);
+  transform: scale(.92); opacity: 0;
+  transition: transform .18s cubic-bezier(.2, .8, .3, 1), opacity .18s ease;
+}
+.telon-dialogo.abierto .dialogo { transform: none; opacity: 1; }
+
+.dialogo h2 { font-size: 17px; margin: 0 0 8px; }
+.dialogo p  { font-size: 14px; color: var(--texto-suave); margin: 0; line-height: 1.5; white-space: pre-line; }
+.dialogo label { margin-top: 16px; }
+.dialogo .dialogo-monto { font-size: 22px; font-weight: 700; text-align: center; }
+
+.dialogo-botones { display: flex; gap: 10px; margin-top: 20px; }
+.dialogo-botones .boton { flex: 1; padding: 12px 10px; }

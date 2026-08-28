@@ -2,19 +2,71 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <!-- viewport-fit=cover: aprovecha toda la pantalla del celular, hasta debajo del notch -->
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+  <!-- viewport-fit=cover: aprovecha toda la pantalla del celular, hasta debajo del notch.
+       interactive-widget=resizes-content: cuando sale el teclado, la app se
+       encoge en vez de quedar tapada. Es lo que hace una app nativa. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, interactive-widget=resizes-content">
   <title>Mi Bolsillo - controla tus gastos</title>
   <meta name="description" content="App simple para llevar tus ingresos, gastos y metas de ahorro, con graficos y consejos para aprender a manejar tu plata.">
-  <meta name="theme-color" content="#10a072">
+  <!-- El color de la barra de estado del celular, para que se funda con
+       el encabezado en vez de quedar como una barra de navegador -->
+  <meta name="theme-color" content="#10a072" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0b7554" media="(prefers-color-scheme: dark)">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="iconos/icono-192.png">
   <link rel="apple-touch-icon" href="iconos/icono-192.png">
+  <!-- En iPhone: abrir sin la barra de Safari, y dejar que el encabezado
+       de la app se pinte por debajo de la hora y la bateria -->
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Mi Bolsillo">
+
+  <!-- ============================================================
+       Estilos minimos escritos aca adentro a proposito: el navegador
+       los aplica antes de bajar estilos.css, asi la app nunca muestra
+       el parpadeo blanco de "pagina cargando". Es lo que hace que
+       abrir se sienta como abrir una app y no como entrar a un sitio.
+       ============================================================ -->
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #f4f6f8; }
+    @media (prefers-color-scheme: dark) { html, body { background: #12171d; } }
+    .app { position: fixed; inset: 0; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* La pantalla de arranque: se ve desde el primer instante y se
+       desvanece sola cuando la app ya esta lista. */
+    #arranque {
+      position: absolute; inset: 0; z-index: 200;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 10px;
+      background: linear-gradient(160deg, #10a072, #0b7554);
+      color: #fff;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      transition: opacity .32s ease;
+    }
+    #arranque.listo { opacity: 0; pointer-events: none; }
+    #arranque .simbolo { font-size: 52px; line-height: 1; }
+    #arranque .nombre { font-size: 19px; font-weight: 700; letter-spacing: .2px; }
+  </style>
+
   <link rel="stylesheet" href="src/ui/estilos.css">
 </head>
 <body>
+
+<!-- ============================================================
+     .app es el marco de la aplicacion: ocupa la pantalla completa
+     y no se mueve. Adentro, lo unico que hace scroll es .contenido.
+     Gracias a eso el encabezado y la barra de abajo quedan fijos
+     como en una app de verdad, y el celular deja de hacer el rebote
+     y el "deslizar para recargar" del navegador.
+     ============================================================ -->
+<div class="app" id="app">
+
+  <!-- Pantalla de arranque. La saca app.js cuando termina de cargar. -->
+  <div id="arranque">
+    <span class="simbolo">💚</span>
+    <span class="nombre">Mi Bolsillo</span>
+  </div>
 
   <!-- ================= PANTALLA DE REGISTRO =================
        Se muestra una sola vez, la primera vez que se abre la app.
@@ -71,6 +123,9 @@
       </div>
     </div>
   </header>
+
+  <!-- La unica zona que hace scroll en toda la app -->
+  <div class="contenido" id="contenido">
 
   <!-- ================= 1. INICIO (dashboard) ================= -->
   <main class="pantalla activa" id="pantalla-inicio">
@@ -300,6 +355,8 @@
     <p class="ayuda" style="text-align:center">Mi Bolsillo · version 2.0</p>
   </main>
 
+  </div><!-- fin .contenido -->
+
   <!-- ================= BOTON + Y NAVEGACION ================= -->
   <button class="boton-flotante" id="botonAgregar" aria-label="Agregar movimiento">+</button>
 
@@ -440,6 +497,8 @@
 
   <div class="mensajito" id="mensajito"></div>
 
+</div><!-- fin .app -->
+
   <!-- El orden importa: cada archivo usa los de mas arriba.
        datos fijos -> motor de calculo -> almacenamiento -> fachada -> pantalla -->
   <script src="src/data/categorias.js"></script>
@@ -452,6 +511,7 @@
   <script src="src/storage/migraciones.js"></script>
   <script src="src/storage/almacenamiento.js"></script>
   <script src="src/datos.js"></script>
+  <script src="src/ui/dialogos.js"></script>
   <script src="src/ui/graficos.js"></script>
   <script src="src/ui/app.js"></script>
 </body>

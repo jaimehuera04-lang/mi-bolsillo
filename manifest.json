@@ -1,15 +1,36 @@
 {
+  "id": "./",
   "name": "Mi Bolsillo - control de gastos",
   "short_name": "Mi Bolsillo",
   "description": "Lleva tus ingresos, gastos y metas de ahorro con graficos simples y tecnicas para aprender a manejar tu plata.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
-  "background_color": "#f4f6f8",
+  "background_color": "#0b7554",
   "theme_color": "#10a072",
   "lang": "es-CL",
+  "dir": "ltr",
   "categories": ["finance", "productivity", "education"],
+  "launch_handler": { "client_mode": "navigate-existing" },
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Anotar un gasto",
+      "short_name": "Gasto",
+      "description": "Abre directo el formulario para anotar un gasto",
+      "url": "./index.html?accion=gasto",
+      "icons": [{ "src": "iconos/icono-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Ver mis movimientos",
+      "short_name": "Movimientos",
+      "description": "Abre la lista de lo que entro y salio",
+      "url": "./index.html?ir=movimientos",
+      "icons": [{ "src": "iconos/icono-192.png", "sizes": "192x192" }]
+    }
+  ],
   "icons": [
     {
       "src": "iconos/icono-192.png",

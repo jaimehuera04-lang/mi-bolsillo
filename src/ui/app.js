@@ -44,21 +44,179 @@
     temporizadorMensaje = setTimeout(() => caja.classList.remove('visible'), 2600);
   }
 
-  const abrirHoja  = id => $$$(id).classList.add('abierto');
-  const cerrarHoja = id => $$$(id).classList.remove('abierto');
+  /* --- Ventanas abiertas y el boton "atras" del celular ---
+     En una app, "atras" cierra lo que tengas abierto; nunca te saca a
+     la calle. Para conseguirlo llevamos una pila de lo que hay abierto
+     y una entrada de historial por cada cosa. */
+  const capas = [];            // funciones que cierran; la ultima es la de arriba
+  let atrasProgramado = false; // true cuando el "atras" lo pedimos nosotros
+  let cerrandoPorAtras = false;
+
+  /** Anota una ventana recien abierta para que "atras" la cierre. */
+  function anotarCapa(cerrar) {
+    capas.push(cerrar);
+    history.pushState({ capa: capas.length }, '');
+  }
+
+  /** La cerro el usuario con un boton: devolvemos su entrada de historial. */
+  function olvidarCapa() {
+    if (cerrandoPorAtras || !capas.length) return;
+    capas.pop();
+    atrasProgramado = true;
+    history.back();
+  }
+
+  const abrirHoja = id => {
+    $$$(id).classList.add('abierto');
+    anotarCapa(() => $$$(id).classList.remove('abierto'));
+  };
+  const cerrarHoja = id => {
+    if (!$$$(id).classList.contains('abierto')) return;
+    $$$(id).classList.remove('abierto');
+    olvidarCapa();
+  };
 
   const esMesActual = () =>
     vista.anio === hoy.getFullYear() && vista.mes === hoy.getMonth();
 
   /* ---------------- 3. Navegacion ---------------- */
-  function irA(nombre) {
+
+  // Cada pestana recuerda donde la dejaste, como en cualquier app del
+  // telefono. Volver a Inicio no te devuelve al principio de la lista.
+  const scrollDeCadaPantalla = {};
+
+  function irA(nombre, sinHistorial) {
+    const contenido = $$$('contenido');
+    const repetida = vista.pantalla === nombre;
+
+    // cada cambio de pestana deja huella, para que "atras" te devuelva
+    // a la anterior en vez de sacarte de la app
+    if (!repetida && !sinHistorial) history.pushState({ tab: nombre }, '');
+
+    // antes de cambiar, anotamos donde iba la pestana que dejamos
+    if (!repetida && vista.pantalla) scrollDeCadaPantalla[vista.pantalla] = contenido.scrollTop;
+
     vista.pantalla = nombre;
     $$('.pantalla').forEach(p => p.classList.toggle('activa', p.id === `pantalla-${nombre}`));
     $$('.navegacion button').forEach(b => b.classList.toggle('activa', b.dataset.pantalla === nombre));
     // el boton + solo tiene sentido en las pantallas de plata
     $$$('botonAgregar').style.display = ['inicio', 'movimientos'].includes(nombre) ? '' : 'none';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+
     dibujar();
+
+    // tocar la pestana en la que ya estas te sube al principio;
+    // cambiar de pestana te deja donde la habias dejado
+    contenido.scrollTop = repetida ? 0 : (scrollDeCadaPantalla[nombre] || 0);
+    marcarDesplazamiento();
+  }
+
+  /** Una vibracion cortita al tocar. Si el aparato no puede, no pasa nada. */
+  function vibrar(ms) {
+    try { navigator.vibrate && navigator.vibrate(ms); } catch (_) {}
+  }
+
+  /**
+   * Deja el boton "atras" del celular funcionando como en una app:
+   * primero cierra lo que este abierto, despues te devuelve a Inicio,
+   * y recien ahi, estando en Inicio y sin nada abierto, sale.
+   */
+  function prepararBotonAtras() {
+    history.replaceState({ tab: 'inicio' }, '');
+
+    window.addEventListener('popstate', evento => {
+      // este "atras" lo pedimos nosotros al cerrar algo: ya esta hecho
+      if (atrasProgramado) { atrasProgramado = false; return; }
+
+      // 1. hay algo abierto encima (una hoja o una ventana de confirmar)?
+      //    se cierra lo de mas arriba y nos quedamos donde estabamos
+      if (capas.length) {
+        cerrandoPorAtras = true;
+        capas.pop()();
+        cerrandoPorAtras = false;
+        return;
+      }
+
+      // 2. estabamos en otra pestana: volvemos a la anterior
+      if (evento.state && evento.state.tab) irA(evento.state.tab, true);
+
+      // 3. Inicio y nada abierto: dejamos que el celular cierre la app
+    });
+
+    // las ventanas de confirmar usan la misma pila de capas
+    Dialogos.conectarHistorial(anotarCapa, olvidarCapa);
+  }
+
+  /** Le pone sombra al encabezado cuando hay contenido pasando por debajo. */
+  function marcarDesplazamiento() {
+    $$$('app').classList.toggle('desplazado', $$$('contenido').scrollTop > 4);
+  }
+
+  /**
+   * Ajusta el marco al aparato real: mide la barra de abajo para que el
+   * boton + quede justo encima, pase lo que pase con el tamano de letra
+   * del sistema o con la barra de gestos del celular.
+   */
+  function prepararMarco() {
+    const medir = () => {
+      const alto = $('.navegacion').offsetHeight;
+      document.documentElement.style.setProperty('--alto-barra-inferior', alto + 'px');
+    };
+    medir();
+    window.addEventListener('resize', medir);
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', medir);
+
+    $$$('contenido').addEventListener('scroll', marcarDesplazamiento, { passive: true });
+    prepararArrastreDeHojas();
+
+    // Con el marco fijo, el navegador ya no acomoda solo el campo que
+    // estas llenando. Lo hacemos nosotros: al tocar un campo, lo
+    // subimos al centro de lo que quede visible sobre el teclado.
+    document.addEventListener('focusin', evento => {
+      const campo = evento.target;
+      if (!campo.matches || !campo.matches('input, select, textarea')) return;
+      setTimeout(() => campo.scrollIntoView({ block: 'center', behavior: 'smooth' }), 250);
+    });
+  }
+
+  /**
+   * Deja cerrar las hojas arrastrandolas hacia abajo con el dedo, como
+   * en cualquier app del telefono. Solo empieza a arrastrar si la hoja
+   * ya esta arriba del todo; si no, el dedo esta haciendo scroll dentro
+   * de ella y no hay que quitarselo.
+   */
+  function prepararArrastreDeHojas() {
+    $$('.hoja').forEach(hoja => {
+      let partida = null;
+      let recorrido = 0;
+
+      hoja.addEventListener('touchstart', e => {
+        if (hoja.scrollTop > 0 || e.touches.length !== 1) return;
+        partida = e.touches[0].clientY;
+        recorrido = 0;
+        hoja.classList.add('arrastrando');
+      }, { passive: true });
+
+      hoja.addEventListener('touchmove', e => {
+        if (partida === null) return;
+        recorrido = Math.max(0, e.touches[0].clientY - partida);
+        hoja.style.transform = 'translateY(' + recorrido + 'px)';
+      }, { passive: true });
+
+      const soltar = () => {
+        if (partida === null) return;
+        partida = null;
+        hoja.classList.remove('arrastrando');
+        hoja.style.transform = '';
+        // pasado el tercio de la hoja, se cierra; si no, vuelve a su sitio
+        if (recorrido > Math.min(120, hoja.offsetHeight / 3)) {
+          vibrar(6);
+          cerrarHoja(hoja.closest('.telon').id);
+        }
+      };
+
+      hoja.addEventListener('touchend', soltar);
+      hoja.addEventListener('touchcancel', soltar);
+    });
   }
 
   function cambiarMes(delta) {
@@ -696,7 +854,8 @@
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     promesaInstalacion = e;
-    $$$('avisoInstalar').classList.add('visible');
+    // si ya corre instalada no tiene sentido ofrecerle instalarla
+    if (!estaInstalada()) $$$('avisoInstalar').classList.add('visible');
   });
 
   window.addEventListener('appinstalled', () => {
@@ -714,7 +873,7 @@
 
     // Navegacion inferior
     $$('.navegacion button').forEach(b =>
-      b.addEventListener('click', () => irA(b.dataset.pantalla)));
+      b.addEventListener('click', () => { vibrar(6); irA(b.dataset.pantalla); }));
 
     // Botones internos que llevan a otra pantalla
     document.addEventListener('click', e => {
@@ -730,11 +889,11 @@
     $$$('mesSiguiente').addEventListener('click', () => cambiarMes(1));
 
     // Boton +
-    $$$('botonAgregar').addEventListener('click', abrirFormularioMovimiento);
+    $$$('botonAgregar').addEventListener('click', () => { vibrar(9); abrirFormularioMovimiento(); });
 
     // Cerrar ventanas tocando el fondo oscuro
     $$('.telon').forEach(t =>
-      t.addEventListener('click', e => { if (e.target === t) t.classList.remove('abierto'); }));
+      t.addEventListener('click', e => { if (e.target === t) cerrarHoja(t.id); }));
 
     // ---- Formulario de movimiento ----
     $$$('tipoGasto').addEventListener('click', () => fijarTipo('gasto'));
@@ -795,10 +954,15 @@
       dibujarMovimientos();
     });
 
-    $$$('listaMovimientos').addEventListener('click', e => {
+    $$$('listaMovimientos').addEventListener('click', async e => {
       const b = e.target.closest('[data-borrar]');
       if (!b) return;
-      if (!confirm('Borrar este movimiento?')) return;
+      const seguro = await Dialogos.confirmar({
+        titulo: 'Borrar este movimiento?',
+        texto: 'Deja de contar en el mes y en el saldo de su cuenta.',
+        aceptar: 'Borrar', peligro: true,
+      });
+      if (!seguro) return;
       Datos.borrarMovimiento(b.dataset.borrar);
       dibujar();
       avisar('Movimiento borrado');
@@ -836,29 +1000,44 @@
       avisar('Meta creada 🎯');
     });
 
-    $$$('listaMetas').addEventListener('click', e => {
+    $$$('listaMetas').addEventListener('click', async e => {
       const abonar  = e.target.closest('[data-abonar]');
       const retirar = e.target.closest('[data-retirar]');
       const borrar  = e.target.closest('[data-borrar-meta]');
 
       if (abonar) {
-        const monto = Number(prompt('Cuanto quieres abonar a esta meta?'));
-        if (monto > 0) {
+        const monto = await Dialogos.pedirMonto({
+          titulo: 'Abonar a esta meta',
+          etiqueta: 'Cuanto le sumas?',
+          placeholder: 'Ej: 20000',
+          aceptar: 'Abonar',
+        });
+        if (monto !== null) {
           Datos.abonarMeta(abonar.dataset.abonar, monto);
           dibujarMetas();
           avisar('Abono registrado 🐷');
         }
       }
       if (retirar) {
-        const monto = Number(prompt('Cuanto quieres retirar?'));
-        if (monto > 0) {
+        const monto = await Dialogos.pedirMonto({
+          titulo: 'Retirar de esta meta',
+          etiqueta: 'Cuanto sacas?',
+          placeholder: 'Ej: 20000',
+          aceptar: 'Retirar',
+        });
+        if (monto !== null) {
           Datos.abonarMeta(retirar.dataset.retirar, -monto);
           dibujarMetas();
           avisar('Retiro registrado');
         }
       }
       if (borrar) {
-        if (!confirm('Borrar esta meta? Lo que llevas ahorrado no se descuenta de tus movimientos.')) return;
+        const seguro = await Dialogos.confirmar({
+          titulo: 'Borrar esta meta?',
+          texto: 'Lo que llevas ahorrado no se descuenta de tus movimientos: solo desaparece la meta.',
+          aceptar: 'Borrar', peligro: true,
+        });
+        if (!seguro) return;
         Datos.borrarMeta(borrar.dataset.borrarMeta);
         dibujarMetas();
       }
@@ -914,7 +1093,7 @@
       avisar('Cuenta reactivada');
     });
 
-    $$$('botonBorrarCuenta').addEventListener('click', () => {
+    $$$('botonBorrarCuenta').addEventListener('click', async () => {
       const id = vista.cuentaEditando;
       if (!id) return;
       const usados = Datos.movimientosDeCuenta(id);
@@ -922,17 +1101,26 @@
       if (usados > 0) {
         // Si todavia queda plata adentro, decirlo antes y no despues.
         const saldo = Datos.saldoDeCuenta(id);
-        const aviso = saldo !== 0
-          ? `Esta cuenta todavia tiene ${dinero(saldo)}. Al archivarla deja de sumar a tu total de hoy, `
-            + 'aunque tus movimientos pasados quedan intactos. Si la plata se fue a otra cuenta, '
-            + 'anota primero esa movida con el boton + y despues archivala.\n\nArchivar igual?'
-          : 'Archivar esta cuenta? Deja de aparecer al anotar, pero sus movimientos siguen contando en tu historial.';
-        if (!confirm(aviso)) return;
+        const texto = saldo !== 0
+          ? `Todavia tiene ${dinero(saldo)}. Al archivarla deja de sumar a tu total de hoy, `
+            + 'aunque tus movimientos pasados quedan intactos.\n\n'
+            + 'Si esa plata se fue a otra cuenta, anota primero la movida con el boton + '
+            + 'y despues archivala.'
+          : 'Deja de aparecer al anotar, pero sus movimientos siguen contando en tu historial.';
+        const seguro = await Dialogos.confirmar({
+          titulo: 'Archivar esta cuenta?', texto, aceptar: 'Archivar',
+        });
+        if (!seguro) return;
         try { Datos.archivarCuenta(id); }
         catch (error) { avisar(error.message); return; }
         avisar('Cuenta archivada 📦');
       } else {
-        if (!confirm('Borrar esta cuenta? No tiene movimientos, asi que no se pierde nada.')) return;
+        const seguro = await Dialogos.confirmar({
+          titulo: 'Borrar esta cuenta?',
+          texto: 'No tiene movimientos, asi que no se pierde nada.',
+          aceptar: 'Borrar', peligro: true,
+        });
+        if (!seguro) return;
         try { Datos.borrarCuenta(id); }
         catch (error) { avisar(error.message); return; }
         avisar('Cuenta borrada');
@@ -949,8 +1137,13 @@
       e.target.value = '';
     });
 
-    $$$('botonEjemplo').addEventListener('click', () => {
-      if (!confirm('Esto reemplaza los movimientos del mes actual por datos de prueba. Seguimos?')) return;
+    $$$('botonEjemplo').addEventListener('click', async () => {
+      const seguro = await Dialogos.confirmar({
+        titulo: 'Cargar datos de ejemplo?',
+        texto: 'Reemplaza los movimientos del mes actual por datos de prueba, para que veas como se ve la app llena.',
+        aceptar: 'Cargar',
+      });
+      if (!seguro) return;
       Datos.cargarEjemplo();
       cargarAjustesEnFormulario();
       irA('inicio');
@@ -959,9 +1152,19 @@
 
     $$$('botonTutorial').addEventListener('click', abrirTutorial);
 
-    $$$('botonBorrarTodo').addEventListener('click', () => {
-      if (!confirm('Esto borra TODOS tus movimientos, metas y topes. No se puede deshacer.')) return;
-      if (!confirm('Seguro? Si no descargaste una copia, se pierde todo.')) return;
+    $$$('botonBorrarTodo').addEventListener('click', async () => {
+      const primera = await Dialogos.confirmar({
+        titulo: 'Borrar todos tus datos?',
+        texto: 'Se van tus movimientos, cuentas, metas y topes. No se puede deshacer.',
+        aceptar: 'Continuar', peligro: true,
+      });
+      if (!primera) return;
+      const segunda = await Dialogos.confirmar({
+        titulo: 'Ultima parada',
+        texto: 'Si no descargaste una copia desde Ajustes, esto no se recupera.',
+        aceptar: 'Borrar todo', cancelar: 'Mejor no', peligro: true,
+      });
+      if (!segunda) return;
       Datos.borrarTodo();
       cargarAjustesEnFormulario();
       irA('inicio');
@@ -1030,6 +1233,8 @@
 
   function iniciar() {
     Datos.cargar();
+    prepararMarco();
+    prepararBotonAtras();
     conectarEventos();
     actualizarSaludo();
     cargarAjustesEnFormulario();
@@ -1043,6 +1248,8 @@
     // Quien ya se registro entra directo, sin instrucciones.
     if (!Datos.estaRegistrado()) {
       mostrarRegistro();
+    } else if (atenderAtajo()) {
+      // entro por un atajo del icono: ya lo dejamos donde queria
     } else if (!Datos.obtener().ajustes.tutorialVisto) {
       setTimeout(abrirTutorial, 450);
     }
@@ -1057,6 +1264,57 @@
       window.matchMedia('(prefers-color-scheme: dark)')
         .addEventListener('change', () => dibujar());
     }
+
+    apagarArranque();
+  }
+
+  /**
+   * Saca la pantalla de arranque. La dejamos un momento minimo: un
+   * destello de 40 milisegundos se ve como un error, no como una app
+   * abriendo.
+   */
+  function apagarArranque() {
+    const arranque = $$$('arranque');
+    if (!arranque) return;
+    const yaPasado = performance.now();
+    const espera = Math.max(0, 520 - yaPasado);
+    setTimeout(() => {
+      arranque.classList.add('listo');
+      setTimeout(() => arranque.remove(), 400);
+    }, espera);
+  }
+
+  /**
+   * Atajos del icono: en el celular, dejar apretado el icono de la app
+   * muestra "Anotar un gasto" y "Ver mis movimientos". Cada uno abre la
+   * app con una marca en la direccion, y aca la atendemos.
+   * Devuelve true si venia por un atajo.
+   */
+  function atenderAtajo() {
+    const parametros = new URLSearchParams(location.search);
+    const pantalla = parametros.get('ir');
+    const accion = parametros.get('accion');
+    if (!pantalla && !accion) return false;
+
+    // Primero limpiamos la marca de la direccion, para que recargar no
+    // repita el atajo. Va antes de abrir nada: si no, borrariamos la
+    // huella que el boton "atras" necesita para cerrar la ventana.
+    history.replaceState({ tab: 'inicio' }, '', location.pathname);
+
+    if (['inicio', 'movimientos', 'metas', 'aprender', 'ajustes'].includes(pantalla)) {
+      irA(pantalla);
+    }
+    if (accion === 'gasto') {
+      fijarTipo('gasto');
+      abrirFormularioMovimiento();
+    }
+    return true;
+  }
+
+  /** true cuando la app corre instalada, fuera del navegador. */
+  function estaInstalada() {
+    return window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true;
   }
 
   document.addEventListener('DOMContentLoaded', iniciar);

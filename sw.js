@@ -8,7 +8,7 @@
    Asi el celular sabe que tiene que bajar la version nueva.
    ============================================================ */
 
-const VERSION = 'mi-bolsillo-v3';
+const VERSION = 'mi-bolsillo-v4';
 
 const ARCHIVOS = [
   './',
@@ -24,6 +24,7 @@ const ARCHIVOS = [
   './src/storage/migraciones.js',
   './src/storage/almacenamiento.js',
   './src/datos.js',
+  './src/ui/dialogos.js',
   './src/ui/graficos.js',
   './src/ui/app.js',
   './manifest.json',
