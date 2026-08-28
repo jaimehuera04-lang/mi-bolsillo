@@ -66,13 +66,39 @@ Son dos, y no hay que confundirlas:
 | | Qué es | Para qué | La app la vuelve a leer |
 |---|---|---|---|
 | **`.json`** (Ajustes → Descargar) | copia fiel del objeto guardado, con `schemaVersion` | respaldar y restaurar | **sí**, con Restaurar |
-| **`.xlsx`** (Ajustes → Descargar en Excel) | cinco hojas legibles: movimientos, cuentas, metas, topes y resumen mensual | mirar, hacer cuentas aparte, mandársela a alguien | **no**, es de ida |
+| **`.xlsx` completo** (Ajustes → Descargar en Excel) | siete hojas con gráficos: portada, movimientos, gastos por categoría, cuentas, metas, topes y resumen mensual | mirar, hacer cuentas aparte, mandársela a alguien | **no**, es de ida |
+| **`.xlsx` del mes** (el 📊 del selector de mes) | el cierre de un mes: análisis con su aspecto a mejorar, categorías, movimientos y comparación | revisar cómo cerró el mes | **no**, es de ida |
 
 `/src/ui/excel.js` escribe el `.xlsx` a mano, sin librerías: un `.xlsx` es un ZIP con XML
 adentro, así que el archivo arma el ZIP byte a byte (método *store*, sin comprimir) y genera
 el XML de cada hoja. Da montos con formato de pesos, fechas de verdad y porcentajes, no texto.
 Bajar una librería de cientos de kilobytes para esto habría roto la regla de "sin librerías
 ni compilación".
+
+### Los gráficos dentro del .xlsx
+
+Un gráfico son tres archivos que se apuntan entre sí: la hoja apunta a un *dibujo*, el dibujo
+dice en qué celdas queda pegado, y adentro va el gráfico, que **no guarda los números sino que
+apunta al rango de celdas**. Por eso, si editas la tabla en Excel, el gráfico se actualiza
+solo. Hay dos tipos: `dona` (con el porcentaje sobre cada trozo, y el color de cada categoría
+tomado de `categorias.js`, para que calce con la app) y `barras`.
+
+El orden de los elementos dentro del XML de una hoja lo exige el formato y no se puede mover:
+`dimension`, `sheetViews`, `sheetFormatPr`, `cols`, `sheetData`, `autoFilter`, `mergeCells`,
+`drawing`. Si se altera, Excel dice que el archivo está dañado.
+
+### El análisis del mes
+
+Sale del 📊 que está en el selector de mes, junto al mes al que pertenece. Su hoja *Análisis*
+trae cómo cerró el mes, la comparación con el anterior, el reparto 50/30/20 y un **aspecto a
+mejorar**.
+
+Ese aspecto **no se inventa**: es la primera alerta de `Datos.sugerir()`, el mismo motor
+determinístico que alimenta los consejos de Inicio. Si el mes no dejó ninguna alerta, en vez de
+decir "todo bien" se elige el grupo del reparto que más se alejó de su ideal y se dice con los
+números del motor (`mejorarDesdeElReparto`). Siempre con una salida concreta, como manda
+[VOZ.md](VOZ.md). Cuando el mes anterior no tiene nada anotado, la comparación muestra una raya
+y no un 0%, que parecería un dato.
 
 ## La nube
 

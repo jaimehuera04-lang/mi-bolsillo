@@ -992,12 +992,181 @@
     avisar('Copia descargada ✅');
   }
 
+  /* ---------------- 12b. Las planillas de Excel ----------------
+
+     Son dos salidas distintas:
+       - "Descargar en Excel" (Ajustes): todo lo anotado, con gráficos.
+       - "Análisis del mes" (el selector de mes): el cierre de un mes,
+         con su aspecto a mejorar.
+
+     Los dos comparten las piezas de abajo. Ningún número se calcula
+     acá: todos salen del motor, igual que en pantalla. */
+
+  const ROTULO_TIPO = {
+    ingreso: 'Ingreso', gasto: 'Gasto', transferencia: 'Movida entre cuentas',
+  };
+
+  const nombreDeCuenta = id => {
+    const c = Datos.cuentaPorId(id);
+    return c ? c.nombre : '';
+  };
+
+  /** Las columnas y filas de una lista de movimientos. */
+  function hojaDeMovimientos(nombre, lista) {
+    return {
+      nombre,
+      columnas: [
+        { titulo: 'Fecha', ancho: 12, tipo: 'fecha' },
+        { titulo: 'Mes', ancho: 16 },
+        { titulo: 'Tipo', ancho: 20 },
+        { titulo: 'Categoría', ancho: 20 },
+        { titulo: 'Monto', ancho: 14, tipo: 'pesos' },
+        { titulo: 'Sale de', ancho: 20 },
+        { titulo: 'Entra a', ancho: 20 },
+        { titulo: 'Nota', ancho: 34 },
+      ],
+      filas: [...lista]
+        .sort((a, b) => (a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : 0))
+        .map(m => {
+          const partes = String(m.fecha).split('-').map(Number);
+          return [
+            m.fecha,
+            Datos.nombreMes(partes[0], partes[1] - 1),
+            ROTULO_TIPO[m.tipo] || m.tipo,
+            m.tipo === 'transferencia' ? '' : Datos.categoriaPorId(m.categoria).nombre,
+            m.monto,
+            nombreDeCuenta(m.cuentaOrigen),
+            nombreDeCuenta(m.cuentaDestino),
+            m.nota || m.descripcion || '',
+          ];
+        }),
+    };
+  }
+
   /**
-   * Arma la planilla de Excel con todo lo anotado y la descarga.
-   * Son cinco hojas: los movimientos uno por uno, las cuentas con su
-   * saldo de hoy, las metas, los topes, y un resumen mes a mes.
-   * A diferencia de la copia de seguridad (el .json), esto es para
-   * mirar y hacer cuentas aparte: la app no lo vuelve a leer.
+   * La hoja de categorías con su gráfico de dona. El porcentaje va
+   * como número entre 0 y 1: Excel le pone el % al mostrarlo, y así
+   * se puede seguir haciendo cuentas con él.
+   */
+  function hojaDeCategorias(nombre, titulo, categorias, movimientos) {
+    const total = categorias.reduce((suma, c) => suma + c.monto, 0);
+
+    const cuenta = new Map();
+    for (const m of movimientos) {
+      cuenta.set(m.categoria, (cuenta.get(m.categoria) || 0) + 1);
+    }
+
+    const filas = categorias.map(c => {
+      const veces = cuenta.get(c.id) || 0;
+      return [
+        (c.emoji ? c.emoji + ' ' : '') + c.nombre,
+        c.monto,
+        total > 0 ? c.monto / total : 0,
+        veces,
+        veces > 0 ? Math.round(c.monto / veces) : 0,
+      ];
+    });
+
+    const ultimaFila = filas.length + 1;
+
+    return {
+      nombre,
+      columnas: [
+        { titulo: 'Categoría', ancho: 24 },
+        { titulo: 'Total', ancho: 15, tipo: 'pesos' },
+        { titulo: 'Del total', ancho: 11, tipo: 'porcentaje' },
+        { titulo: 'Veces', ancho: 9, tipo: 'numero' },
+        { titulo: 'Promedio', ancho: 15, tipo: 'pesos' },
+      ],
+      filas,
+      graficos: filas.length ? [{
+        tipo: 'dona',
+        titulo,
+        categorias: 'A2:A' + ultimaFila,
+        valores: 'B2:B' + ultimaFila,
+        nombreSerie: 'B1',
+        colores: categorias.map(c => c.color),
+        cacheCategorias: categorias.map(c => (c.emoji ? c.emoji + ' ' : '') + c.nombre),
+        cacheValores: categorias.map(c => c.monto),
+        ancla: { columna: 6, fila: 0 },
+        ancho: 10, alto: Math.max(16, filas.length + 4),
+      }] : [],
+    };
+  }
+
+  /** La hoja de mes a mes con su gráfico de barras. */
+  function hojaResumenMensual(nombre, historial) {
+    const filas = historial.map(m => [
+      Datos.nombreMes(m.anio, m.mes),
+      m.ingresos, m.gastos, m.saldo,
+      m.tasaAhorro / 100, m.cantidad,
+    ]);
+    const ultimaFila = filas.length + 1;
+
+    return {
+      nombre,
+      columnas: [
+        { titulo: 'Mes', ancho: 18 },
+        { titulo: 'Entró', ancho: 15, tipo: 'pesos' },
+        { titulo: 'Salió', ancho: 15, tipo: 'pesos' },
+        { titulo: 'Diferencia', ancho: 15, tipo: 'pesos' },
+        { titulo: 'Tasa de ahorro', ancho: 15, tipo: 'porcentaje' },
+        { titulo: 'Movimientos', ancho: 13, tipo: 'numero' },
+      ],
+      filas,
+      graficos: filas.length ? [{
+        tipo: 'barras',
+        titulo: 'Lo que entró y lo que salió, mes a mes',
+        categorias: 'A2:A' + ultimaFila,
+        cacheCategorias: historial.map(m => Datos.nombreMes(m.anio, m.mes)),
+        series: [
+          {
+            ref: 'B2:B' + ultimaFila, nombreRef: 'B1', nombre: 'Entró',
+            color: '#10a072', cache: historial.map(m => m.ingresos),
+          },
+          {
+            ref: 'C2:C' + ultimaFila, nombreRef: 'C1', nombre: 'Salió',
+            color: '#e2564d', cache: historial.map(m => m.gastos),
+          },
+        ],
+        ancla: { columna: 7, fila: 0 },
+        ancho: 13, alto: Math.max(18, filas.length + 4),
+      }] : [],
+    };
+  }
+
+  /**
+   * El reparto 50/30/20, en filas listas para una hoja.
+   * El nombre va corto a propósito: es lo que después aparece en la
+   * leyenda del gráfico de dona, y ahí un nombre largo no se lee.
+   * La explicación va en su propia columna.
+   */
+  function filasDeReparto(reparto) {
+    return [
+      ['Necesidades', reparto.necesidades.monto, reparto.necesidades.pct / 100, 0.5,
+        'Arriendo, comida, transporte, cuentas, salud'],
+      ['Gustos', reparto.deseos.monto, reparto.deseos.pct / 100, 0.3,
+        'Salidas, ropa, delivery, streaming'],
+      ['Para ti', reparto.ahorro.monto, reparto.ahorro.pct / 100, 0.2,
+        'Ahorro, fondo de emergencia, pagar deudas'],
+    ];
+  }
+
+  /** Las cuatro filas del reparto listas para pegar en una hoja. */
+  const bloqueDeReparto = reparto => [
+    [['Grupo', 'subtitulo'], ['Monto', 'subtitulo'], ['Tuyo', 'subtitulo'],
+     ['Ideal', 'subtitulo'], ['Qué entra acá', 'subtitulo']],
+    ...filasDeReparto(reparto).map(f => [
+      f[0], [f[1], 'pesos'], [f[2], 'porcentaje'], [f[3], 'porcentaje'], f[4],
+    ]),
+  ];
+
+  /* ---------------- La planilla completa ---------------- */
+
+  /**
+   * Todo lo anotado, en siete hojas y con gráficos. A diferencia de
+   * la copia de seguridad (el .json), esto es para mirar y hacer
+   * cuentas aparte: la app no lo vuelve a leer.
    */
   function exportarExcel() {
     const estado = Datos.obtener();
@@ -1008,38 +1177,59 @@
       return;
     }
 
-    const nombreCuenta = id => {
-      const c = Datos.cuentaPorId(id);
-      return c ? c.nombre : '';
-    };
-    const ROTULO_TIPO = { ingreso: 'Ingreso', gasto: 'Gasto', transferencia: 'Movida entre cuentas' };
+    const r = Datos.resumenDelMes(vista.anio, vista.mes);
+    const reparto = Datos.reparto503020(vista.anio, vista.mes);
+    const mesActual = Datos.nombreMes(vista.anio, vista.mes);
+    const saldos = Datos.saldosDeCuentas();
 
-    // ---- Hoja 1: cada movimiento, del más nuevo al más viejo ----
-    const hojaMovimientos = {
-      nombre: 'Movimientos',
-      columnas: [
-        { titulo: 'Fecha', ancho: 12, tipo: 'fecha' },
-        { titulo: 'Tipo', ancho: 20 },
-        { titulo: 'Categoría', ancho: 20 },
-        { titulo: 'Monto', ancho: 14, tipo: 'pesos' },
-        { titulo: 'Sale de', ancho: 20 },
-        { titulo: 'Entra a', ancho: 20 },
-        { titulo: 'Nota', ancho: 34 },
+    // ---- Hoja 1: la portada ----
+    const portada = {
+      nombre: 'Resumen',
+      sinEncabezado: true, sinCuadricula: true,
+      columnas: [{ ancho: 34 }, { ancho: 18 }, { ancho: 12 }, { ancho: 12 }, { ancho: 44 }],
+      combinar: ['A1:E1'],
+      altoDeFila: { 0: 26 },
+      filas: [
+        [['Mi Bolsillo · todos tus datos', 'titulo']],
+        ['Planilla generada el', [Datos.hoyISO(), 'fecha']],
+        [],
+        [['Hoy', 'subtitulo']],
+        ['Lo que tienes menos lo que debes', [Datos.patrimonio(), 'pesosGrande']],
+        ['Cuentas activas', [saldos.length, 'numero']],
+        ['Movimientos anotados en total', [movimientos.length, 'numero']],
+        [],
+        [[mesActual, 'subtitulo']],
+        ['Entró', [r.ingresos, 'pesos']],
+        ['Salió', [r.gastos, 'pesos']],
+        ['Diferencia', [r.saldo, 'pesos']],
+        ['Tasa de ahorro', [r.tasaAhorro / 100, 'porcentaje']],
+        ['Movimientos del mes', [r.cantidad, 'numero']],
+        [],
+        [['Tu reparto del mes', 'subtitulo']],
+        ...bloqueDeReparto(reparto),
       ],
-      filas: [...movimientos]
-        .sort((a, b) => (a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : 0))
-        .map(m => [
-          m.fecha,
-          ROTULO_TIPO[m.tipo] || m.tipo,
-          m.tipo === 'transferencia' ? '' : Datos.categoriaPorId(m.categoria).nombre,
-          m.monto,
-          nombreCuenta(m.cuentaOrigen),
-          nombreCuenta(m.cuentaDestino),
-          m.nota || m.descripcion || '',
-        ]),
+      graficos: r.gastos > 0 ? [{
+        tipo: 'dona',
+        titulo: 'Tu reparto de ' + mesActual,
+        categorias: 'A18:A20',
+        valores: 'B18:B20',
+        colores: ['#3b7dd8', '#e8a33d', '#10a072'],
+        cacheCategorias: ['Necesidades', 'Gustos', 'Para ti'],
+        cacheValores: [reparto.necesidades.monto, reparto.deseos.monto, reparto.ahorro.monto],
+        ancla: { columna: 5, fila: 2 }, ancho: 9, alto: 16,
+      }] : [],
     };
 
-    // ---- Hoja 2: dónde está la plata hoy ----
+    // ---- Hoja 3: en qué se te fue ----
+    const categorias = Datos.gastosPorCategoria(vista.anio, vista.mes);
+    const delMes = Datos.movimientosDelMes(vista.anio, vista.mes);
+    const hojaCategorias = hojaDeCategorias(
+      'Gastos por categoría',
+      'En qué se te fue en ' + mesActual,
+      categorias, delMes
+    );
+
+    // ---- Hoja 4: dónde está la plata hoy ----
     const hojaCuentas = {
       nombre: 'Cuentas',
       columnas: [
@@ -1047,6 +1237,7 @@
         { titulo: 'Tipo', ancho: 22 },
         { titulo: 'Saldo inicial', ancho: 16, tipo: 'pesos' },
         { titulo: 'Saldo hoy', ancho: 16, tipo: 'pesos' },
+        { titulo: 'Movimientos', ancho: 13, tipo: 'numero' },
         { titulo: 'Estado', ancho: 14 },
       ],
       filas: (estado.cuentas || []).map(c => [
@@ -1054,11 +1245,12 @@
         Datos.tipoCuenta(c.tipo).nombre,
         c.saldoInicial,
         Datos.saldoDeCuenta(c.id),
+        Datos.movimientosDeCuenta(c.id),
         c.activa === false ? 'Archivada' : 'Activa',
       ]),
     };
 
-    // ---- Hoja 3: metas de ahorro ----
+    // ---- Hoja 5: metas ----
     const hojaMetas = {
       nombre: 'Metas',
       columnas: [
@@ -1074,13 +1266,12 @@
         m.montoObjetivo,
         m.montoActual,
         Math.max(0, m.montoObjetivo - m.montoActual),
-        // el porcentaje va de 0 a 1: Excel le pone el % al mostrarlo
         m.montoObjetivo > 0 ? Math.min(1, m.montoActual / m.montoObjetivo) : 0,
         m.fechaObjetivo || '',
       ]),
     };
 
-    // ---- Hoja 4: topes por categoría ----
+    // ---- Hoja 6: topes ----
     const topes = Datos.estadoPresupuestos(vista.anio, vista.mes);
     const hojaTopes = {
       nombre: 'Topes',
@@ -1089,46 +1280,239 @@
         { titulo: 'Tope del mes', ancho: 16, tipo: 'pesos' },
         { titulo: 'Gastado', ancho: 16, tipo: 'pesos' },
         { titulo: 'Queda', ancho: 16, tipo: 'pesos' },
+        { titulo: 'Usado', ancho: 11, tipo: 'porcentaje' },
       ],
       filas: topes.map(t => [
         (t.emoji ? t.emoji + ' ' : '') + t.nombre,
-        t.tope,
-        t.usado,
-        t.tope - t.usado,
+        t.tope, t.usado, t.tope - t.usado,
+        t.tope > 0 ? t.usado / t.tope : 0,
       ]),
     };
 
-    // ---- Hoja 5: los últimos 12 meses ----
-    const hojaResumen = {
-      nombre: 'Resumen mensual',
-      columnas: [
-        { titulo: 'Mes', ancho: 18 },
-        { titulo: 'Entró', ancho: 16, tipo: 'pesos' },
-        { titulo: 'Salió', ancho: 16, tipo: 'pesos' },
-        { titulo: 'Diferencia', ancho: 16, tipo: 'pesos' },
-        { titulo: 'Tasa de ahorro', ancho: 16, tipo: 'porcentaje' },
-        { titulo: 'Movimientos', ancho: 14, tipo: 'numero' },
-      ],
-      filas: Datos.historialMeses(vista.anio, vista.mes, 12).map(m => [
-        Datos.nombreMes(m.anio, m.mes),
-        m.ingresos,
-        m.gastos,
-        m.saldo,
-        m.tasaAhorro / 100,
-        m.cantidad,
-      ]),
+    const hojas = [
+      portada,
+      hojaDeMovimientos('Movimientos', movimientos),
+      hojaCategorias,
+      hojaCuentas,
+      hojaMetas,
+      hojaTopes,
+      hojaResumenMensual('Resumen mensual', Datos.historialMeses(vista.anio, vista.mes, 12)),
+    ];
+
+    entregarPlanilla(hojas, `mi-bolsillo-${Datos.hoyISO()}.xlsx`, 'Planilla descargada 📊');
+  }
+
+  /* ---------------- El análisis de un mes ---------------- */
+
+  /**
+   * El cierre de un mes: cómo te fue, cómo cambió respecto del mes
+   * anterior, y qué conviene mirar.
+   *
+   * El "aspecto a mejorar" NO lo inventa esta función: sale de
+   * Datos.sugerir(), el mismo motor determinístico que alimenta los
+   * consejos de la pantalla de Inicio. Si no hay ninguna alerta, se
+   * dice que no la hay en vez de inventar una.
+   */
+  function exportarAnalisisDelMes() {
+    const anio = vista.anio;
+    const mes = vista.mes;
+    const nombre = Datos.nombreMes(anio, mes);
+
+    const delMes = Datos.movimientosDelMes(anio, mes);
+    if (!delMes.length) {
+      avisar('En ' + nombre + ' no hay nada anotado todavía');
+      return;
+    }
+
+    const r = Datos.resumenDelMes(anio, mes);
+    const reparto = Datos.reparto503020(anio, mes);
+    const categorias = Datos.gastosPorCategoria(anio, mes);
+    const avisos = Datos.sugerir(anio, mes);
+    const hormiga = Datos.gastosHormiga(anio, mes);
+
+    // el mes anterior, para poder comparar
+    const anterior = new Date(anio, mes - 1, 1);
+    const rAnterior = Datos.resumenDelMes(anterior.getFullYear(), anterior.getMonth());
+    const nombreAnterior = Datos.nombreMes(anterior.getFullYear(), anterior.getMonth());
+    // sin mes anterior con datos no hay con qué comparar: mejor una
+    // raya que un 0% que parece un dato
+    const hayAnterior = rAnterior.cantidad > 0;
+    const variacion = (ahora, antes) =>
+      (hayAnterior && antes > 0) ? [(ahora - antes) / antes, 'porcentaje'] : '—';
+    const siHay = (valor, tipo) => (hayAnterior ? [valor, tipo] : '—');
+
+    // Lo que hay que mejorar es la primera alerta del motor. Si el mes
+    // no dejó ninguna, igual hay algo que mirar: el grupo del reparto
+    // que más se pasó de su ideal. No inventamos nada, solo elegimos
+    // cuál de los números que ya calculó el motor conviene mostrar.
+    const alertas = avisos.filter(a => a.tipo === 'alerta');
+    const loBueno = avisos.find(a => a.tipo === 'bien') || null;
+    const aMejorar = alertas[0] || mejorarDesdeElReparto(reparto, categorias);
+
+    const filas = [
+      [['Análisis de ' + nombre, 'titulo']],
+      ['Generado el', [Datos.hoyISO(), 'fecha']],
+      [],
+
+      [['Cómo te fue', 'subtitulo']],
+      [['', 'texto'], ['Este mes', 'subtitulo'], [nombreAnterior, 'subtitulo'],
+       ['Cambio', 'subtitulo']],
+      ['Entró', [r.ingresos, 'pesos'], siHay(rAnterior.ingresos, 'pesos'),
+        variacion(r.ingresos, rAnterior.ingresos)],
+      ['Salió', [r.gastos, 'pesos'], siHay(rAnterior.gastos, 'pesos'),
+        variacion(r.gastos, rAnterior.gastos)],
+      ['Diferencia', [r.saldo, 'pesos'], siHay(rAnterior.saldo, 'pesos'), ''],
+      ['Tasa de ahorro', [r.tasaAhorro / 100, 'porcentaje'],
+        siHay(rAnterior.tasaAhorro / 100, 'porcentaje'), ''],
+      ['Movimientos anotados', [r.cantidad, 'numero'], siHay(rAnterior.cantidad, 'numero'), ''],
+      [],
+
+      [['Tu reparto del mes', 'subtitulo']],
+      ...bloqueDeReparto(reparto),
+      [],
+
+      [['Aspecto a mejorar', 'subtitulo']],
+    ];
+
+    filas.push([[aMejorar.titulo, 'destacado']]);
+    filas.push([[aMejorar.texto, 'parrafo']]);
+    filas.push([]);
+
+    // el resto de lo que detectó el motor, sin repetir lo ya dicho
+    const otros = avisos.filter(a => a !== aMejorar && a !== loBueno);
+    if (otros.length) {
+      filas.push([['Lo demás que vale la pena mirar', 'subtitulo']]);
+      for (const a of otros) {
+        filas.push([[a.titulo, 'destacado']]);
+        filas.push([[a.texto, 'parrafo']]);
+      }
+      filas.push([]);
+    }
+
+    if (hormiga) {
+      filas.push([['Gastos hormiga', 'subtitulo']]);
+      filas.push(['Compras chicas', [hormiga.cantidad, 'numero']]);
+      filas.push(['Promedio de cada una', [hormiga.promedio, 'pesos']]);
+      filas.push(['Todas juntas suman', [hormiga.total, 'pesos']]);
+      filas.push([]);
+    }
+
+    if (loBueno) {
+      filas.push([['Lo que sí va bien', 'subtitulo']]);
+      filas.push([[loBueno.titulo, 'destacado']]);
+      filas.push([[loBueno.texto, 'parrafo']]);
+    }
+
+    // Los textos largos ocupan la fila entera y necesitan altura, si no
+    // quedan cortados. Como no sabemos de antemano en qué fila cae cada
+    // uno, lo resolvemos recorriendo lo ya armado.
+    const altoDeFila = { 0: 26 };
+    const combinar = ['A1:E1'];
+    filas.forEach((f, i) => {
+      const tipo = (f.length === 1 && Array.isArray(f[0])) ? f[0][1] : null;
+      if (tipo !== 'parrafo' && tipo !== 'destacado') return;
+      const numeroDeFila = i + 1;                 // sin encabezado, la fila 1 es la primera
+      combinar.push('A' + numeroDeFila + ':E' + numeroDeFila);
+      // el ancho total ronda los 120 caracteres por línea
+      if (tipo === 'parrafo') {
+        const largo = String(f[0][0]).length;
+        altoDeFila[i] = Math.min(90, Math.max(30, Math.ceil(largo / 118) * 15 + 6));
+      } else {
+        altoDeFila[i] = 22;
+      }
+    });
+
+    const hojaAnalisis = {
+      nombre: 'Análisis',
+      sinEncabezado: true, sinCuadricula: true,
+      columnas: [{ ancho: 34 }, { ancho: 16 }, { ancho: 16 }, { ancho: 12 }, { ancho: 44 }],
+      combinar,
+      altoDeFila,
+      filas,
     };
 
+    const hojas = [
+      hojaAnalisis,
+      hojaDeCategorias('Gastos del mes', 'En qué se te fue en ' + nombre, categorias, delMes),
+      hojaDeMovimientos('Movimientos', delMes),
+      hojaResumenMensual('Comparación', Datos.historialMeses(anio, mes, 6)),
+    ];
+
+    const claveMes = `${anio}-${String(mes + 1).padStart(2, '0')}`;
+    entregarPlanilla(hojas, `mi-bolsillo-analisis-${claveMes}.xlsx`,
+      `Análisis de ${nombre} descargado 📊`);
+  }
+
+  /**
+   * Cuando el mes no dejó ninguna alerta, igual hay algo que mirar.
+   * Elegimos el grupo del reparto que más se alejó de su ideal y lo
+   * decimos con los números del motor, más una salida concreta: nunca
+   * una advertencia sin una puerta abierta.
+   */
+  function mejorarDesdeElReparto(reparto, categorias) {
+    const mayorDeTipo = tipo => categorias
+      .filter(c => Datos.categoriaPorId(c.id).tipo === tipo)
+      .sort((a, b) => b.monto - a.monto)[0] || null;
+
+    if (reparto.deseos.pct > 32) {
+      const top = mayorDeTipo('deseo');
+      return {
+        titulo: `Los gustos se llevaron el ${Math.round(reparto.deseos.pct)}% del mes`,
+        texto: `Son ${dinero(reparto.deseos.monto)}. La regla 50/30/20 deja 30% para esto, `
+          + `así que no estás lejos, pero es la parte más fácil de mover.`
+          + (top ? ` Lo más grande fue ${top.nombre} con ${dinero(top.monto)}: ponerle un tope `
+            + `en Ajustes te avisa antes de pasarte, no después.` : ''),
+      };
+    }
+
+    if (reparto.necesidades.pct > 52) {
+      return {
+        titulo: `Tus gastos fijos se llevaron el ${Math.round(reparto.necesidades.pct)}%`,
+        texto: `Son ${dinero(reparto.necesidades.monto)} y lo sano ronda el 50%. Cuando los `
+          + `fijos aprietan, recortar en lo chico casi no alcanza: lo que mueve la aguja es `
+          + `renegociar algo grande, como el plan de celular, un seguro o una deuda cara. `
+          + `Revisa cuál de esos puedes bajar este mes.`,
+      };
+    }
+
+    if (reparto.ahorro.pct < 20 && reparto.ingresos > 0) {
+      const falta = Math.max(0, Math.round(reparto.ingresos * 0.2) - reparto.ahorro.monto);
+      return {
+        titulo: `Guardaste el ${Math.round(reparto.ahorro.pct)}% de lo que entró`,
+        texto: `Para llegar al 20% que sugiere la regla 50/30/20 te faltaron ${dinero(falta)}. `
+          + `Lo que funciona no es apretar a fin de mes: el día que te paguen, aparta esa `
+          + `cifra primero y vive con el resto.`,
+      };
+    }
+
+    const top = categorias[0];
+    if (top) {
+      return {
+        titulo: `${top.emoji} ${top.nombre} fue tu gasto más grande`,
+        texto: `${dinero(top.monto)}, el ${Math.round(top.porcentaje)}% de todo lo que gastaste. `
+          + `El mes cerró ordenado, así que esto no es una alarma: es dónde está tu palanca `
+          + `más grande si el próximo mes quieres que sobre más.`,
+      };
+    }
+
+    return {
+      titulo: 'El mes cerró sin nada que corregir',
+      texto: 'No te pasaste de ningún tope, gastaste menos de lo que entró y tu reparto quedó '
+        + 'dentro de lo sano. Lo que sigue es sostenerlo: vuelve a mirar el próximo cierre.',
+    };
+  }
+
+  /** Arma el archivo y lo entrega. Si algo falla, lo dice y no rompe. */
+  function entregarPlanilla(hojas, nombreArchivo, mensaje) {
     let archivo;
     try {
-      archivo = Excel.crear([hojaMovimientos, hojaCuentas, hojaMetas, hojaTopes, hojaResumen]);
+      archivo = Excel.crear(hojas);
     } catch (error) {
       avisar('No se pudo armar la planilla. Prueba con la copia en .json.');
       return;
     }
-
-    descargar(archivo, `mi-bolsillo-${Datos.hoyISO()}.xlsx`);
-    avisar('Planilla descargada 📊');
+    descargar(archivo, nombreArchivo);
+    avisar(mensaje);
   }
 
   /** Le pasa un archivo al navegador para que la persona lo guarde. */
@@ -1505,6 +1889,10 @@
 
     $$$('botonExportar').addEventListener('click', exportarArchivo);
     $$$('botonExcel').addEventListener('click', exportarExcel);
+    $$$('botonAnalisisMes').addEventListener('click', () => {
+      vibrar(9);
+      exportarAnalisisDelMes();
+    });
     $$$('botonImportar').addEventListener('click', () => $$$('archivoImportar').click());
     $$$('archivoImportar').addEventListener('change', e => {
       if (e.target.files[0]) importarArchivo(e.target.files[0]);
