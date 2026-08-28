@@ -555,3 +555,24 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--verde); out
 @media (prefers-color-scheme: dark) {
   .pastilla-nube.pendiente { background: #33280f; color: var(--amarillo); }
 }
+
+/* ---------- El bloque de SQL de "Conectar tu nube" ----------
+   Es de las poquísimas cosas que sí se pueden seleccionar con el dedo:
+   la persona necesita copiarlo. */
+.bloque-sql {
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 12px;
+  margin: 10px 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--texto);
+  white-space: pre;
+  overflow-x: auto;
+  max-height: 220px;
+  overflow-y: auto;
+  -webkit-user-select: text;
+  user-select: text;
+}

@@ -87,7 +87,8 @@ No hay que tocar código ni publicar nada. Abre Mi Bolsillo, anda a
 Antes de guardar nada, la app revisa dos cosas y te dice cuál falló:
 
 - que la dirección responda y acepte la llave;
-- que la tabla exista. Si te saltaste el paso 2, te lo dice con esas palabras.
+- que la tabla exista. **Si te saltaste el paso 2, la app te muestra el SQL ahí mismo**, con un
+  botón para copiarlo: no tienes que venir a buscar este archivo.
 
 Cuando ambas pasan, la conexión queda guardada en ese teléfono y la app se recarga sola,
 ya con cuenta y contraseña.

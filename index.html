@@ -387,6 +387,43 @@
              placeholder="eyJhbGciOiJIUzI1NiIs...">
       <p class="error-campo" id="errorNube" hidden></p>
 
+      <!-- Aparece solo si la prueba descubre que falta crear la tabla.
+           El SQL va acá para no mandar a nadie a buscar un archivo
+           justo cuando está trabado. -->
+      <div id="zonaSql" hidden>
+        <p class="ayuda" style="margin-top:10px">
+          Te falta el paso del SQL. Copia esto, pégalo en Supabase en
+          <strong>SQL Editor → New query</strong>, toca <strong>Run</strong>, y vuelve acá.
+          Tiene que decir <em>Success. No rows returned</em>.
+        </p>
+        <pre class="bloque-sql" id="bloqueSql">create table public.estados (
+  usuario_id      uuid primary key references auth.users on delete cascade,
+  datos           jsonb not null,
+  version_esquema int not null default 2,
+  actualizado     timestamptz not null default now()
+);
+
+alter table public.estados enable row level security;
+
+create policy "cada quien lee lo suyo"
+  on public.estados for select
+  using (auth.uid() = usuario_id);
+
+create policy "cada quien crea lo suyo"
+  on public.estados for insert
+  with check (auth.uid() = usuario_id);
+
+create policy "cada quien actualiza lo suyo"
+  on public.estados for update
+  using (auth.uid() = usuario_id)
+  with check (auth.uid() = usuario_id);</pre>
+        <button class="boton secundario" id="botonCopiarSql">📋 Copiar el SQL</button>
+        <p class="ayuda">
+          Las tres reglas del final son lo que impide que otra persona lea tus gastos.
+          No las borres.
+        </p>
+      </div>
+
       <button class="boton" id="botonConectarNube" style="margin-top:14px">
         Probar y conectar
       </button>

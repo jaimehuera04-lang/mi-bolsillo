@@ -113,9 +113,12 @@ const Nube = (() => {
       return { ok: false, mensaje: 'El proyecto responde, pero no pudimos revisar la tabla.' };
     }
     if (tabla.status === 404) {
+      // "faltaTabla" le sirve a la interfaz para mostrar el SQL ahí
+      // mismo, en vez de mandar a la persona a buscar un archivo.
       return {
         ok: false,
-        mensaje: 'Falta crear la tabla. Es el paso 2 de SUPABASE.md: pegar el SQL en el editor de Supabase.',
+        faltaTabla: true,
+        mensaje: 'Tu proyecto responde bien, pero todavía no existe la tabla donde guardar.',
       };
     }
 
