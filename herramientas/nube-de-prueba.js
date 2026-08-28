@@ -92,7 +92,15 @@ const servidor = http.createServer(async (req, res) => {
     }
     const usuario = { id: nuevoId(), correo, clave: cuerpo.password };
     usuarios.set(correo, usuario);
-    // simulamos un proyecto SIN confirmación de correo: entra al tiro
+
+    // Los proyectos nuevos de Supabase piden confirmar el correo: crean
+    // el usuario pero NO devuelven sesión. Con CONFIRMAR=1 simulamos eso,
+    // que es lo que le pasa a una persona de verdad.
+    //   CONFIRMAR=1 node herramientas/nube-de-prueba.js
+    if (process.env.CONFIRMAR) {
+      usuario.sinConfirmar = true;
+      return responder(res, 200, { user: { id: usuario.id, email: correo }, session: null });
+    }
     return responder(res, 200, sesionPara(usuario));
   }
 

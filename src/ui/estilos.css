@@ -475,7 +475,8 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--verde); out
   bottom: calc(var(--alto-barra-inferior) + 84px);
   background: var(--texto); color: var(--fondo);
   padding: 11px 18px; border-radius: 999px; font-size: 13.5px; font-weight: 600;
-  z-index: 60; opacity: 0; pointer-events: none; transition: opacity .25s ease;
+  /* 130: los avisos van sobre todo, incluida la bienvenida */
+  z-index: 130; opacity: 0; pointer-events: none; transition: opacity .25s ease;
   max-width: 90vw; text-align: center;
 }
 .mensajito.visible { opacity: 1; }
@@ -514,8 +515,14 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--verde); out
 /* ---------- Ventanas de confirmar y preguntar (dialogos.js) ----------
    Reemplazan al confirm() y al prompt() del navegador, que salian con
    el nombre del sitio arriba y delataban que esto era una página web. */
+/* z-index 120: por encima de la pantalla de bienvenida, que va en 100.
+   Esto no es un detalle de estilo. Cuando estaba en 70, las ventanas de
+   confirmar se abrían DETRÁS de la bienvenida: invisibles y sin poder
+   tocarlas. Al crear la cuenta, la app quedaba esperando para siempre un
+   toque imposible. Si alguna vez subes el z-index de .bienvenida, sube
+   también este. */
 .telon-dialogo {
-  position: absolute; inset: 0; z-index: 70;
+  position: absolute; inset: 0; z-index: 120;
   display: flex; align-items: center; justify-content: center;
   padding: 24px;
   background: rgba(12, 20, 28, 0);
