@@ -1573,6 +1573,7 @@
       const caja = $$$('errorNube');
       const mostrarError = t => { caja.textContent = t; caja.hidden = !t; };
       mostrarError('');
+      $$$('zonaSql').hidden = true;
 
       const boton = $$$('botonConectarNube');
       boton.disabled = true;
@@ -1586,7 +1587,15 @@
         boton.textContent = 'Probar y conectar';
       }
 
-      if (!r.ok) { mostrarError('⚠️ ' + r.mensaje); return; }
+      if (!r.ok) {
+        mostrarError('⚠️ ' + r.mensaje);
+        // si lo único que falta es la tabla, le mostramos el SQL acá mismo
+        if (r.faltaTabla) {
+          $$$('zonaSql').hidden = false;
+          $$$('zonaSql').scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }
+        return;
+      }
 
       Nube.guardarConfig(r.url, r.llavePublica);
       await Dialogos.avisar({
@@ -1597,6 +1606,23 @@
       });
       // recargamos para que todo arranque con la conexión nueva
       location.reload();
+    });
+
+    $$$('botonCopiarSql').addEventListener('click', async () => {
+      const sql = $$$('bloqueSql').textContent;
+      try {
+        await navigator.clipboard.writeText(sql);
+        avisar('SQL copiado ✅');
+      } catch (_) {
+        // en algunos navegadores no se puede copiar solo: lo seleccionamos
+        // para que baste con tocar "copiar"
+        const rango = document.createRange();
+        rango.selectNodeContents($$$('bloqueSql'));
+        const seleccion = window.getSelection();
+        seleccion.removeAllRanges();
+        seleccion.addRange(rango);
+        avisar('Quedó seleccionado: cópialo tú');
+      }
     });
 
     $$$('botonDesconectarNube').addEventListener('click', async () => {
