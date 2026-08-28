@@ -384,3 +384,33 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--verde); out
   .pantalla { max-width: 620px; margin: 0 auto; }
   .cabecera > div { max-width: 620px; margin: 0 auto; }
 }
+
+/* ---------- Ventanas de confirmar y preguntar (dialogos.js) ----------
+   Reemplazan al confirm() y al prompt() del navegador, que salian con
+   el nombre del sitio arriba y delataban que esto era una pagina web. */
+.telon-dialogo {
+  position: fixed; inset: 0; z-index: 70;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  background: rgba(12, 20, 28, 0);
+  transition: background .18s ease;
+}
+.telon-dialogo.abierto { background: rgba(12, 20, 28, .55); }
+
+.dialogo {
+  background: var(--tarjeta); color: var(--texto);
+  width: 100%; max-width: 340px;
+  border-radius: 22px; padding: 22px 20px 18px;
+  box-shadow: var(--sombra-alta);
+  transform: scale(.92); opacity: 0;
+  transition: transform .18s cubic-bezier(.2, .8, .3, 1), opacity .18s ease;
+}
+.telon-dialogo.abierto .dialogo { transform: none; opacity: 1; }
+
+.dialogo h2 { font-size: 17px; margin: 0 0 8px; }
+.dialogo p  { font-size: 14px; color: var(--texto-suave); margin: 0; line-height: 1.5; white-space: pre-line; }
+.dialogo label { margin-top: 16px; }
+.dialogo .dialogo-monto { font-size: 22px; font-weight: 700; text-align: center; }
+
+.dialogo-botones { display: flex; gap: 10px; margin-top: 20px; }
+.dialogo-botones .boton { flex: 1; padding: 12px 10px; }

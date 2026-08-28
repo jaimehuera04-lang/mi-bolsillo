@@ -795,10 +795,15 @@
       dibujarMovimientos();
     });
 
-    $$$('listaMovimientos').addEventListener('click', e => {
+    $$('listaMovimientos').addEventListener('click', async e => {
       const b = e.target.closest('[data-borrar]');
       if (!b) return;
-      if (!confirm('Borrar este movimiento?')) return;
+      const seguro = await Dialogos.confirmar({
+        titulo: 'Borrar este movimiento?',
+        texto: 'Deja de contar en el mes y en el saldo de su cuenta.',
+        aceptar: 'Borrar', peligro: true,
+      });
+      if (!seguro) return;
       Datos.borrarMovimiento(b.dataset.borrar);
       dibujar();
       avisar('Movimiento borrado');
@@ -836,29 +841,44 @@
       avisar('Meta creada 🎯');
     });
 
-    $$$('listaMetas').addEventListener('click', e => {
+    $$('listaMetas').addEventListener('click', async e => {
       const abonar  = e.target.closest('[data-abonar]');
       const retirar = e.target.closest('[data-retirar]');
       const borrar  = e.target.closest('[data-borrar-meta]');
 
       if (abonar) {
-        const monto = Number(prompt('Cuanto quieres abonar a esta meta?'));
-        if (monto > 0) {
+        const monto = await Dialogos.pedirMonto({
+          titulo: 'Abonar a esta meta',
+          etiqueta: 'Cuanto le sumas?',
+          placeholder: 'Ej: 20000',
+          aceptar: 'Abonar',
+        });
+        if (monto !== null) {
           Datos.abonarMeta(abonar.dataset.abonar, monto);
           dibujarMetas();
           avisar('Abono registrado 🐷');
         }
       }
       if (retirar) {
-        const monto = Number(prompt('Cuanto quieres retirar?'));
-        if (monto > 0) {
+        const monto = await Dialogos.pedirMonto({
+          titulo: 'Retirar de esta meta',
+          etiqueta: 'Cuanto sacas?',
+          placeholder: 'Ej: 20000',
+          aceptar: 'Retirar',
+        });
+        if (monto !== null) {
           Datos.abonarMeta(retirar.dataset.retirar, -monto);
           dibujarMetas();
           avisar('Retiro registrado');
         }
       }
       if (borrar) {
-        if (!confirm('Borrar esta meta? Lo que llevas ahorrado no se descuenta de tus movimientos.')) return;
+        const seguro = await Dialogos.confirmar({
+          titulo: 'Borrar esta meta?',
+          texto: 'Lo que llevas ahorrado no se descuenta de tus movimientos: solo desaparece la meta.',
+          aceptar: 'Borrar', peligro: true,
+        });
+        if (!seguro) return;
         Datos.borrarMeta(borrar.dataset.borrarMeta);
         dibujarMetas();
       }
@@ -914,7 +934,7 @@
       avisar('Cuenta reactivada');
     });
 
-    $$$('botonBorrarCuenta').addEventListener('click', () => {
+    $$('botonBorrarCuenta').addEventListener('click', async () => {
       const id = vista.cuentaEditando;
       if (!id) return;
       const usados = Datos.movimientosDeCuenta(id);
@@ -922,17 +942,26 @@
       if (usados > 0) {
         // Si todavia queda plata adentro, decirlo antes y no despues.
         const saldo = Datos.saldoDeCuenta(id);
-        const aviso = saldo !== 0
-          ? `Esta cuenta todavia tiene ${dinero(saldo)}. Al archivarla deja de sumar a tu total de hoy, `
-            + 'aunque tus movimientos pasados quedan intactos. Si la plata se fue a otra cuenta, '
-            + 'anota primero esa movida con el boton + y despues archivala.\n\nArchivar igual?'
-          : 'Archivar esta cuenta? Deja de aparecer al anotar, pero sus movimientos siguen contando en tu historial.';
-        if (!confirm(aviso)) return;
+        const texto = saldo !== 0
+          ? `Todavia tiene ${dinero(saldo)}. Al archivarla deja de sumar a tu total de hoy, `
+            + 'aunque tus movimientos pasados quedan intactos.\n\n'
+            + 'Si esa plata se fue a otra cuenta, anota primero la movida con el boton + '
+            + 'y despues archivala.'
+          : 'Deja de aparecer al anotar, pero sus movimientos siguen contando en tu historial.';
+        const seguro = await Dialogos.confirmar({
+          titulo: 'Archivar esta cuenta?', texto, aceptar: 'Archivar',
+        });
+        if (!seguro) return;
         try { Datos.archivarCuenta(id); }
         catch (error) { avisar(error.message); return; }
         avisar('Cuenta archivada 📦');
       } else {
-        if (!confirm('Borrar esta cuenta? No tiene movimientos, asi que no se pierde nada.')) return;
+        const seguro = await Dialogos.confirmar({
+          titulo: 'Borrar esta cuenta?',
+          texto: 'No tiene movimientos, asi que no se pierde nada.',
+          aceptar: 'Borrar', peligro: true,
+        });
+        if (!seguro) return;
         try { Datos.borrarCuenta(id); }
         catch (error) { avisar(error.message); return; }
         avisar('Cuenta borrada');
@@ -949,8 +978,13 @@
       e.target.value = '';
     });
 
-    $$$('botonEjemplo').addEventListener('click', () => {
-      if (!confirm('Esto reemplaza los movimientos del mes actual por datos de prueba. Seguimos?')) return;
+    $$('botonEjemplo').addEventListener('click', async () => {
+      const seguro = await Dialogos.confirmar({
+        titulo: 'Cargar datos de ejemplo?',
+        texto: 'Reemplaza los movimientos del mes actual por datos de prueba, para que veas como se ve la app llena.',
+        aceptar: 'Cargar',
+      });
+      if (!seguro) return;
       Datos.cargarEjemplo();
       cargarAjustesEnFormulario();
       irA('inicio');
@@ -959,9 +993,19 @@
 
     $$$('botonTutorial').addEventListener('click', abrirTutorial);
 
-    $$$('botonBorrarTodo').addEventListener('click', () => {
-      if (!confirm('Esto borra TODOS tus movimientos, metas y topes. No se puede deshacer.')) return;
-      if (!confirm('Seguro? Si no descargaste una copia, se pierde todo.')) return;
+    $$('botonBorrarTodo').addEventListener('click', async () => {
+      const primera = await Dialogos.confirmar({
+        titulo: 'Borrar todos tus datos?',
+        texto: 'Se van tus movimientos, cuentas, metas y topes. No se puede deshacer.',
+        aceptar: 'Continuar', peligro: true,
+      });
+      if (!primera) return;
+      const segunda = await Dialogos.confirmar({
+        titulo: 'Ultima parada',
+        texto: 'Si no descargaste una copia desde Ajustes, esto no se recupera.',
+        aceptar: 'Borrar todo', cancelar: 'Mejor no', peligro: true,
+      });
+      if (!segunda) return;
       Datos.borrarTodo();
       cargarAjustesEnFormulario();
       irA('inicio');

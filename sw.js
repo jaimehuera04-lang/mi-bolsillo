@@ -24,6 +24,7 @@ const ARCHIVOS = [
   './src/storage/migraciones.js',
   './src/storage/almacenamiento.js',
   './src/datos.js',
+  './src/ui/dialogos.js',
   './src/ui/graficos.js',
   './src/ui/app.js',
   './manifest.json',
