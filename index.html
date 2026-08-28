@@ -89,28 +89,27 @@
                aria-describedby="errorCorreo">
         <p class="error-campo" id="errorCorreo" hidden></p>
 
-        <!-- La contraseña solo aparece si hay nube configurada.
-             Sin nube no existe cuenta que proteger. -->
-        <div id="bloqueClave" hidden>
-          <label for="campoClave">Tu contraseña</label>
-          <input type="password" id="campoClave" autocomplete="current-password"
-                 placeholder="Al menos 6 caracteres" aria-describedby="errorClave">
-          <p class="error-campo" id="errorClave" hidden></p>
-          <p class="ayuda" id="ayudaClave">
-            Es la llave de tus datos. Si la pierdes, te mandamos un correo para cambiarla.
-          </p>
+        <!-- Segundo paso: el código que llega al correo. Solo aparece
+             cuando ya lo pedimos, y solo si hay nube configurada. -->
+        <div id="bloqueCodigo" hidden>
+          <label for="campoCodigo">El código que te llegó</label>
+          <input type="text" id="campoCodigo" class="campo-codigo" inputmode="numeric"
+                 autocomplete="one-time-code" maxlength="6" placeholder="000000"
+                 aria-describedby="errorCodigo">
+          <p class="error-campo" id="errorCodigo" hidden></p>
+          <p class="ayuda" id="ayudaCodigo"></p>
         </div>
 
         <button class="boton" type="submit" style="margin-top:16px" id="botonEntrar">Entrar</button>
 
         <div id="opcionesCuenta" hidden>
-          <button class="boton fantasma" type="button" id="botonCambiarModo"
-                  style="width:100%; margin-top:10px">
-            ¿Primera vez? Crea tu cuenta
+          <button class="boton fantasma chico" type="button" id="botonReenviar"
+                  style="width:100%; margin-top:10px" hidden>
+            No me llegó, mándalo de nuevo
           </button>
-          <button class="boton fantasma chico" type="button" id="botonOlvideClave"
-                  style="width:100%">
-            Olvidé mi contraseña
+          <button class="boton fantasma chico" type="button" id="botonOtroCorreo"
+                  style="width:100%" hidden>
+            Usar otro correo
           </button>
         </div>
       </form>
@@ -134,11 +133,16 @@
         <p>
           <strong>☁️ Tus datos te siguen.</strong>
           Se guardan en este teléfono y también en tu propia nube. Si cambias de
-          celular, entras con tu correo y tu contraseña y está todo.
+          celular, entras con tu correo y está todo. No hay contraseña que recordar:
+          te mandamos un código de 6 números cada vez.
+        </p>
+        <p>
+          <strong>Ojo con esto:</strong> quien pueda abrir tu correo puede entrar a tus
+          cuentas. Cuida ese correo como cuidas el banco.
         </p>
         <p style="margin-bottom:0">
           Para ser exactos: los datos viajan por internet a <strong>tu</strong> proyecto y
-          se abren con tu contraseña. No es cifrado de punta a punta, así que quien
+          solo se abren desde tu cuenta. No es cifrado de punta a punta, así que quien
           administre ese proyecto —o sea, tú— puede verlos.
         </p>
       </div>
