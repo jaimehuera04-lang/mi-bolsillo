@@ -24,6 +24,8 @@
     categoria: 'comida',
     cuentaOrigen: null,
     cuentaDestino: null,
+    // 'entrar' o 'crear': en qué modo está la pantalla de bienvenida
+    modoCuenta: 'entrar',
   };
 
   /* ---------------- 2. Utilidades ---------------- */
@@ -738,7 +740,14 @@
     $$$('campoCorreo').classList.toggle('con-error', Boolean(mensaje));
   }
 
-  function enviarRegistro(evento) {
+  function mostrarErrorClave(mensaje) {
+    const caja = $$$('errorClave');
+    caja.textContent = mensaje;
+    caja.hidden = !mensaje;
+    $$$('campoClave').classList.toggle('con-error', Boolean(mensaje));
+  }
+
+  async function enviarRegistro(evento) {
     evento.preventDefault();
     const correo = $$$('campoCorreo').value.trim();
 
@@ -752,8 +761,65 @@
       $$$('campoCorreo').focus();
       return;
     }
-
     mostrarErrorCorreo('');
+
+    // Sin nube configurada, entrar es lo mismo de siempre: anotar el
+    // correo en este teléfono y seguir.
+    if (!Nube.configurada()) {
+      entrarSinNube(correo);
+      return;
+    }
+
+    const clave = $$$('campoClave').value;
+    if (clave.length < 6) {
+      mostrarErrorClave('⚠️ La contraseña necesita al menos 6 caracteres');
+      $$$('campoClave').focus();
+      return;
+    }
+    mostrarErrorClave('');
+
+    const boton = $$$('botonEntrar');
+    const textoOriginal = boton.textContent;
+    boton.disabled = true;
+    boton.textContent = vista.modoCuenta === 'crear' ? 'Creando…' : 'Entrando…';
+
+    try {
+      if (vista.modoCuenta === 'crear') {
+        const r = await Nube.crearCuenta(correo, clave);
+        if (r.confirmarCorreo) {
+          await Dialogos.avisar({
+            titulo: 'Revisa tu correo',
+            texto: 'Te mandamos un mensaje a ' + correo + ' para confirmar que la dirección '
+              + 'es tuya. Ábrelo y después vuelve acá a entrar.',
+          });
+          return;
+        }
+      } else {
+        await Nube.entrar(correo, clave);
+      }
+    } catch (error) {
+      mostrarErrorClave('⚠️ ' + error.message);
+      return;
+    } finally {
+      boton.disabled = false;
+      boton.textContent = textoOriginal;
+    }
+
+    // Ya hay sesión. Ahora hay que decidir qué datos se quedan.
+    Datos.registrar(correo);
+    await reconciliarConLaNube();
+
+    ocultarRegistro();
+    actualizarSaludo();
+    cargarAjustesEnFormulario();
+    dibujar();
+
+    const nombre = Datos.obtener().ajustes.nombre;
+    avisar(nombre ? `Bienvenido, ${nombre} 👋` : 'Bienvenido 👋');
+  }
+
+  /** El camino de siempre: sin cuenta, todo en este teléfono. */
+  function entrarSinNube(correo) {
     Datos.registrar(correo);      // esto también marca el tutorial como visto
     ocultarRegistro();
     actualizarSaludo();
@@ -761,6 +827,108 @@
 
     const nombre = Datos.obtener().ajustes.nombre;
     avisar(nombre ? `Bienvenido, ${nombre} 👋` : 'Bienvenido 👋');
+  }
+
+  /**
+   * Recién entrado, puede haber datos en los dos lados. En vez de
+   * pisar uno en silencio, le contamos a la persona qué hay en cada
+   * lado y que elija. Perder movimientos sin avisar sería imperdonable.
+   */
+  async function reconciliarConLaNube() {
+    let enLaNube = null;
+    try {
+      enLaNube = await Nube.bajar();
+    } catch (error) {
+      avisar('No pudimos leer la nube ahora. Tus datos siguen en el teléfono.');
+      return;
+    }
+
+    const locales = Datos.obtener().movimientos.length;
+    const remotos = (enLaNube && enLaNube.datos && Array.isArray(enLaNube.datos.movimientos))
+      ? enLaNube.datos.movimientos.length : 0;
+
+    // La nube está vacía: subimos lo que hay acá y listo.
+    if (!enLaNube || !enLaNube.datos) { await Nube.subirAhora(); return; }
+
+    // Este teléfono está vacío: bajamos sin preguntar, no hay nada que perder.
+    if (locales === 0) { await traerDeLaNube(true); return; }
+
+    // Hay datos en los dos lados. Que elija.
+    const quedarseConLaNube = await Dialogos.confirmar({
+      titulo: '¿Con cuáles nos quedamos?',
+      texto: 'En este teléfono hay ' + locales + (locales === 1 ? ' movimiento' : ' movimientos')
+        + ' y en tu nube hay ' + remotos + '.\n\n'
+        + 'Los que no elijas se pierden. Si tienes dudas, cancela y descarga primero '
+        + 'una copia desde Ajustes.',
+      aceptar: 'Los de la nube',
+      cancelar: 'Los de este teléfono',
+    });
+
+    if (quedarseConLaNube) await traerDeLaNube(true);
+    else await Nube.subirAhora();
+  }
+
+  /**
+   * Al abrir, la nube compara quién tiene lo más nuevo. Si los dos
+   * lados cambiaron desde la última vez, no elige sola: pregunta.
+   * No traba el arranque: corre por detrás.
+   */
+  async function revisarNubeAlAbrir() {
+    if (!Nube.configurada() || !Nube.haySesion() || !Datos.estaRegistrado()) return;
+
+    const veredicto = await Nube.revisarAlAbrir();
+
+    if (veredicto.accion === 'bajar') {
+      if (await traerDeLaNube(true)) avisar('Traído de tu nube ☁️');
+      return;
+    }
+
+    if (veredicto.accion === 'conflicto') {
+      const quedarseConLaNube = await Dialogos.confirmar({
+        titulo: 'Hay dos versiones',
+        texto: 'Anotaste cosas en este teléfono y también en otro lado desde la última vez '
+          + 'que se pusieron de acuerdo.\n\n'
+          + 'Acá hay ' + veredicto.movimientosAca + ' y en tu nube hay '
+          + veredicto.movimientosAlla + '. Los que no elijas se pierden.',
+        aceptar: 'Los de la nube',
+        cancelar: 'Los de este teléfono',
+      });
+
+      if (quedarseConLaNube) {
+        if (await traerDeLaNube(true)) avisar('Traído de tu nube ☁️');
+      } else {
+        // subirAhora se encarga de dejar la marca al día
+        await Nube.subirAhora();
+        avisar('Guardado en tu nube ☁️');
+      }
+    }
+  }
+
+  /** Reemplaza lo del teléfono por lo que hay en la nube. */
+  async function traerDeLaNube(silencioso) {
+    let enLaNube;
+    try {
+      enLaNube = await Nube.bajar();
+    } catch (error) {
+      avisar(error.message);
+      return false;
+    }
+    if (!enLaNube || !enLaNube.datos) {
+      avisar('Tu nube todavía está vacía');
+      return false;
+    }
+    try {
+      // importar valida y migra, igual que al restaurar un archivo
+      Datos.importar(JSON.stringify(enLaNube.datos));
+    } catch (error) {
+      avisar(error.message);
+      return false;
+    }
+    cargarAjustesEnFormulario();
+    actualizarSaludo();
+    dibujar();
+    if (!silencioso) avisar('Datos traídos de la nube ☁️');
+    return true;
   }
 
   /* ---------------- 11. Tutorial ---------------- */
@@ -1014,6 +1182,67 @@
     $$$('formRegistro').addEventListener('submit', enviarRegistro);
     // al empezar a corregir, el error se va solo
     $$$('campoCorreo').addEventListener('input', () => mostrarErrorCorreo(''));
+    $$$('campoClave').addEventListener('input', () => mostrarErrorClave(''));
+
+    // ---- Nube ----
+    $$$('botonCambiarModo').addEventListener('click', () =>
+      fijarModoCuenta(vista.modoCuenta === 'crear' ? 'entrar' : 'crear'));
+
+    $$$('botonOlvideClave').addEventListener('click', async () => {
+      const correo = $$$('campoCorreo').value.trim();
+      if (!Datos.correoValido(correo)) {
+        mostrarErrorCorreo('⚠️ Escribe tu correo primero y volvemos a intentarlo');
+        $$$('campoCorreo').focus();
+        return;
+      }
+      try {
+        await Nube.recuperarClave(correo);
+      } catch (error) {
+        avisar(error.message);
+        return;
+      }
+      await Dialogos.avisar({
+        titulo: 'Te mandamos un correo',
+        texto: 'Ábrelo desde este mismo teléfono y elige una contraseña nueva. '
+          + 'Si no llega en unos minutos, revisa la carpeta de spam.',
+      });
+    });
+
+    $$$('botonEntrarNube').addEventListener('click', () => {
+      fijarModoCuenta('entrar');
+      $$$('campoCorreo').value = Datos.obtener().ajustes.correo || '';
+      mostrarRegistro();
+    });
+
+    $$$('botonSubirNube').addEventListener('click', async () => {
+      const ok = await Nube.subirAhora();
+      avisar(ok ? 'Guardado en tu nube ☁️' : (Nube.errorActual() || 'No se pudo subir ahora'));
+    });
+
+    $$$('botonBajarNube').addEventListener('click', async () => {
+      const locales = Datos.obtener().movimientos.length;
+      const seguro = await Dialogos.confirmar({
+        titulo: '¿Traer los datos de la nube?',
+        texto: 'Reemplaza lo que hay en este teléfono (' + locales
+          + (locales === 1 ? ' movimiento' : ' movimientos') + ') por lo que esté guardado '
+          + 'en tu nube. Lo de acá se pierde.',
+        aceptar: 'Traer', peligro: true,
+      });
+      if (!seguro) return;
+      if (await traerDeLaNube(false)) irA('inicio');
+    });
+
+    $$$('botonSalirNube').addEventListener('click', async () => {
+      const seguro = await Dialogos.confirmar({
+        titulo: '¿Cerrar sesión?',
+        texto: 'Tus datos se quedan en este teléfono tal como están. Lo único que pasa '
+          + 'es que dejan de sincronizarse hasta que vuelvas a entrar.',
+        aceptar: 'Cerrar sesión',
+      });
+      if (!seguro) return;
+      await Nube.salir();
+      avisar('Sesión cerrada');
+    });
 
     // Navegación inferior
     $$('.navegacion button').forEach(b =>
@@ -1381,6 +1610,7 @@
     prepararMarco();
     prepararBotonAtras();
     conectarEventos();
+    prepararNube();
     actualizarSaludo();
     cargarAjustesEnFormulario();
     dibujarTecnicas();
@@ -1411,6 +1641,9 @@
     }
 
     apagarArranque();
+
+    // Va al final y sin await: la app ya está usable mientras esto pasa.
+    revisarNubeAlAbrir();
   }
 
   /**
@@ -1454,6 +1687,79 @@
       abrirFormularioMovimiento();
     }
     return true;
+  }
+
+  /* ---------------- 13b. La nube ---------------- */
+
+  const ROTULO_NUBE = {
+    'apagada':    { texto: '—',            clase: '' },
+    'sin-sesion': { texto: 'sin cuenta',   clase: '' },
+    'al-dia':     { texto: '✓ al día',     clase: 'al-dia' },
+    'subiendo':   { texto: 'subiendo…',    clase: 'subiendo' },
+    'pendiente':  { texto: 'por subir',    clase: 'pendiente' },
+    'error':      { texto: 'no subió',     clase: 'error' },
+  };
+
+  const DETALLE_NUBE = {
+    'sin-sesion': 'Tus datos están solo en este teléfono.',
+    'al-dia':     'Todo lo que anotaste está guardado en tu nube.',
+    'subiendo':   'Guardando en tu nube…',
+    'pendiente':  'Hay cambios que todavía no suben. Se van solos cuando haya internet.',
+    'error':      'No se pudo guardar en la nube. Lo del teléfono está intacto.',
+  };
+
+  /**
+   * Enciende o apaga toda la parte de nube según config-nube.js.
+   * Si no está configurada, esta función deja la app tal como estaba
+   * antes de que existiera la nube.
+   */
+  function prepararNube() {
+    const hay = Nube.configurada();
+
+    // ---- pantalla de bienvenida ----
+    $$$('bloqueClave').hidden = !hay;
+    $$$('opcionesCuenta').hidden = !hay;
+    $$$('notaSoloTelefono').hidden = hay;
+    $$$('notaConNube').hidden = !hay;
+    $$$('tarjetaNube').hidden = !hay;
+
+    if (!hay) return;
+
+    fijarModoCuenta('entrar');
+
+    // ---- la pastilla y el detalle, en Ajustes ----
+    Nube.alCambiar(estado => {
+      const rotulo = ROTULO_NUBE[estado] || ROTULO_NUBE['sin-sesion'];
+      const pastilla = $$$('pastillaNube');
+      pastilla.textContent = rotulo.texto;
+      pastilla.className = 'pastilla-nube ' + rotulo.clase;
+
+      const conSesion = Nube.haySesion();
+      $$$('zonaNubeConSesion').hidden = !conSesion;
+      $$$('zonaNubeSinSesion').hidden = conSesion;
+
+      const detalle = DETALLE_NUBE[estado] || '';
+      $$$('detalleNube').textContent = conSesion
+        ? (Nube.correoDeLaSesion() + ' · ' + detalle)
+        : detalle;
+    });
+  }
+
+  /** Cambia entre "entrar" y "crear cuenta" en la bienvenida. */
+  function fijarModoCuenta(modo) {
+    vista.modoCuenta = modo;
+    const creando = modo === 'crear';
+
+    $$$('botonEntrar').textContent = creando ? 'Crear mi cuenta' : 'Entrar';
+    $$$('botonCambiarModo').textContent = creando
+      ? '¿Ya tienes cuenta? Entra'
+      : '¿Primera vez? Crea tu cuenta';
+    $$$('campoClave').autocomplete = creando ? 'new-password' : 'current-password';
+    $$$('ayudaClave').textContent = creando
+      ? 'Elige una de al menos 6 caracteres. Es la llave de tus datos: anótala en un lugar seguro.'
+      : 'Es la llave de tus datos. Si la perdiste, toca "Olvidé mi contraseña".';
+    $$$('botonOlvideClave').hidden = creando;
+    mostrarErrorClave('');
   }
 
   /** true cuando la app corre instalada, fuera del navegador. */

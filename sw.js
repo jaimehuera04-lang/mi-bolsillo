@@ -8,12 +8,13 @@
    Así el celular sabe que tiene que bajar la versión nueva.
    ============================================================ */
 
-const VERSION = 'mi-bolsillo-v6';
+const VERSION = 'mi-bolsillo-v8';
 
 const ARCHIVOS = [
   './',
   './index.html',
   './src/ui/estilos.css',
+  './src/config-nube.js',
   './src/data/categorias.js',
   './src/data/tecnicas.js',
   './src/core/fechas.js',
@@ -23,6 +24,7 @@ const ARCHIVOS = [
   './src/storage/esquema.js',
   './src/storage/migraciones.js',
   './src/storage/almacenamiento.js',
+  './src/storage/nube.js',
   './src/datos.js',
   './src/ui/dialogos.js',
   './src/ui/excel.js',
@@ -54,16 +56,29 @@ self.addEventListener('activate', evento => {
 });
 
 // 3. Al pedir un archivo: primero intentamos la red (así ves los
-//    cambios al tiro cuando estas desarrollando) y si no hay
+//    cambios al tiro cuando estás desarrollando) y si no hay
 //    internet, servimos la copia guardada.
 self.addEventListener('fetch', evento => {
   if (evento.request.method !== 'GET') return;
 
+  // SOLO nos hacemos cargo de los archivos de la app.
+  //
+  // Esto no es un detalle: cuando este ayudante atendía TODO, también
+  // atendía las consultas a la nube y las respondía con una copia
+  // guardada. La app entonces creía que la nube estaba vacía y le
+  // pasaba por encima con los datos de este teléfono. Todo lo que no
+  // sea de nuestro propio sitio pasa derecho al navegador.
+  const url = new URL(evento.request.url);
+  if (url.origin !== self.location.origin) return;
+
   evento.respondWith(
     fetch(evento.request)
       .then(respuesta => {
-        const copia = respuesta.clone();
-        caches.open(VERSION).then(cache => cache.put(evento.request, copia));
+        // una respuesta con error no merece quedar guardada
+        if (respuesta && respuesta.ok) {
+          const copia = respuesta.clone();
+          caches.open(VERSION).then(cache => cache.put(evento.request, copia));
+        }
         return respuesta;
       })
       .catch(() => caches.match(evento.request).then(r => r || caches.match('./index.html')))

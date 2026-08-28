@@ -16,7 +16,10 @@ estacionales − aportes a metas. Si una función no ayuda a entender o proteger
    de correrla la app genera un respaldo exportable.
 7. **Las transferencias no son ingresos ni gastos.**
 8. **Gasto con tarjeta ≠ pago de tarjeta.** Nunca contabilizar dos veces.
-9. **Sin secretos en el frontend.** Ninguna API key ni token en el cliente ni en el repo.
+9. **Sin secretos en el frontend.** Ninguna API key ni token en el cliente ni en el repo. La
+   llave `anon` de Supabase es la excepción y no rompe la regla: es pública por diseño y sola
+   no sirve. Quien protege los datos son las reglas RLS de la tabla. La `service_role` **nunca**
+   entra al repositorio. Ver [SUPABASE.md](SUPABASE.md).
 10. **Esto es una app, no una página web.** Nada de `alert`/`confirm`/`prompt`, el documento no
     scrollea, y el botón atrás cierra capas antes de salir. Las ocho reglas de la cáscara están
     en [ARQUITECTURA.md](ARQUITECTURA.md#la-cáscara-de-app).
@@ -30,6 +33,7 @@ estacionales − aportes a metas. Si una función no ayuda a entender o proteger
 - [ARQUITECTURA.md](ARQUITECTURA.md) — capas, modelo de datos, motor de compromisos, privacidad e IA.
 - [ROADMAP.md](ROADMAP.md) — las fases y su criterio verificable de término.
 - [LEEME.md](LEEME.md) — cómo correrla, instalarla y publicarla.
+- [SUPABASE.md](SUPABASE.md) — cómo encender la nube y cómo funciona la sincronización.
 
 ## Protocolo
 Antes de codear (máx. 10 líneas): qué cambio, qué archivos, por qué, qué impacto, cómo no rompo nada.

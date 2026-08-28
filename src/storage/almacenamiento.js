@@ -48,6 +48,9 @@ const Almacenamiento = (() => {
 
   /* ---------- Guardar ---------- */
   function guardar() {
+    // La marca de tiempo va antes de escribir, para que quede guardada
+    // junto con el resto. Es lo que le permite a la nube comparar.
+    estado.meta.actualizado = new Date().toISOString();
     const ok = escribirCrudo(Esquema.LLAVE, JSON.stringify(estado));
     if (!ok) {
       arranque.error = 'No pudimos guardar en este dispositivo. '

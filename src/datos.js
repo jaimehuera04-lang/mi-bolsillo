@@ -13,8 +13,24 @@ const Datos = (() => {
   const estado = () => Almacenamiento.obtener();
 
   /* ---------- Arranque ---------- */
-  const cargar = () => Almacenamiento.cargar();
-  const guardar = () => Almacenamiento.guardar();
+  function cargar() {
+    const r = Almacenamiento.cargar();
+    // La nube se entera de que existimos y le dejamos una forma de
+    // pedirnos el objeto completo cuando le toque subir.
+    if (typeof Nube !== 'undefined') Nube.iniciar(() => estado());
+    return r;
+  }
+
+  /**
+   * Guarda en el teléfono y, si hay cuenta, le avisa a la nube.
+   * El orden importa: primero el teléfono, que es el que manda para
+   * lo inmediato; la nube va después y sin bloquear nada.
+   */
+  function guardar() {
+    const ok = Almacenamiento.guardar();
+    if (typeof Nube !== 'undefined') Nube.anotarCambio();
+    return ok;
+  }
   const obtener = () => estado();
   const arranque = () => Almacenamiento.estadoDelArranque();
   const puedeGuardar = () => Almacenamiento.puedeGuardar();

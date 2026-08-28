@@ -51,6 +51,11 @@ Recién aquí aparece la IA, y solo interpreta resultados ya calculados.
 ## Fase 7 — Escalamiento
 Cuentas de usuario, nube, sincronización, voz, OCR.
 
+> **Adelantado el 2026-08-28, a pedido de Jaime.** Las cuentas de usuario y la sincronización
+> con Supabase ya están hechas, fuera de orden. Nacen apagadas: sin `src/config-nube.js`
+> configurado la app sigue siendo local. Ver [SUPABASE.md](SUPABASE.md). Queda pendiente de
+> esta fase: voz y OCR.
+
 ---
 
 ## Definición de "terminado"
