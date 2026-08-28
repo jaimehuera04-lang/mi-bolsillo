@@ -130,6 +130,34 @@ const servidor = http.createServer(async (req, res) => {
     return responder(res, 200, {});
   }
 
+  /* ---------- Entrar con un código al correo (sin contraseña) ---------- */
+
+  // Pedir el código. Supabase lo manda por correo; acá lo escribimos en
+  // la consola, que para probar es lo mismo y más rápido.
+  if (ruta === '/auth/v1/otp' && req.method === 'POST') {
+    const correo = String(cuerpo.email || '').toLowerCase();
+    if (!correo.includes('@')) return responder(res, 400, { msg: 'Invalid email' });
+
+    let usuario = usuarios.get(correo);
+    if (!usuario) {
+      usuario = { id: nuevoId(), correo, clave: null };
+      usuarios.set(correo, usuario);
+    }
+    usuario.codigo = String(Math.floor(100000 + Math.random() * 900000));
+    console.log('  >>> CÓDIGO para ' + correo + ': ' + usuario.codigo);
+    return responder(res, 200, {});
+  }
+
+  // Cambiar el código por una sesión.
+  if (ruta === '/auth/v1/verify' && req.method === 'POST') {
+    const usuario = usuarios.get(String(cuerpo.email || '').toLowerCase());
+    if (!usuario || !usuario.codigo || usuario.codigo !== String(cuerpo.token || '')) {
+      return responder(res, 403, { msg: 'Token has expired or is invalid' });
+    }
+    usuario.codigo = null;          // un código se usa una sola vez
+    return responder(res, 200, sesionPara(usuario));
+  }
+
   /* ---------- Lo que consulta "Probar y conectar" ---------- */
 
   // Supabase de verdad responde acá con la configuración pública del

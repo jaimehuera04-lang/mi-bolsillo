@@ -108,13 +108,34 @@ por sobre este archivo.
 
 ---
 
-## 4. Usarla
+## 4. Que llegue el código, no un enlace
 
-La primera vez que abras la app con esto configurado, la pantalla de bienvenida va a pedirte
-correo **y contraseña**:
+**Este paso hace falta**, si no la app no puede funcionar como debe.
 
-- **¿Primera vez? Crea tu cuenta** → elige una contraseña de al menos 6 caracteres.
-- Supabase te va a mandar un correo para confirmar la dirección. Ábrelo y vuelve a entrar.
+Se entra sin contraseña: escribes tu correo, te llega un **código de 6 números** y lo escribes.
+Pero Supabase, de fábrica, manda un **enlace** en vez del código. Y un enlace, en el teléfono,
+abre el navegador y **no** la app instalada: la sesión queda en el lugar equivocado.
+
+Para que mande el código, en Supabase anda a **Authentication → Emails → Magic Link** y deja la
+plantilla así:
+
+```html
+<h2>Tu código para entrar a Mi Bolsillo</h2>
+<p>Escribe este código en la app:</p>
+<p style="font-size:28px; letter-spacing:6px"><strong>{{ .Token }}</strong></p>
+<p>Dura una hora. Si no lo pediste tú, ignora este correo.</p>
+```
+
+Lo que importa es que aparezca **`{{ .Token }}`**, que es el código. Puedes dejar también
+`{{ .ConfirmationURL }}` si quieres el enlace de repuesto: la app entiende los dos.
+
+---
+
+## 5. Usarla
+
+- Escribes tu correo y tocas **Mándame el código**.
+- Te llega, lo escribes, y entras. No hay contraseña que recordar ni que perder.
+- En otro aparato, lo mismo: tu correo, tu código, y ahí están tus datos.
 
 ### Usarla en el computador (o en otro teléfono)
 
@@ -132,11 +153,16 @@ y al revés.
 En **Ajustes → Tu cuenta en la nube** ves cómo va: *al día*, *por subir* o *no subió*, más los
 botones para forzar una subida, traer lo de la nube, o cerrar sesión.
 
-### Si quieres saltarte la confirmación por correo
+### Si los correos no llegan
 
-Es más cómodo pero menos seguro (un error de tipeo en el correo y no puedes recuperar la
-cuenta). Si aun así lo prefieres: **Authentication → Providers → Email** y apaga
-*Confirm email*.
+El envío gratuito de Supabase está limitado a unos pocos por hora. Si pides varios códigos
+seguidos, deja de mandarlos por un rato. La app te lo dice con esas palabras.
+
+### Lo que cambia al no tener contraseña
+
+Quien pueda abrir tu correo puede entrar a tus cuentas. En la práctica siempre fue así —el
+"olvidé mi contraseña" hace exactamente lo mismo— pero ahora es la puerta principal. Cuida ese
+correo como cuidas el banco.
 
 ---
 

@@ -25,7 +25,7 @@
     cuentaOrigen: null,
     cuentaDestino: null,
     // 'entrar' o 'crear': en qué modo está la pantalla de bienvenida
-    modoCuenta: 'entrar',
+    pasoEntrada: 'correo',
   };
 
   /* ---------------- 2. Utilidades ---------------- */
@@ -740,11 +740,35 @@
     $$$('campoCorreo').classList.toggle('con-error', Boolean(mensaje));
   }
 
-  function mostrarErrorClave(mensaje) {
-    const caja = $$$('errorClave');
+  function mostrarErrorCodigo(mensaje) {
+    const caja = $$$('errorCodigo');
     caja.textContent = mensaje;
     caja.hidden = !mensaje;
-    $$$('campoClave').classList.toggle('con-error', Boolean(mensaje));
+    $$$('campoCodigo').classList.toggle('con-error', Boolean(mensaje));
+  }
+
+  /**
+   * La bienvenida tiene dos pasos cuando hay nube:
+   *   'correo' → escribes tu correo y te mandamos un código
+   *   'codigo' → escribes el código y entras
+   * Sin nube configurada no hay segundo paso: el correo se anota en el
+   * teléfono y listo, como toda la vida.
+   */
+  function fijarPasoDeEntrada(paso) {
+    vista.pasoEntrada = paso;
+    const enCodigo = paso === 'codigo';
+
+    $$$('bloqueCodigo').hidden = !enCodigo;
+    $$$('campoCorreo').readOnly = enCodigo;
+    $$$('botonEntrar').textContent = enCodigo ? 'Entrar' : 'Mándame el código';
+    $$$('botonReenviar').hidden = !enCodigo;
+    $$$('botonOtroCorreo').hidden = !enCodigo;
+
+    mostrarErrorCodigo('');
+    if (enCodigo) {
+      $$$('campoCodigo').value = '';
+      setTimeout(() => $$$('campoCodigo').focus(), 200);
+    }
   }
 
   async function enviarRegistro(evento) {
@@ -770,56 +794,76 @@
       return;
     }
 
-    const clave = $$$('campoClave').value;
-    if (clave.length < 6) {
-      mostrarErrorClave('⚠️ La contraseña necesita al menos 6 caracteres');
-      $$$('campoClave').focus();
+    if (vista.pasoEntrada === 'codigo') {
+      await entrarConElCodigo(correo);
       return;
     }
-    mostrarErrorClave('');
+    await pedirElCodigo(correo);
+  }
 
+  /** Primer paso: que le manden el código al correo. */
+  async function pedirElCodigo(correo) {
     const boton = $$$('botonEntrar');
-    const textoOriginal = boton.textContent;
     boton.disabled = true;
-    boton.textContent = vista.modoCuenta === 'crear' ? 'Creando…' : 'Entrando…';
+    boton.textContent = 'Mandando…';
 
-    let faltaConfirmar = false;
     try {
-      if (vista.modoCuenta === 'crear') {
-        const r = await Nube.crearCuenta(correo, clave);
-        faltaConfirmar = r.confirmarCorreo;
-      } else {
-        await Nube.entrar(correo, clave);
-      }
+      await Nube.mandarCodigo(correo);
     } catch (error) {
-      mostrarErrorClave('⚠️ ' + error.message);
+      mostrarErrorCorreo('⚠️ ' + error.message);
       return;
     } finally {
       boton.disabled = false;
-      boton.textContent = textoOriginal;
+      boton.textContent = 'Mándame el código';
     }
 
-    // El aviso va FUERA del try a propósito: así el botón vuelve a la
-    // normalidad antes de que aparezca, y nunca queda un "Creando…"
-    // colgado esperando un toque.
-    if (faltaConfirmar) {
-      await Dialogos.avisar({
-        titulo: 'Ya casi: confirma tu correo',
-        texto: 'Tu cuenta quedó creada. Te mandamos un mensaje a ' + correo + ' para confirmar '
-          + 'que la dirección es tuya.\n\n'
-          + 'Ábrelo, y después vuelve acá y toca Entrar con la misma contraseña. '
-          + 'Si no llega en unos minutos, revisa la carpeta de spam.',
-        aceptar: 'Entendido',
-      });
-      // la próxima vez lo que corresponde es entrar, no volver a crear
-      fijarModoCuenta('entrar');
+    fijarPasoDeEntrada('codigo');
+    $$$('ayudaCodigo').textContent =
+      'Te lo mandamos a ' + correo + '. Llega en menos de un minuto; '
+      + 'si no lo ves, revisa la carpeta de spam.';
+    avisar('Código enviado 📬');
+  }
+
+  /** Segundo paso: cambiar el código por una sesión. */
+  async function entrarConElCodigo(correo) {
+    const codigo = $$$('campoCodigo').value.replace(/\D/g, '');
+    if (codigo.length < 6) {
+      mostrarErrorCodigo('⚠️ El código son 6 números');
+      $$$('campoCodigo').focus();
       return;
     }
+    mostrarErrorCodigo('');
 
-    // Ya hay sesión. Ahora hay que decidir qué datos se quedan.
-    Datos.registrar(correo);
+    const boton = $$$('botonEntrar');
+    boton.disabled = true;
+    boton.textContent = 'Entrando…';
+
+    try {
+      await Nube.entrarConCodigo(correo, codigo);
+    } catch (error) {
+      mostrarErrorCodigo('⚠️ ' + error.message);
+      return;
+    } finally {
+      boton.disabled = false;
+      boton.textContent = 'Entrar';
+    }
+
+    await terminarDeEntrar(correo);
+  }
+
+  /** Lo que pasa una vez que ya hay sesión, venga del código o del enlace. */
+  async function terminarDeEntrar(correo) {
+    // El correo puede venir de dos lados: lo escribió la persona, o lo
+    // leímos del token del enlace. Si por lo que sea no llega ninguno,
+    // no rompemos nada: la sesión ya existe, que es lo que importa.
+    const limpio = String(correo || '').trim();
+    if (limpio && Datos.correoValido(limpio)) {
+      try { Datos.registrar(limpio); } catch (_) { /* seguimos igual */ }
+    }
+
     await reconciliarConLaNube();
 
+    fijarPasoDeEntrada('correo');
     ocultarRegistro();
     actualizarSaludo();
     cargarAjustesEnFormulario();
@@ -1577,7 +1621,7 @@
     $$$('formRegistro').addEventListener('submit', enviarRegistro);
     // al empezar a corregir, el error se va solo
     $$$('campoCorreo').addEventListener('input', () => mostrarErrorCorreo(''));
-    $$$('campoClave').addEventListener('input', () => mostrarErrorClave(''));
+
 
     // ---- Conectar una nube ----
     $$$('botonConectarNube').addEventListener('click', async () => {
@@ -1665,31 +1709,38 @@
     });
 
     // ---- Nube ----
-    $$$('botonCambiarModo').addEventListener('click', () =>
-      fijarModoCuenta(vista.modoCuenta === 'crear' ? 'entrar' : 'crear'));
-
-    $$$('botonOlvideClave').addEventListener('click', async () => {
-      const correo = $$$('campoCorreo').value.trim();
-      if (!Datos.correoValido(correo)) {
-        mostrarErrorCorreo('⚠️ Escribe tu correo primero y volvemos a intentarlo');
-        $$$('campoCorreo').focus();
-        return;
-      }
+    $$$('botonReenviar').addEventListener('click', async () => {
+      const boton = $$$('botonReenviar');
+      boton.disabled = true;
       try {
-        await Nube.recuperarClave(correo);
+        await Nube.mandarCodigo($$$('campoCorreo').value.trim());
+        avisar('Te mandamos otro código 📬');
+        mostrarErrorCodigo('');
       } catch (error) {
-        avisar(error.message);
-        return;
+        mostrarErrorCodigo('⚠️ ' + error.message);
+      } finally {
+        boton.disabled = false;
       }
-      await Dialogos.avisar({
-        titulo: 'Te mandamos un correo',
-        texto: 'Ábrelo desde este mismo teléfono y elige una contraseña nueva. '
-          + 'Si no llega en unos minutos, revisa la carpeta de spam.',
-      });
+    });
+
+    $$$('botonOtroCorreo').addEventListener('click', () => {
+      fijarPasoDeEntrada('correo');
+      $$$('campoCorreo').focus();
+    });
+
+    // al escribir el código, el error se va solo; y con 6 números entramos
+    $$$('campoCodigo').addEventListener('input', e => {
+      mostrarErrorCodigo('');
+      const limpio = e.target.value.replace(/\D/g, '').slice(0, 6);
+      if (limpio !== e.target.value) e.target.value = limpio;
+      // pegar el código desde el correo debería bastar
+      if (limpio.length === 6) {
+        $$$('formRegistro').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+      }
     });
 
     $$$('botonEntrarNube').addEventListener('click', () => {
-      fijarModoCuenta('entrar');
+      fijarPasoDeEntrada('correo');
       $$$('campoCorreo').value = Datos.obtener().ajustes.correo || '';
       mostrarRegistro();
     });
@@ -2105,7 +2156,13 @@
 
     // Quien no se ha registrado ve primero la pantalla de bienvenida.
     // Quien ya se registró entra directo, sin instrucciones.
-    if (!Datos.estaRegistrado()) {
+    // Si tocó el enlace del correo en vez de escribir el código, vuelve
+    // con la sesión colgando de la dirección. Se recoge acá.
+    const vinoDelEnlace = Nube.configurada() && Nube.recogerSesionDelEnlace();
+
+    if (vinoDelEnlace) {
+      terminarDeEntrar(Nube.correoDeLaSesion() || Datos.obtener().ajustes.correo);
+    } else if (!Datos.estaRegistrado()) {
       mostrarRegistro();
     } else if (atenderAtajo()) {
       // entró por un atajo del icono: ya lo dejamos donde quería
@@ -2201,7 +2258,7 @@
     const hay = Nube.configurada();
 
     // ---- pantalla de bienvenida ----
-    $$$('bloqueClave').hidden = !hay;
+    $$$('opcionesCuenta').hidden = !hay;
     $$$('opcionesCuenta').hidden = !hay;
     $$$('notaSoloTelefono').hidden = hay;
     $$$('notaConNube').hidden = !hay;
@@ -2223,7 +2280,7 @@
 
     if (!hay) return;
 
-    fijarModoCuenta('entrar');
+    fijarPasoDeEntrada('correo');
 
     // ---- la pastilla y el detalle, en Ajustes ----
     Nube.alCambiar(estado => {
@@ -2237,28 +2294,14 @@
       $$$('zonaNubeSinSesion').hidden = conSesion;
 
       const detalle = DETALLE_NUBE[estado] || '';
+      // si el token no trajo el correo, usamos el que guardó la app
+      const correo = Nube.correoDeLaSesion() || Datos.obtener().ajustes.correo;
       $$$('detalleNube').textContent = conSesion
-        ? (Nube.correoDeLaSesion() + ' · ' + detalle)
+        ? ((correo ? correo + ' · ' : '') + detalle)
         : detalle;
     });
   }
 
-  /** Cambia entre "entrar" y "crear cuenta" en la bienvenida. */
-  function fijarModoCuenta(modo) {
-    vista.modoCuenta = modo;
-    const creando = modo === 'crear';
-
-    $$$('botonEntrar').textContent = creando ? 'Crear mi cuenta' : 'Entrar';
-    $$$('botonCambiarModo').textContent = creando
-      ? '¿Ya tienes cuenta? Entra'
-      : '¿Primera vez? Crea tu cuenta';
-    $$$('campoClave').autocomplete = creando ? 'new-password' : 'current-password';
-    $$$('ayudaClave').textContent = creando
-      ? 'Elige una de al menos 6 caracteres. Es la llave de tus datos: anótala en un lugar seguro.'
-      : 'Es la llave de tus datos. Si la perdiste, toca "Olvidé mi contraseña".';
-    $$$('botonOlvideClave').hidden = creando;
-    mostrarErrorClave('');
-  }
 
   /** true cuando la app corre instalada, fuera del navegador. */
   function estaInstalada() {

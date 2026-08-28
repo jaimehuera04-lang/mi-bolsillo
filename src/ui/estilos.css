@@ -74,6 +74,14 @@ html, body {
   overscroll-behavior: none;
 }
 
+/* "hidden" tiene que ganar SIEMPRE.
+   El navegador trae [hidden] { display: none }, pero cualquier clase
+   nuestra que fije un display —como .boton, que usa inline-flex— le
+   gana por especificidad, y el elemento se ve igual aunque esté
+   marcado como oculto. Pasó de verdad: los botones del segundo paso
+   de la bienvenida aparecían desde el principio. */
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -594,3 +602,15 @@ input[readonly] {
   -webkit-user-select: text;
   user-select: text;
 }
+
+/* El campo del código de 6 números: grande y separado, para que se lea
+   de una y no haya que forzar la vista al escribirlo. */
+.campo-codigo {
+  font-size: 30px;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  padding-left: 10px;   /* compensa el espaciado del último número */
+}
+.campo-codigo::placeholder { letter-spacing: 10px; opacity: .35; }

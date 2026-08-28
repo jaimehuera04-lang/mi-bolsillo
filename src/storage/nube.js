@@ -68,6 +68,23 @@ const Nube = (() => {
   /** La llave pública, para poder copiarla a otro aparato. */
   const llaveDelProyecto = () => conf.llavePublica || '';
 
+  /**
+   * Abre un JWT y devuelve lo que trae escrito adentro.
+   * Un JWT son tres partes separadas por punto; la del medio es el
+   * contenido, en base64. No verificamos la firma: no nos hace falta,
+   * solo queremos leer de quién es.
+   */
+  function leerJWT(token) {
+    const partes = String(token || '').split('.');
+    if (partes.length !== 3) return null;
+    try {
+      const limpio = partes[1].replace(/-/g, '+').replace(/_/g, '/');
+      return JSON.parse(atob(limpio + '==='.slice((limpio.length + 3) % 4)));
+    } catch (_) {
+      return null;
+    }
+  }
+
   /** Limpia la dirección: sin barra final y siempre con https. */
   function ordenarUrl(texto) {
     let url = String(texto || '').trim().replace(/\/+$/, '');
@@ -154,19 +171,13 @@ const Nube = (() => {
     // Las llaves viejas son un JWT: tres partes separadas por punto, y
     // en la del medio viene escrito para qué rol sirve.
     if (apikey.startsWith('ey')) {
-      const partes = apikey.split('.');
-      if (partes.length === 3) {
-        try {
-          const relleno = partes[1].replace(/-/g, '+').replace(/_/g, '/');
-          const contenido = JSON.parse(atob(relleno + '==='.slice((relleno.length + 3) % 4)));
-          if (contenido && contenido.role === 'service_role') {
-            return {
-              ok: false,
-              mensaje: 'Esa es la llave "service_role", la que se salta todas las reglas de '
-                + 'seguridad. Nunca va en una app. Usa la que dice "anon public".',
-            };
-          }
-        } catch (_) { /* si no se puede leer, que decida la prueba de verdad */ }
+      const contenido = leerJWT(apikey);
+      if (contenido && contenido.role === 'service_role') {
+        return {
+          ok: false,
+          mensaje: 'Esa es la llave "service_role", la que se salta todas las reglas de '
+            + 'seguridad. Nunca va en una app. Usa la que dice "anon public".',
+        };
       }
       return null;
     }
@@ -266,8 +277,16 @@ const Nube = (() => {
     if (crudo.includes('already registered')) return 'Ese correo ya tiene cuenta. Prueba con Entrar.';
     if (crudo.includes('email not confirmed')) return 'Falta confirmar tu correo. Revisa tu bandeja.';
     if (crudo.includes('password should be')) return 'La contraseña tiene que tener al menos 6 letras o números.';
-    if (crudo.includes('rate limit') || (respuesta && respuesta.status === 429)) {
-      return 'Demasiados intentos seguidos. Espera un minuto.';
+    // los del código de un solo uso
+    if (crudo.includes('expired') || crudo.includes('invalid') && crudo.includes('token')) {
+      return 'Ese código ya venció o no es el correcto. Pide uno nuevo.';
+    }
+    if (crudo.includes('otp_disabled') || crudo.includes('signups not allowed')) {
+      return 'Tu proyecto tiene apagado el ingreso por correo. Se enciende en Supabase, '
+        + 'en Authentication → Providers → Email.';
+    }
+    if (crudo.includes('rate limit') || crudo.includes('too many') || (respuesta && respuesta.status === 429)) {
+      return 'Pediste varios códigos seguidos. Espera un minuto y vuelve a intentar.';
     }
     if (respuesta && respuesta.status === 401) return 'Tu sesión venció. Vuelve a entrar.';
     return crudo ? crudo.charAt(0).toUpperCase() + crudo.slice(1) : 'No se pudo conectar con la nube.';
@@ -353,7 +372,80 @@ const Nube = (() => {
     };
   }
 
-  /* ---------------- 4. Entrar, crear cuenta, salir ---------------- */
+  /* ---------------- 4. Entrar con un código al correo ----------------
+
+     Sin contraseña. Pides un código, te llega al correo, lo escribes y
+     entras. Si la cuenta no existe, se crea sola.
+
+     Se usa código y no un enlace a propósito: en un teléfono, tocar un
+     enlace del correo abre el navegador, NO la app instalada, y la
+     sesión quedaría en el lugar equivocado. El código lo escribes donde
+     estés. (Aun así, si alguien toca el enlace, más abajo recogemos la
+     sesión que viene en la dirección.) */
+
+  /** Pide que le manden un código al correo. Crea la cuenta si no existe. */
+  async function mandarCodigo(correo) {
+    await pedir('/auth/v1/otp', {
+      metodo: 'POST',
+      cuerpo: { email: String(correo).trim().toLowerCase(), create_user: true },
+      conSesion: false,
+    });
+    return true;
+  }
+
+  /** Cambia el código por una sesión de verdad. */
+  async function entrarConCodigo(correo, codigo) {
+    const limpio = String(codigo || '').replace(/\D/g, '');
+    if (limpio.length < 6) throw new Error('El código son 6 números.');
+
+    const datos = await pedir('/auth/v1/verify', {
+      metodo: 'POST',
+      cuerpo: {
+        email: String(correo).trim().toLowerCase(),
+        token: limpio,
+        type: 'email',
+      },
+      conSesion: false,
+    });
+
+    const nueva = sesionDesdeRespuesta(datos, correo);
+    if (!nueva) throw new Error('La nube no devolvió una sesión válida.');
+
+    guardarSesion(nueva);
+    avisarCambio('pendiente');
+    return true;
+  }
+
+  /**
+   * Si la persona tocó el enlace del correo en vez de escribir el código,
+   * vuelve con la sesión colgando de la dirección. La recogemos, la
+   * guardamos, y limpiamos la dirección para que no quede a la vista.
+   * Devuelve true si había una sesión ahí.
+   */
+  function recogerSesionDelEnlace() {
+    const trozo = (location.hash || '').replace(/^#/, '');
+    if (!trozo.includes('access_token')) return false;
+
+    const datos = new URLSearchParams(trozo);
+    const token = datos.get('access_token');
+    if (!token) return false;
+
+    const contenido = leerJWT(token) || {};
+    guardarSesion({
+      token,
+      refresco: datos.get('refresh_token') || '',
+      expira: Date.now() + (Number(datos.get('expires_in') || 3600) * 1000),
+      usuarioId: contenido.sub || '',
+      correo: contenido.email || '',
+    });
+
+    // fuera de la barra de direcciones: ahí no pinta nada
+    try { history.replaceState(history.state, '', location.pathname); } catch (_) {}
+    avisarCambio('pendiente');
+    return true;
+  }
+
+  /* ---------------- 4b. Entrar, crear cuenta, salir ---------------- */
 
   /**
    * Crea la cuenta. Si el proyecto pide confirmar el correo,
@@ -582,6 +674,7 @@ const Nube = (() => {
     configurada, configEsDelTelefono, direccionDelProyecto, llaveDelProyecto,
     probarConexion, guardarConfig, borrarConfig,
     iniciar,
+    mandarCodigo, entrarConCodigo, recogerSesionDelEnlace,
     crearCuenta, entrar, salir, recuperarClave,
     haySesion, correoDeLaSesion,
     bajar, subir, anotarCambio, subirAhora,
