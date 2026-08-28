@@ -5,7 +5,7 @@
      1. Estado de la pantalla     5. Metas
      2. Utilidades                6. Aprender
      3. Navegacion                7. Ajustes
-     4. Inicio (dashboard)        8. Tutorial, instalacion, arranque
+     4. Inicio (dashboard)        8. Tutorial, instalación, arranque
    ============================================================ */
 
 (() => {
@@ -17,7 +17,7 @@
     anio: hoy.getFullYear(),
     mes: hoy.getMonth(),              // 0 = enero
     pantalla: 'inicio',
-    tendencia: 'barras',              // 'barras' o 'linea'
+    tendencia: 'barras',              // 'barras' o 'línea'
     filtroMovimientos: 'todos',
     // formulario de movimiento
     tipo: 'gasto',
@@ -44,15 +44,15 @@
     temporizadorMensaje = setTimeout(() => caja.classList.remove('visible'), 2600);
   }
 
-  /* --- Ventanas abiertas y el boton "atras" del celular ---
-     En una app, "atras" cierra lo que tengas abierto; nunca te saca a
+  /* --- Ventanas abiertas y el boton "atrás" del celular ---
+     En una app, "atrás" cierra lo que tengas abierto; nunca te saca a
      la calle. Para conseguirlo llevamos una pila de lo que hay abierto
      y una entrada de historial por cada cosa. */
-  const capas = [];            // funciones que cierran; la ultima es la de arriba
-  let atrasProgramado = false; // true cuando el "atras" lo pedimos nosotros
+  const capas = [];            // funciones que cierran; la última es la de arriba
+  let atrasProgramado = false; // true cuando el "atrás" lo pedimos nosotros
   let cerrandoPorAtras = false;
 
-  /** Anota una ventana recien abierta para que "atras" la cierre. */
+  /** Anota una ventana recién abierta para que "atrás" la cierre. */
   function anotarCapa(cerrar) {
     capas.push(cerrar);
     history.pushState({ capa: capas.length }, '');
@@ -81,19 +81,19 @@
 
   /* ---------------- 3. Navegacion ---------------- */
 
-  // Cada pestana recuerda donde la dejaste, como en cualquier app del
-  // telefono. Volver a Inicio no te devuelve al principio de la lista.
+  // Cada pestaña recuerda donde la dejaste, como en cualquier app del
+  // teléfono. Volver a Inicio no te devuelve al principio de la lista.
   const scrollDeCadaPantalla = {};
 
   function irA(nombre, sinHistorial) {
     const contenido = $$$('contenido');
     const repetida = vista.pantalla === nombre;
 
-    // cada cambio de pestana deja huella, para que "atras" te devuelva
+    // cada cambio de pestaña deja huella, para que "atrás" te devuelva
     // a la anterior en vez de sacarte de la app
     if (!repetida && !sinHistorial) history.pushState({ tab: nombre }, '');
 
-    // antes de cambiar, anotamos donde iba la pestana que dejamos
+    // antes de cambiar, anotamos donde iba la pestaña que dejamos
     if (!repetida && vista.pantalla) scrollDeCadaPantalla[vista.pantalla] = contenido.scrollTop;
 
     vista.pantalla = nombre;
@@ -104,8 +104,8 @@
 
     dibujar();
 
-    // tocar la pestana en la que ya estas te sube al principio;
-    // cambiar de pestana te deja donde la habias dejado
+    // tocar la pestaña en la que ya estas te sube al principio;
+    // cambiar de pestaña te deja donde la habías dejado
     contenido.scrollTop = repetida ? 0 : (scrollDeCadaPantalla[nombre] || 0);
     marcarDesplazamiento();
   }
@@ -116,19 +116,19 @@
   }
 
   /**
-   * Deja el boton "atras" del celular funcionando como en una app:
-   * primero cierra lo que este abierto, despues te devuelve a Inicio,
-   * y recien ahi, estando en Inicio y sin nada abierto, sale.
+   * Deja el boton "atrás" del celular funcionando como en una app:
+   * primero cierra lo que este abierto, después te devuelve a Inicio,
+   * y recién ahí, estando en Inicio y sin nada abierto, sale.
    */
   function prepararBotonAtras() {
     history.replaceState({ tab: 'inicio' }, '');
 
     window.addEventListener('popstate', evento => {
-      // este "atras" lo pedimos nosotros al cerrar algo: ya esta hecho
+      // este "atrás" lo pedimos nosotros al cerrar algo: ya esta hecho
       if (atrasProgramado) { atrasProgramado = false; return; }
 
       // 1. hay algo abierto encima (una hoja o una ventana de confirmar)?
-      //    se cierra lo de mas arriba y nos quedamos donde estabamos
+      //    se cierra lo de mas arriba y nos quedamos donde estábamos
       if (capas.length) {
         cerrandoPorAtras = true;
         capas.pop()();
@@ -136,7 +136,7 @@
         return;
       }
 
-      // 2. estabamos en otra pestana: volvemos a la anterior
+      // 2. estábamos en otra pestaña: volvemos a la anterior
       if (evento.state && evento.state.tab) irA(evento.state.tab, true);
 
       // 3. Inicio y nada abierto: dejamos que el celular cierre la app
@@ -153,7 +153,7 @@
 
   /**
    * Ajusta el marco al aparato real: mide la barra de abajo para que el
-   * boton + quede justo encima, pase lo que pase con el tamano de letra
+   * boton + quede justo encima, pase lo que pase con el tamaño de letra
    * del sistema o con la barra de gestos del celular.
    */
   function prepararMarco() {
@@ -179,10 +179,10 @@
   }
 
   /**
-   * Deja cerrar las hojas arrastrandolas hacia abajo con el dedo, como
-   * en cualquier app del telefono. Solo empieza a arrastrar si la hoja
+   * Deja cerrar las hojas arrastrándolas hacia abajo con el dedo, como
+   * en cualquier app del teléfono. Solo empieza a arrastrar si la hoja
    * ya esta arriba del todo; si no, el dedo esta haciendo scroll dentro
-   * de ella y no hay que quitarselo.
+   * de ella y no hay que quitárselo.
    */
   function prepararArrastreDeHojas() {
     $$('.hoja').forEach(hoja => {
@@ -229,7 +229,7 @@
   /** Redibuja lo que este visible. */
   function dibujar() {
     $$$('etiquetaMes').textContent = Datos.nombreMes(vista.anio, vista.mes);
-    // no dejamos avanzar mas alla del mes actual
+    // no dejamos avanzar mas allá del mes actual
     const futuro = new Date(vista.anio, vista.mes + 1, 1) > new Date(hoy.getFullYear(), hoy.getMonth(), 1);
     $$$('mesSiguiente').style.visibility = futuro ? 'hidden' : 'visible';
 
@@ -264,18 +264,18 @@
       tasa >= 20 ? 'var(--verde)' : tasa >= 10 ? 'var(--amarillo)' : 'var(--rojo)';
     $$$('textoTasaAhorro').textContent = r.ingresos > 0 ? `${r.tasaAhorro}%` : 'sin ingresos anotados';
 
-    // Consejos automaticos
+    // Consejos automáticos
     const consejos = Datos.sugerir(vista.anio, vista.mes);
     $$$('zonaConsejos').innerHTML = consejos.map(c => `
       <div class="consejo ${c.tipo === 'alerta' ? 'aviso' : ''}" style="margin-bottom:14px">
         <strong>${esc(c.titulo)}</strong>${esc(c.texto)}
       </div>`).join('');
 
-    // Graficos
+    // Gráficos
     Graficos.dona($$$('graficoDona'), Datos.gastosPorCategoria(vista.anio, vista.mes), {
-      // el mensaje cambia segun si el mes esta vacio o si de verdad no gastaste nada
+      // el mensaje cambia según si el mes esta vacío o si de verdad no gastaste nada
       mensajeVacio: r.cantidad === 0
-        ? 'Este mes todavia no tiene nada anotado'
+        ? 'Este mes todavía no tiene nada anotado'
         : 'Sin gastos este mes 🎉',
     });
     dibujarTendencia();
@@ -292,10 +292,10 @@
       $$$('pieTendencia').textContent =
         'Verde es lo que entro, rojo lo que salio. Si el rojo supera al verde, ese mes gastaste mas de lo que ganaste.';
     } else {
-      $$$('tituloTendencia').textContent = 'Mi saldo dia a dia';
+      $$$('tituloTendencia').textContent = 'Mi saldo día a día';
       Graficos.linea($$$('graficoTendencia'), Datos.saldoDiario(vista.anio, vista.mes));
       $$$('pieTendencia').textContent =
-        'Como te fue quedando la plata a lo largo del mes. Si la curva cruza hacia abajo la linea punteada, ese dia entraste en numeros rojos.';
+        'Como te fue quedando la plata a lo largo del mes. Si la curva cruza hacia abajo la línea punteada, ese día entraste en números rojos.';
     }
   }
 
@@ -324,7 +324,7 @@
 
   /* ---------------- 5. Movimientos ---------------- */
 
-  /** Una linea de la lista. Las transferencias se ven distinto a proposito:
+  /** Una línea de la lista. Las transferencias se ven distinto a propósito:
       no llevan signo, porque no suman ni restan a lo que tienes. */
   function lineaDeMovimiento(m) {
     const nombreCuenta = id => {
@@ -369,14 +369,14 @@
       $$$('listaMovimientos').innerHTML = `
         <div class="vacio">
           <span class="emoji-grande">📝</span>
-          <p><strong>Todavia no hay nada anotado</strong></p>
+          <p><strong>Todavía no hay nada anotado</strong></p>
           <p class="ayuda">Toca el boton + de abajo a la derecha. Anotar un gasto toma cinco segundos
-          y es lo unico que necesitas hacer todos los dias.</p>
+          y es lo único que necesitas hacer todos los días.</p>
         </div>`;
       return;
     }
 
-    // agrupamos por dia para que se lea mejor
+    // agrupamos por día para que se lea mejor
     const porDia = new Map();
     for (const m of movs) {
       if (!porDia.has(m.fecha)) porDia.set(m.fecha, []);
@@ -385,14 +385,14 @@
 
     let html = '';
     for (const [fecha, delDia] of porDia) {
-      // el total del dia no cuenta las transferencias: mover plata entre tus
+      // el total del día no cuenta las transferencias: mover plata entre tus
       // cuentas no te deja ni con mas ni con menos
       const totalDia = delDia.reduce((a, m) =>
         m.tipo === 'ingreso' ? a + m.monto
       : m.tipo === 'gasto'   ? a - m.monto
       : a, 0);
-      // Un dia en que solo moviste plata entre cuentas no tiene total que mostrar:
-      // poner "+$0" seria un numero sin significado.
+      // Un día en que solo moviste plata entre cuentas no tiene total que mostrar:
+      // poner "+$0" seria un número sin significado.
       const soloMovidas = delDia.every(m => m.tipo === 'transferencia');
       const totalHtml = soloMovidas ? '' : `
                  <span style="float:right; text-transform:none; letter-spacing:0">
@@ -417,7 +417,7 @@
           <span class="emoji-grande">🎯</span>
           <p><strong>Aun no tienes metas</strong></p>
           <p class="ayuda">Una buena primera meta es el fondo de emergencia: un mes de tus gastos
-          basicos guardado para imprevistos.</p>
+          básicos guardado para imprevistos.</p>
         </div>`;
       return;
     }
@@ -427,10 +427,10 @@
       const falta = Math.max(0, m.montoObjetivo - m.montoActual);
       const lista = pct >= 100;
 
-      // Si hay fecha limite, calculamos cuanto habria que guardar al mes
+      // Si hay fecha límite, calculamos cuanto habría que guardar al mes
       let ritmo = '';
       if (m.fechaObjetivo && !lista) {
-        // aFecha() y no new Date(iso): esto ultimo se lee como UTC y corre un dia
+        // aFecha() y no new Date(iso): esto último se lee como UTC y corre un día
         const meses = Math.max(1, Math.round(
           (Fechas.aFecha(m.fechaObjetivo) - Fechas.aFecha(Datos.hoyISO())) / (1000 * 60 * 60 * 24 * 30.4)));
         ritmo = `<p class="ayuda">Para llegar a tiempo necesitas guardar
@@ -497,7 +497,7 @@
     const intereses = total - aportado;
 
     $$$('resultadoCalc').innerHTML = `
-      <strong>En ${anios} ${anios === 1 ? 'ano' : 'anos'} juntarias ${esc(dinero(Math.round(total)))}</strong>
+      <strong>En ${anios} ${anios === 1 ? 'ano' : 'anos'} juntarías ${esc(dinero(Math.round(total)))}</strong>
       De eso, ${esc(dinero(aportado))} salieron de tu bolsillo y
       ${esc(dinero(Math.round(intereses)))} los generaron los intereses.
       ${intereses > aportado * 0.25
@@ -515,9 +515,9 @@
 
   /* ---------------- 8b. Cuentas ----------------
      Una cuenta es un lugar donde vive tu plata: la Cuenta RUT, el
-     efectivo del bolsillo, la tarjeta de credito. El saldo no se
+     efectivo del bolsillo, la tarjeta de crédito. El saldo no se
      guarda, se calcula sumando tus movimientos sobre el saldo
-     inicial, asi nunca se desincroniza.                          */
+     inicial, así nunca se desincroniza.                          */
 
   function dibujarCuentas() {
     const cuentas = Datos.saldosDeCuentas();
@@ -526,7 +526,7 @@
     $$$('listaCuentas').innerHTML = cuentas.map(c => {
       const tipo = Datos.tipoCuenta(c.tipo);
       const esDeuda = tipo.deuda;
-      // En una tarjeta, saldo negativo significa que debes. En el resto, numeros rojos.
+      // En una tarjeta, saldo negativo significa que debes. En el resto, números rojos.
       const texto = esDeuda && c.saldo < 0
         ? `Debes ${dinero(Math.abs(c.saldo))}`
         : dinero(c.saldo);
@@ -568,18 +568,18 @@
     ).join('');
     if (c) $$$('cuentaTipo').value = c.tipo;
 
-    // El saldo inicial solo se puede tocar al crear: cambiarlo despues
-    // mueve todos los saldos historicos de golpe y nadie entiende por que.
+    // El saldo inicial solo se puede tocar al crear: cambiarlo después
+    // mueve todos los saldos históricos de golpe y nadie entiende por que.
     $$$('ayudaSaldoCuenta').textContent = c
       ? 'Es el saldo con el que partio la cuenta. Cambiarlo mueve todos tus saldos desde esa fecha.'
-      : 'Cuanta plata hay hoy en esta cuenta. Si es una tarjeta de credito y debes plata, escribelo en negativo.';
+      : 'Cuanta plata hay hoy en esta cuenta. Si es una tarjeta de crédito y debes plata, escríbelo en negativo.';
 
     $$$('zonaBorrarCuenta').hidden = !c;
     if (c) {
       const usados = Datos.movimientosDeCuenta(c.id);
       $$$('ayudaBorrarCuenta').textContent = usados
         ? `Esta cuenta tiene ${usados} ${usados === 1 ? 'movimiento' : 'movimientos'}. Archivarla la saca de los formularios sin borrar tu historial.`
-        : 'Esta cuenta no tiene movimientos, asi que se puede borrar sin perder nada.';
+        : 'Esta cuenta no tiene movimientos, así que se puede borrar sin perder nada.';
       $$$('botonBorrarCuenta').textContent = usados ? '📦 Archivar cuenta' : '🗑️ Borrar cuenta';
     }
 
@@ -634,7 +634,7 @@
 
   /* ---------------- 9. Formulario de movimiento ---------------- */
   function dibujarCategorias() {
-    if (vista.tipo === 'transferencia') return;   // una transferencia no tiene categoria
+    if (vista.tipo === 'transferencia') return;   // una transferencia no tiene categoría
     const lista = vista.tipo === 'gasto' ? Datos.CATEGORIAS_GASTO : Datos.CATEGORIAS_INGRESO;
     if (!lista.some(c => c.id === vista.categoria)) vista.categoria = lista[0].id;
 
@@ -653,7 +653,7 @@
       </option>`).join('');
   }
 
-  /** Muestra los selectores que correspondan segun el tipo de movimiento. */
+  /** Muestra los selectores que correspondan según el tipo de movimiento. */
   function dibujarCuentasDelFormulario() {
     const cuentas = Datos.cuentasActivas();
     const primera = (cuentas[0] || {}).id;
@@ -684,7 +684,7 @@
   function abrirFormularioMovimiento() {
     $$$('campoMonto').value = '';
     $$$('campoNota').value = '';
-    // si estas mirando un mes pasado, la fecha por defecto es el dia 1 de ese mes
+    // si estas mirando un mes pasado, la fecha por defecto es el día 1 de ese mes
     $$$('campoFecha').value = esMesActual()
       ? Datos.hoyISO()
       : `${vista.anio}-${String(vista.mes + 1).padStart(2, '0')}-01`;
@@ -708,22 +708,22 @@
     $$$('tipoTransferencia').classList.toggle('activo', tipo === 'transferencia');
     $$$('tituloHojaMovimiento').textContent = TITULO_MOVIMIENTO[tipo];
 
-    // La categoria solo existe para ingresos y gastos.
+    // La categoría solo existe para ingresos y gastos.
     $$$('bloqueCategorias').hidden = tipo === 'transferencia';
     dibujarCategorias();
     dibujarCuentasDelFormulario();
   }
 
   /* ---------------- 10. Registro ----------------
-     No es una cuenta: no hay servidor ni contrasena. Solo pedimos
+     No es una cuenta: no hay servidor ni contraseña. Solo pedimos
      el correo una vez, lo guardamos en este dispositivo y con eso
      personalizamos la app. Quien se registra entra directo, sin
      pasar por el tutorial.                                       */
 
   function mostrarRegistro() {
     $$$('bienvenida').hidden = false;
-    // el foco automatico molesta en celular (abre el teclado de golpe),
-    // asi que solo lo hacemos en pantallas grandes
+    // el foco automático molesta en celular (abre el teclado de golpe),
+    // así que solo lo hacemos en pantallas grandes
     if (window.innerWidth >= 700) setTimeout(() => $$$('campoCorreo').focus(), 300);
   }
 
@@ -754,7 +754,7 @@
     }
 
     mostrarErrorCorreo('');
-    Datos.registrar(correo);      // esto tambien marca el tutorial como visto
+    Datos.registrar(correo);      // esto también marca el tutorial como visto
     ocultarRegistro();
     actualizarSaludo();
     cargarAjustesEnFormulario();
@@ -770,33 +770,33 @@
       cuerpo: `<p>Esta app hace tres cosas:</p>
         <ul>
           <li><strong>Anota</strong> lo que entra y lo que sale.</li>
-          <li><strong>Te lo muestra</strong> en graficos faciles de leer.</li>
-          <li><strong>Te ensena</strong> tecnicas de ahorro y te dice cual te conviene segun tus numeros.</li>
+          <li><strong>Te lo muestra</strong> en gráficos fáciles de leer.</li>
+          <li><strong>Te enseña</strong> técnicas de ahorro y te dice cual te conviene según tus números.</li>
         </ul>
         <p>Todo se guarda solo en tu dispositivo. No hay cuenta, ni clave, ni nadie mirando.</p>`,
     },
     {
-      titulo: 'Lo unico que tienes que hacer 📝',
+      titulo: 'Lo único que tienes que hacer 📝',
       cuerpo: `<p>Toca el boton <strong>+</strong> verde y anota lo que gastaste. Toma cinco segundos.</p>
-        <p>No intentes anotar el mes completo de memoria el primer dia. Anota lo de <em>hoy</em>,
-        y manana lo de manana. En una semana ya vas a ver patrones que hoy no ves.</p>`,
+        <p>No intentes anotar el mes completo de memoria el primer día. Anota lo de <em>hoy</em>,
+        y mañana lo de mañana. En una semana ya vas a ver patrones que hoy no ves.</p>`,
     },
     {
-      titulo: 'Lee tus graficos 📊',
+      titulo: 'Lee tus gráficos 📊',
       cuerpo: `<ul>
-          <li><strong>La dona</strong> te dice en que se te va la plata. La porcion mas grande es donde tienes mas que ganar si quieres recortar.</li>
-          <li><strong>Las barras</strong> comparan mes con mes. Ahi se ve si vas mejorando.</li>
-          <li><strong>Tu reparto</strong> compara tus gastos con la regla 50/30/20, un estandar simple y bastante util.</li>
+          <li><strong>La dona</strong> te dice en que se te va la plata. La porción mas grande es donde tienes mas que ganar si quieres recortar.</li>
+          <li><strong>Las barras</strong> comparan mes con mes. Ahí se ve si vas mejorando.</li>
+          <li><strong>Tu reparto</strong> compara tus gastos con la regla 50/30/20, un estándar simple y bastante útil.</li>
         </ul>`,
     },
     {
       titulo: 'Ponte una meta 🎯',
       cuerpo: `<p>Ahorrar "por si acaso" cuesta. Ahorrar para algo con nombre cuesta mucho menos.</p>
         <p>Si no sabes por donde partir, la mejor primera meta casi siempre es la misma:
-        <strong>un fondo de emergencia</strong> equivalente a un mes de tus gastos basicos.
+        <strong>un fondo de emergencia</strong> equivalente a un mes de tus gastos básicos.
         Es lo que evita que un imprevisto se convierta en deuda.</p>
-        <p>En la pestana <strong>Aprender</strong> hay once tecnicas explicadas en simple. No las leas todas
-        de una: elige una y pruebala un mes.</p>`,
+        <p>En la pestaña <strong>Aprender</strong> hay once técnicas explicadas en simple. No las leas todas
+        de una: elige una y pruébala un mes.</p>`,
     },
   ];
   let pasoActual = 0;
@@ -848,7 +848,7 @@
     lector.readAsText(archivo);
   }
 
-  /* ---------------- 13. Instalacion en el celular ---------------- */
+  /* ---------------- 13. Instalación en el celular ---------------- */
   let promesaInstalacion = null;
 
   window.addEventListener('beforeinstallprompt', e => {
@@ -907,7 +907,7 @@
       dibujarCategorias();
     });
 
-    // los selectores de cuenta se recuerdan para el proximo movimiento
+    // los selectores de cuenta se recuerdan para el próximo movimiento
     $$$('campoCuentaOrigen').addEventListener('change', e => {
       vista.cuentaOrigen = e.target.value;
       if (vista.tipo === 'transferencia') dibujarCuentasDelFormulario();
@@ -968,7 +968,7 @@
       avisar('Movimiento borrado');
     });
 
-    // ---- Pestanas del grafico de tendencia ----
+    // ---- Pestañas del gráfico de tendencia ----
     $$('.pestanas-grafico button').forEach(b =>
       b.addEventListener('click', () => {
         vista.tendencia = b.dataset.vista;
@@ -1049,7 +1049,7 @@
 
     // ---- Ajustes ----
     $$$('botonGuardarAjustes').addEventListener('click', () => {
-      // si escribio un correo, tiene que ser valido; si lo dejo vacio, lo respetamos
+      // si escribio un correo, tiene que ser valido; si lo dejo vacío, lo respetamos
       const correo = $$$('campoCorreoAjustes').value.trim().toLowerCase();
       if (correo && !Datos.correoValido(correo)) {
         avisar('Ese correo no se ve bien. Revisa que tenga @ y un punto.');
@@ -1099,13 +1099,13 @@
       const usados = Datos.movimientosDeCuenta(id);
 
       if (usados > 0) {
-        // Si todavia queda plata adentro, decirlo antes y no despues.
+        // Si todavía queda plata adentro, decirlo antes y no después.
         const saldo = Datos.saldoDeCuenta(id);
         const texto = saldo !== 0
-          ? `Todavia tiene ${dinero(saldo)}. Al archivarla deja de sumar a tu total de hoy, `
+          ? `Todavía tiene ${dinero(saldo)}. Al archivarla deja de sumar a tu total de hoy, `
             + 'aunque tus movimientos pasados quedan intactos.\n\n'
             + 'Si esa plata se fue a otra cuenta, anota primero la movida con el boton + '
-            + 'y despues archivala.'
+            + 'y después archívala.'
           : 'Deja de aparecer al anotar, pero sus movimientos siguen contando en tu historial.';
         const seguro = await Dialogos.confirmar({
           titulo: 'Archivar esta cuenta?', texto, aceptar: 'Archivar',
@@ -1117,7 +1117,7 @@
       } else {
         const seguro = await Dialogos.confirmar({
           titulo: 'Borrar esta cuenta?',
-          texto: 'No tiene movimientos, asi que no se pierde nada.',
+          texto: 'No tiene movimientos, así que no se pierde nada.',
           aceptar: 'Borrar', peligro: true,
         });
         if (!seguro) return;
@@ -1160,7 +1160,7 @@
       });
       if (!primera) return;
       const segunda = await Dialogos.confirmar({
-        titulo: 'Ultima parada',
+        titulo: 'Última parada',
         texto: 'Si no descargaste una copia desde Ajustes, esto no se recupera.',
         aceptar: 'Borrar todo', cancelar: 'Mejor no', peligro: true,
       });
@@ -1168,14 +1168,14 @@
       Datos.borrarTodo();
       cargarAjustesEnFormulario();
       irA('inicio');
-      // se borro tambien el registro, asi que volvemos a la pantalla de bienvenida
+      // se borro también el registro, así que volvemos a la pantalla de bienvenida
       $$$('campoCorreo').value = '';
       mostrarErrorCorreo('');
       mostrarRegistro();
       avisar('Todo borrado');
     });
 
-    // ---- Instalacion ----
+    // ---- Instalación ----
     $$$('botonInstalar').addEventListener('click', async () => {
       if (!promesaInstalacion) {
         avisar('En iPhone: boton Compartir → Agregar a inicio');
@@ -1203,7 +1203,7 @@
   function actualizarSaludo() {
     const nombre = Datos.obtener().ajustes.nombre;
     const h = new Date().getHours();
-    const momento = h < 12 ? 'Buenos dias' : h < 20 ? 'Buenas tardes' : 'Buenas noches';
+    const momento = h < 12 ? 'Buenos días' : h < 20 ? 'Buenas tardes' : 'Buenas noches';
     $$$('saludo').textContent = nombre ? `${momento}, ${nombre}` : momento;
   }
 
@@ -1225,9 +1225,9 @@
       $$$('avisoArranque').className = 'consejo';
       $$$('avisoArranque').innerHTML =
         '<strong>Actualizamos el formato de tus datos</strong>'
-        + 'Tus movimientos, metas y topes estan tal cual los dejaste, ahora repartidos en cuentas. '
+        + 'Tus movimientos, metas y topes están tal cual los dejaste, ahora repartidos en cuentas. '
         + 'Guardamos una copia de lo anterior antes de tocar nada. '
-        + 'Si algo no te calza, descarga tu copia desde Ajustes y avisanos.';
+        + 'Si algo no te calza, descarga tu copia desde Ajustes y avísanos.';
     }
   }
 
@@ -1249,7 +1249,7 @@
     if (!Datos.estaRegistrado()) {
       mostrarRegistro();
     } else if (atenderAtajo()) {
-      // entro por un atajo del icono: ya lo dejamos donde queria
+      // entro por un atajo del icono: ya lo dejamos donde quería
     } else if (!Datos.obtener().ajustes.tutorialVisto) {
       setTimeout(abrirTutorial, 450);
     }
@@ -1259,7 +1259,7 @@
       navigator.serviceWorker.register('sw.js').catch(() => {});
     }
 
-    // Si el celular cambia entre modo claro y oscuro, redibujamos los graficos
+    // Si el celular cambia entre modo claro y oscuro, redibujamos los gráficos
     if (window.matchMedia) {
       window.matchMedia('(prefers-color-scheme: dark)')
         .addEventListener('change', () => dibujar());
@@ -1269,7 +1269,7 @@
   }
 
   /**
-   * Saca la pantalla de arranque. La dejamos un momento minimo: un
+   * Saca la pantalla de arranque. La dejamos un momento mínimo: un
    * destello de 40 milisegundos se ve como un error, no como una app
    * abriendo.
    */
@@ -1287,7 +1287,7 @@
   /**
    * Atajos del icono: en el celular, dejar apretado el icono de la app
    * muestra "Anotar un gasto" y "Ver mis movimientos". Cada uno abre la
-   * app con una marca en la direccion, y aca la atendemos.
+   * app con una marca en la dirección, y acá la atendemos.
    * Devuelve true si venia por un atajo.
    */
   function atenderAtajo() {
@@ -1296,9 +1296,9 @@
     const accion = parametros.get('accion');
     if (!pantalla && !accion) return false;
 
-    // Primero limpiamos la marca de la direccion, para que recargar no
+    // Primero limpiamos la marca de la dirección, para que recargar no
     // repita el atajo. Va antes de abrir nada: si no, borrariamos la
-    // huella que el boton "atras" necesita para cerrar la ventana.
+    // huella que el boton "atrás" necesita para cerrar la ventana.
     history.replaceState({ tab: 'inicio' }, '', location.pathname);
 
     if (['inicio', 'movimientos', 'metas', 'aprender', 'ajustes'].includes(pantalla)) {

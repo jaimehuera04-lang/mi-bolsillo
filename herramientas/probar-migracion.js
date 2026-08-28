@@ -1,7 +1,7 @@
 /* ============================================================
    herramientas/probar-migracion.js
 
-   Corre la migracion del esquema 1 al 2 y revisa que NO se haya
+   Corre la migración del esquema 1 al 2 y revisa que NO se haya
    perdido ni movido un peso. Se ejecuta en Node, sin navegador,
    porque el motor de /src/core son funciones puras.
 
@@ -35,7 +35,7 @@ for (const archivo of [
 ]) {
   vm.runInContext(fs.readFileSync(path.join(RAIZ, archivo), 'utf8'), contexto, { filename: archivo });
 }
-// Los archivos declaran sus modulos con const, asi que no quedan colgando del
+// Los archivos declaran sus modulos con const, así que no quedan colgando del
 // objeto global: hay que pedirlos con una expresion dentro del mismo contexto.
 const { Migraciones, Calculos } =
   vm.runInContext('({ Migraciones, Calculos, Esquema })', contexto);
@@ -69,7 +69,7 @@ function datosDeEjemploV1() {
 
 /* ------------------------------------------------------------
    Totales calculados A MANO sobre el esquema 1, para tener con
-   que comparar sin usar el mismo codigo que estamos probando.
+   que comparar sin usar el mismo código que estamos probando.
    ------------------------------------------------------------ */
 function totalesV1(viejo) {
   const porMes = {};
@@ -98,8 +98,8 @@ function main() {
     : datosDeEjemploV1();
 
   console.log(archivo
-    ? `\nProbando la migracion con tu respaldo: ${archivo}\n`
-    : '\nProbando la migracion con datos de ejemplo\n');
+    ? `\nProbando la migración con tu respaldo: ${archivo}\n`
+    : '\nProbando la migración con datos de ejemplo\n');
 
   const antes = totalesV1(viejo);
   const r = Migraciones.aplicar(viejo);
@@ -108,18 +108,18 @@ function main() {
   console.log(`Esquema ${r.desde} -> ${r.hasta}\n`);
 
   /* --- 1. Nada se perdio --- */
-  revisar('Todos los movimientos siguen ahi',
+  revisar('Todos los movimientos siguen ahí',
     nuevo.movimientos.length === (viejo.movimientos || []).length,
-    `${(viejo.movimientos || []).length} antes, ${nuevo.movimientos.length} despues`);
+    `${(viejo.movimientos || []).length} antes, ${nuevo.movimientos.length} después`);
 
-  revisar('Todas las metas siguen ahi',
+  revisar('Todas las metas siguen ahí',
     nuevo.metas.length === (viejo.metas || []).length,
-    `${(viejo.metas || []).length} antes, ${nuevo.metas.length} despues`);
+    `${(viejo.metas || []).length} antes, ${nuevo.metas.length} después`);
 
   revisar('Los topes siguen iguales',
     JSON.stringify(nuevo.presupuestos) === JSON.stringify(viejo.presupuestos || {}));
 
-  /* --- 2. Los numeros de cada mes no se movieron --- */
+  /* --- 2. Los números de cada mes no se movieron --- */
   let mesesOk = true;
   const detalles = [];
   for (const [mes, t] of Object.entries(antes)) {
@@ -133,7 +133,7 @@ function main() {
   revisar('Ingresos y gastos de cada mes dan lo mismo', mesesOk,
     detalles.join(' | ') || `${Object.keys(antes).length} meses revisados`);
 
-  /* --- 3. Ningun movimiento quedo sin cuenta --- */
+  /* --- 3. Ningún movimiento quedo sin cuenta --- */
   const huerfanos = nuevo.movimientos.filter(m =>
     (m.tipo === 'gasto'   && !m.cuentaOrigen) ||
     (m.tipo === 'ingreso' && !m.cuentaDestino));
@@ -152,7 +152,7 @@ function main() {
   revisar('El objeto quedo marcado como esquema 2',
     nuevo.meta.schemaVersion === 2, `es ${nuevo.meta.schemaVersion}`);
 
-  /* --- 6. El registro y el nombre siguen ahi --- */
+  /* --- 6. El registro y el nombre siguen ahí --- */
   const a = (viejo.ajustes || {});
   revisar('El correo y el nombre se conservan',
     nuevo.ajustes.correo === (a.correo || '') && nuevo.ajustes.nombre === (a.nombre || ''));
@@ -210,7 +210,7 @@ function main() {
   revisar('Comprar con tarjeta y pagarla suma el gasto una sola vez',
     conTarjetaAgosto.gastos === agosto.gastos + 78000,
     `${agosto.gastos} + 78000 = ${conTarjetaAgosto.gastos}`);
-  revisar('La tarjeta queda saldada despues de pagarla',
+  revisar('La tarjeta queda saldada después de pagarla',
     Calculos.saldoDeCuenta(conTarjeta, tarjeta.id) === 0);
 
   /* ------------------------------------------------------------ */
@@ -219,7 +219,7 @@ function main() {
     console.log(`${fallas} ${fallas === 1 ? 'revision fallo' : 'revisiones fallaron'}. NO migres con estos datos.\n`);
     process.exit(1);
   }
-  console.log('Todo cuadra: la migracion no perdio ni movio un peso.\n');
+  console.log('Todo cuadra: la migración no perdio ni movio un peso.\n');
 }
 
 main();

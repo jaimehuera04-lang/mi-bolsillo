@@ -1,12 +1,12 @@
 /* ============================================================
-   graficos.js - Dibuja los graficos del dashboard.
-   No usamos ninguna libreria externa: son dibujos SVG hechos a
+   gráficos.js - Dibuja los gráficos del dashboard.
+   No usamos ninguna librería externa: son dibujos SVG hechos a
    mano. Ventaja: la app pesa poco, funciona sin internet y se
-   ve nitida en cualquier pantalla.
+   ve nítida en cualquier pantalla.
 
    Detalle importante: los colores NO se copian como valor fijo,
-   se escriben como var(--nombre) dentro de style="...". Asi, si
-   el celular cambia de modo claro a oscuro, los graficos se
+   se escriben como var(--nombre) dentro de style="...". Así, si
+   el celular cambia de modo claro a oscuro, los gráficos se
    adaptan solos sin tener que volver a dibujarlos.
    ============================================================ */
 
@@ -16,7 +16,7 @@ const Graficos = (() => {
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   /* ------------------------------------------------------------
-     1) DONA - en que se va la plata, por categoria
+     1) DONA - en que se va la plata, por categoría
      ------------------------------------------------------------ */
   function dona(contenedor, datos, opciones = {}) {
     const total = datos.reduce((a, d) => a + d.monto, 0);
@@ -38,7 +38,7 @@ const Graficos = (() => {
     datos.forEach(d => (d.porcentaje >= 3 ? visibles.push(d) : (restoMonto += d.monto)));
     if (restoMonto > 0) {
       visibles.push({
-        id: '__resto', nombre: 'Otros pequenos', emoji: '·',
+        id: '__resto', nombre: 'Otros pequeños', emoji: '·',
         color: '#9aa6b2', monto: restoMonto, porcentaje: (restoMonto / total) * 100,
       });
     }
@@ -46,7 +46,7 @@ const Graficos = (() => {
     visibles.forEach(d => {
       const barrido = (d.monto / total) * Math.PI * 2;
       const fin = angulo + barrido;
-      // pequeno espacio entre porciones para que se distingan
+      // pequeño espacio entre porciones para que se distingan
       const hueco = visibles.length > 1 ? Math.min(0.045, barrido * 0.12) : 0;
       arcos += arco(centro, centro, radio, angulo + hueco / 2, fin - hueco / 2, grosor, d.color);
       angulo = fin;
@@ -55,7 +55,7 @@ const Graficos = (() => {
     const principal = visibles[0];
     contenedor.innerHTML = `
       <svg class="grafico" viewBox="0 0 ${T} ${T}" style="max-height:230px" role="img"
-           aria-label="Reparto de gastos por categoria">
+           aria-label="Reparto de gastos por categoría">
         ${arcos}
         <text x="${centro}" y="${centro - 8}" text-anchor="middle"
               font-size="10" style="fill:var(--texto-suave)">Gastaste</text>
@@ -77,7 +77,7 @@ const Graficos = (() => {
       </div>`;
   }
 
-  // Genera el "trozo de rosquilla" entre dos angulos
+  // Genera el "trozo de rosquilla" entre dos ángulos
   function arco(cx, cy, r, desde, hasta, grosor, relleno) {
     const rExt = r, rInt = r - grosor;
     const p = (radio, ang) => [cx + radio * Math.cos(ang), cy + radio * Math.sin(ang)];
@@ -106,7 +106,7 @@ const Graficos = (() => {
     const anchoBarra = Math.min(15, anchoRanura / 3.2);
 
     let cuerpo = '';
-    // lineas guia horizontales
+    // líneas guía horizontales
     for (let i = 0; i <= 3; i++) {
       const y = margenArriba + (alturaUtil / 3) * i;
       cuerpo += `<line x1="0" y1="${y}" x2="${A}" y2="${y}"
@@ -130,7 +130,7 @@ const Graficos = (() => {
 
     contenedor.innerHTML = `
       <svg class="grafico" viewBox="0 0 ${A} ${H}" style="max-height:190px" role="img"
-           aria-label="Ingresos y gastos de los ultimos meses">${cuerpo}</svg>
+           aria-label="Ingresos y gastos de los últimos meses">${cuerpo}</svg>
       <div class="leyenda">
         <span class="item"><span class="punto" style="background:var(--verde)"></span>Entro</span>
         <span class="item"><span class="punto" style="background:var(--rojo)"></span>Salio</span>
@@ -138,11 +138,11 @@ const Graficos = (() => {
   }
 
   /* ------------------------------------------------------------
-     3) LINEA - como evoluciona tu saldo dia a dia
+     3) LÍNEA - como evoluciona tu saldo día a día
      ------------------------------------------------------------ */
   function linea(contenedor, puntos) {
     if (puntos.length < 2) {
-      contenedor.innerHTML = vacio('Anota un par de dias para ver la curva');
+      contenedor.innerHTML = vacio('Anota un par de días para ver la curva');
       return;
     }
 
@@ -177,9 +177,9 @@ const Graficos = (() => {
         <path d="${camino}" fill="none" stroke-width="2.5" stroke-linejoin="round"
               stroke-linecap="round" style="stroke:${trazo}"></path>
         <circle cx="${x(puntos.length - 1)}" cy="${y(ultimo.valor)}" r="4" style="fill:${trazo}"></circle>
-        <text x="0" y="${H - 6}" font-size="10" style="fill:var(--texto-suave)">dia 1</text>
+        <text x="0" y="${H - 6}" font-size="10" style="fill:var(--texto-suave)">día 1</text>
         <text x="${A}" y="${H - 6}" font-size="10" text-anchor="end"
-              style="fill:var(--texto-suave)">dia ${ultimo.dia}</text>
+              style="fill:var(--texto-suave)">día ${ultimo.dia}</text>
       </svg>`;
   }
 

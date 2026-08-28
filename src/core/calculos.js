@@ -1,14 +1,14 @@
 /* ============================================================
    src/core/calculos.js
-   El motor. Funciones PURAS: reciben el estado, devuelven numeros.
+   El motor. Funciones PURAS: reciben el estado, devuelven números.
    No tocan el DOM, no leen localStorage, no guardan nada.
    Por eso se pueden probar en Node sin abrir un navegador.
 
    Dos reglas que se respetan en todo este archivo:
      - Las transferencias NO son ingresos ni gastos. Mover plata
        entre dos cuentas tuyas no te hace mas rico ni mas pobre,
-       asi que no aparece en ningun total ni en ningun grafico.
-     - Un gasto con tarjeta se cuenta al comprar. Pagar despues la
+       así que no aparece en ningún total ni en ningún gráfico.
+     - Un gasto con tarjeta se cuenta al comprar. Pagar después la
        tarjeta es una transferencia, no un segundo gasto.
    ============================================================ */
 
@@ -41,7 +41,7 @@ const Calculos = (() => {
     return { ingresos, gastos, saldo, tasaAhorro, cantidad: movs.length };
   }
 
-  /** Gastos agrupados por categoria, de mayor a menor. */
+  /** Gastos agrupados por categoría, de mayor a menor. */
   function gastosPorCategoria(estado, anio, mes) {
     const movs = movimientosDelMes(estado, anio, mes).filter(esGasto);
     const mapa = new Map();
@@ -59,7 +59,7 @@ const Calculos = (() => {
       .sort((a, b) => b.monto - a.monto);
   }
 
-  /** Ingresos vs gastos de los ultimos N meses (grafico de barras). */
+  /** Ingresos vs gastos de los últimos N meses (gráfico de barras). */
   function historialMeses(estado, anio, mes, cantidad = 6) {
     const salida = [];
     for (let i = cantidad - 1; i >= 0; i--) {
@@ -73,7 +73,7 @@ const Calculos = (() => {
     return salida;
   }
 
-  /** Saldo acumulado dia a dia dentro del mes (grafico de linea). */
+  /** Saldo acumulado día a día dentro del mes (gráfico de línea). */
   function saldoDiario(estado, anio, mes) {
     const dias = Fechas.diasDelMes(anio, mes);
     const porDia = new Array(dias + 1).fill(0);
@@ -104,7 +104,7 @@ const Calculos = (() => {
       const cat = Categorias.porId(m.categoria);
       grupos[cat.tipo || 'deseo'] += m.monto;
     }
-    // el dinero que quedo sin gastar tambien cuenta como ahorro
+    // el dinero que quedo sin gastar también cuenta como ahorro
     const { ingresos, saldo } = resumenDelMes(estado, anio, mes);
     if (saldo > 0) grupos.ahorro += saldo;
 

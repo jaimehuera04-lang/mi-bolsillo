@@ -54,7 +54,7 @@ function png(ancho, alto, pixeles /* Uint8Array RGBA */) {
 function dibujar(tam, margenSeguro) {
   const buf = Buffer.alloc(tam * tam * 4);
   const escala = tam / 512;
-  // el area util se encoge cuando el icono es "maskable" (Android recorta los bordes)
+  // el area útil se encoge cuando el icono es "maskable" (Android recorta los bordes)
   const k = margenSeguro ? 0.72 : 1;
   const cx = tam / 2, cy = tam / 2;
 

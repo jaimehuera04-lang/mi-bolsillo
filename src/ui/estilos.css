@@ -1,6 +1,6 @@
 /* ============================================================
    Mi Bolsillo - hoja de estilos
-   Todo esta comentado para que puedas cambiar colores y tamanos
+   Todo esta comentado para que puedas cambiar colores y tamaños
    sin miedo. Los "--nombre" de abajo son variables: cambias el
    valor una sola vez y se actualiza en toda la app.
    ============================================================ */
@@ -29,7 +29,7 @@
   /* La mide app.js al arrancar; este valor es solo el de partida */
   --alto-barra-inferior: 62px;
 
-  /* El fondo de escritorio: lo que rodea al marco del telefono */
+  /* El fondo de escritorio: lo que rodea al marco del teléfono */
   --fondo-escritorio: #dfe5ea;
 }
 
@@ -49,7 +49,7 @@
 }
 
 /* Nada de seleccionar texto arrastrando el dedo, ni del menu de
-   "copiar / compartir" al dejar el dedo apretado: eso es de paginas
+   "copiar / compartir" al dejar el dedo apretado: eso es de páginas
    web. En los campos donde SI se escribe, lo devolvemos.
    touch-action: manipulation apaga el zoom al tocar dos veces. */
 * {
@@ -64,7 +64,7 @@ input, textarea, select, [contenteditable] {
   user-select: text;
 }
 
-/* El navegador ya no maneja el scroll de la pagina: lo maneja la app.
+/* El navegador ya no maneja el scroll de la página: lo maneja la app.
    Esto es lo que elimina el rebote elastico al llegar al final y el
    gesto de "deslizar hacia abajo para recargar" de Android. */
 html, body {
@@ -94,9 +94,9 @@ body {
   background: var(--fondo);
 }
 
-/* La UNICA zona que hace scroll en toda la app.
+/* La ÚNICA zona que hace scroll en toda la app.
    overscroll-behavior: contain evita que el scroll se "escape"
-   hacia la pagina cuando llegas al final de la lista. */
+   hacia la página cuando llegas al final de la lista. */
 .contenido {
   flex: 1 1 auto;
   overflow-y: auto;
@@ -164,7 +164,7 @@ input.con-error:focus { outline-color: var(--rojo); }
   transition: box-shadow .22s ease;
 }
 /* Al bajar por el contenido, el encabezado levanta una sombra:
-   es la senal de que hay algo pasando por debajo. */
+   es la señal de que hay algo pasando por debajo. */
 .app.desplazado .cabecera { box-shadow: 0 8px 20px rgba(10, 25, 40, .22); }
 .cabecera .saludo { font-size: 14px; opacity: .9; margin: 0; }
 .cabecera .titulo { font-size: 20px; font-weight: 700; margin: 2px 0 0; }
@@ -187,7 +187,7 @@ input.con-error:focus { outline-color: var(--rojo); }
 .chip-mes button:hover { opacity: 1; }
 
 /* ---------- Contenedores ---------- */
-/* El espacio de abajo es para que el boton + no tape la ultima tarjeta */
+/* El espacio de abajo es para que el boton + no tape la última tarjeta */
 .pantalla { padding: 16px 16px 92px; display: none; animation: aparecer .26s cubic-bezier(.2, .8, .3, 1); }
 .pantalla.activa { display: block; }
 @keyframes aparecer { from { opacity: 0; transform: translateY(10px) scale(.995); } to { opacity: 1; transform: none; } }
@@ -241,7 +241,7 @@ input.con-error:focus { outline-color: var(--rojo); }
 
 /* ---------- Barra de navegacion inferior ---------- */
 /* Ya no va "flotando" sobre el contenido: es una pieza real del marco,
-   como la barra de pestanas de cualquier app del telefono. */
+   como la barra de pestañas de cualquier app del teléfono. */
 .navegacion {
   flex: 0 0 auto;
   position: relative; z-index: 40;
@@ -261,8 +261,8 @@ input.con-error:focus { outline-color: var(--rojo); }
   transition: transform .2s cubic-bezier(.2, .85, .25, 1);
 }
 .navegacion button.activa { color: var(--verde); }
-/* el icono de la pestana en la que estas se levanta un poco: es la
-   senal chiquitita que separa una app de una barra de enlaces */
+/* el icono de la pestaña en la que estas se levanta un poco: es la
+   señal chiquitita que separa una app de una barra de enlaces */
 .navegacion button.activa .icono { transform: translateY(-2px) scale(1.12); }
 .navegacion button:active .icono { transform: scale(.88); }
 
@@ -321,7 +321,7 @@ input.con-error:focus { outline-color: var(--rojo); }
   text-transform: uppercase; letter-spacing: .04em; margin: 14px 0 2px;
 }
 
-/* ---------- Estado vacio ---------- */
+/* ---------- Estado vacío ---------- */
 .vacio { text-align: center; padding: 26px 14px; color: var(--texto-suave); }
 .vacio .emoji-grande { font-size: 42px; display: block; margin-bottom: 8px; }
 
@@ -410,7 +410,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--verde); out
 .consejo.aviso { background: #fff6e6; border-left-color: var(--amarillo); }
 @media (prefers-color-scheme: dark) { .consejo.aviso { background: #33280f; } }
 
-/* ---------- Acordeon de tecnicas de ahorro ---------- */
+/* ---------- Acordeon de técnicas de ahorro ---------- */
 .tecnica { border: 1px solid var(--borde); border-radius: 15px; margin-bottom: 10px; overflow: hidden; background: var(--tarjeta); }
 .tecnica > summary {
   padding: 14px; cursor: pointer; font-weight: 700; font-size: 15px;
@@ -428,7 +428,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--verde); out
   padding: 3px 8px; border-radius: 999px; background: var(--fondo); color: var(--texto-suave);
 }
 
-/* ---------- Graficos ---------- */
+/* ---------- Gráficos ---------- */
 .grafico { width: 100%; display: block; overflow: visible; }
 .leyenda { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 12px; font-size: 12.5px; }
 .leyenda .item { display: flex; align-items: center; gap: 6px; }
@@ -470,9 +470,9 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--verde); out
 .fila-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
 /* ---------- En el computador ----------
-   Una app de telefono estirada a 1400px de ancho se ve como un sitio
-   web. Asi que en pantallas grandes la dibujamos dentro de un marco
-   de telefono, centrado. Adentro funciona exactamente igual. */
+   Una app de teléfono estirada a 1400px de ancho se ve como un sitio
+   web. Así que en pantallas grandes la dibujamos dentro de un marco
+   de teléfono, centrado. Adentro funciona exactamente igual. */
 @media (min-width: 760px) and (min-height: 620px) {
   body {
     display: grid;
@@ -486,21 +486,21 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--verde); out
     border-radius: 42px;
     overflow: hidden;
     box-shadow:
-      0 0 0 11px #14181d,          /* el "borde" del telefono */
+      0 0 0 11px #14181d,          /* el "borde" del teléfono */
       0 0 0 12px rgba(255,255,255,.10),
       0 34px 70px rgba(8, 16, 26, .45);
   }
 }
 
 /* Pantallas anchas pero bajitas (un notebook acostado, por ejemplo):
-   no cabe el marco completo, asi que solo centramos y limitamos. */
+   no cabe el marco completo, así que solo centramos y limitamos. */
 @media (min-width: 760px) and (max-height: 619px) {
   .app { max-width: 520px; margin: 0 auto; }
 }
 
 /* ---------- Ventanas de confirmar y preguntar (dialogos.js) ----------
    Reemplazan al confirm() y al prompt() del navegador, que salian con
-   el nombre del sitio arriba y delataban que esto era una pagina web. */
+   el nombre del sitio arriba y delataban que esto era una página web. */
 .telon-dialogo {
   position: absolute; inset: 0; z-index: 70;
   display: flex; align-items: center; justify-content: center;

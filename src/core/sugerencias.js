@@ -1,9 +1,9 @@
 /* ============================================================
    src/core/sugerencias.js
-   Mira tus numeros ya calculados y decide que vale la pena decir.
-   Funcion pura: recibe el estado, devuelve textos. No dibuja.
+   Mira tus números ya calculados y decide que vale la pena decir.
+   Función pura: recibe el estado, devuelve textos. No dibuja.
 
-   Los textos de aqui tienen que cumplir VOZ.md:
+   Los textos de aquí tienen que cumplir VOZ.md:
    consecuencias en vez de juicios, y ninguna advertencia sin
    al menos una salida concreta.
    ============================================================ */
@@ -11,8 +11,8 @@
 const Sugerencias = (() => {
 
   /* ------------------------------------------------------------
-     SUGERENCIAS AUTOMATICAS
-     Miran tus numeros reales del mes y devuelven un mensaje.
+     SUGERENCIAS AUTOMÁTICAS
+     Miran tus números reales del mes y devuelven un mensaje.
      Se ordenan por prioridad: primero lo mas urgente.
      ------------------------------------------------------------ */
   function sugerir(estado, anio, mes) {
@@ -28,7 +28,7 @@ const Sugerencias = (() => {
       return [{
         tipo: 'info',
         titulo: 'Partamos por lo mas simple',
-        texto: 'Toca el boton + y anota un gasto de hoy, aunque sea chico. No necesitas anotar todo el mes de una: con anotar lo del dia basta para que en una semana ya veas patrones.',
+        texto: 'Toca el boton + y anota un gasto de hoy, aunque sea chico. No necesitas anotar todo el mes de una: con anotar lo del día basta para que en una semana ya veas patrones.',
       }];
     }
 
@@ -37,7 +37,7 @@ const Sugerencias = (() => {
       lista.push({
         tipo: 'alerta',
         titulo: 'Este mes vas gastando mas de lo que entro',
-        texto: `Vas ${$(Math.abs(r.saldo))} por debajo. No es para asustarse, es para actuar: mira las dos categorias mas altas de tu grafico y recorta ahi. Recortar donde mas gastas rinde mucho mas que recortar en lo chico.`,
+        texto: `Vas ${$(Math.abs(r.saldo))} por debajo. No es para asustarse, es para actuar: mira las dos categorías mas altas de tu gráfico y recorta ahí. Recortar donde mas gastas rinde mucho mas que recortar en lo chico.`,
       });
     }
 
@@ -52,12 +52,12 @@ const Sugerencias = (() => {
       });
     }
 
-    // 3. Una categoria concentra demasiado
+    // 3. Una categoría concentra demasiado
     if (cats.length > 2 && cats[0].porcentaje > 40) {
       lista.push({
         tipo: 'info',
         titulo: `${cats[0].emoji} ${cats[0].nombre} se lleva el ${Math.round(cats[0].porcentaje)}% de tus gastos`,
-        texto: `Son ${$(cats[0].monto)}. Si es un gasto fijo (arriendo, cuentas) esto es normal. Si es variable, ahi tienes la palanca mas grande que tienes para mover.`,
+        texto: `Son ${$(cats[0].monto)}. Si es un gasto fijo (arriendo, cuentas) esto es normal. Si es variable, ahí tienes la palanca mas grande que tienes para mover.`,
       });
     }
 
@@ -74,7 +74,7 @@ const Sugerencias = (() => {
     if (reparto.ingresos > 0 && reparto.necesidades.pct > 60) {
       lista.push({
         tipo: 'alerta',
-        titulo: 'Tus gastos fijos estan apretados',
+        titulo: 'Tus gastos fijos están apretados',
         texto: `Las necesidades se llevan el ${Math.round(reparto.necesidades.pct)}% (lo sano ronda el 50%). Cuando esto pasa, apretar los gustos casi no alcanza. Lo que mueve la aguja es renegociar algo grande: arriendo, plan de celular, seguros, una deuda cara.`,
       });
     }
@@ -84,13 +84,13 @@ const Sugerencias = (() => {
       lista.push({
         tipo: 'bien',
         titulo: `Vas ahorrando el ${r.tasaAhorro}% de lo que entro`,
-        texto: 'Estas sobre lo que recomienda la regla 50/30/20. Si todavia no tienes fondo de emergencia, ese es el mejor destino para esa plata antes de pensar en cualquier otra cosa.',
+        texto: 'Estas sobre lo que recomienda la regla 50/30/20. Si todavía no tienes fondo de emergencia, ese es el mejor destino para esa plata antes de pensar en cualquier otra cosa.',
       });
     } else if (r.tasaAhorro > 0 && r.tasaAhorro < 10 && r.ingresos > 0) {
       lista.push({
         tipo: 'info',
         titulo: `Estas ahorrando ${r.tasaAhorro}% este mes`,
-        texto: 'Es un comienzo real. Prueba esto: el dia que te paguen, aparta primero un 5% y vive con el resto. Ahorrar lo que sobra casi nunca funciona, porque casi nunca sobra.',
+        texto: 'Es un comienzo real. Prueba esto: el día que te paguen, aparta primero un 5% y vive con el resto. Ahorrar lo que sobra casi nunca funciona, porque casi nunca sobra.',
       });
     }
 
@@ -99,7 +99,7 @@ const Sugerencias = (() => {
       lista.push({
         tipo: 'info',
         titulo: 'Ponle nombre a tu ahorro',
-        texto: 'Ahorrar "porque si" cuesta mucho mas que ahorrar para algo. Crea una meta en la pestana Metas, aunque sea chica. Ver la barra avanzar hace mas por tu constancia que cualquier planilla.',
+        texto: 'Ahorrar "porque si" cuesta mucho mas que ahorrar para algo. Crea una meta en la pestaña Metas, aunque sea chica. Ver la barra avanzar hace mas por tu constancia que cualquier planilla.',
       });
     }
 

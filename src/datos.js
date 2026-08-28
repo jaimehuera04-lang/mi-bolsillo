@@ -1,9 +1,9 @@
 /* ============================================================
    src/datos.js
-   La puerta de entrada. Es lo unico que la interfaz conoce.
+   La puerta de entrada. Es lo único que la interfaz conoce.
 
-   Aqui NO hay cuentas matematicas (esas viven en /src/core) ni
-   codigo de localStorage (ese vive en /src/storage). Este archivo
+   Aquí NO hay cuentas matemáticas (esas viven en /src/core) ni
+   código de localStorage (ese vive en /src/storage). Este archivo
    solo ordena: valida lo que llega, llama a quien corresponde y
    guarda.
    ============================================================ */
@@ -86,8 +86,8 @@ const Datos = (() => {
     if (usados > 0) {
       throw new Error(
         `Esta cuenta tiene ${usados} ${usados === 1 ? 'movimiento' : 'movimientos'} anotados. `
-        + 'Si la borraras, esa plata desapareceria de tu historial. Puedes archivarla: deja de aparecer '
-        + 'al anotar, pero tus numeros pasados quedan intactos.'
+        + 'Si la borraras, esa plata desaparecería de tu historial. Puedes archivarla: deja de aparecer '
+        + 'al anotar, pero tus números pasados quedan intactos.'
       );
     }
     if (cuentasActivas().length <= 1) {
@@ -189,7 +189,7 @@ const Datos = (() => {
     guardar();
   }
 
-  /* ---------- Topes por categoria ---------- */
+  /* ---------- Topes por categoría ---------- */
   function fijarPresupuesto(categoria, monto) {
     const n = Dinero.entero(monto);
     if (!n) delete estado().presupuestos[categoria];
@@ -203,8 +203,8 @@ const Datos = (() => {
   }
 
   /* ---------- Registro ----------
-     Aclaracion honesta: esto NO es una cuenta. No hay servidor, ni
-     contrasena, ni sincronizacion. El correo se guarda en este
+     Aclaración honesta: esto NO es una cuenta. No hay servidor, ni
+     contraseña, ni sincronización. El correo se guarda en este
      dispositivo igual que el resto de los datos.                  */
   const correoValido = correo => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(correo).trim());
 
@@ -248,7 +248,7 @@ const Datos = (() => {
   const borrarTodo = () => Almacenamiento.borrarTodo();
 
   /* ---------- Datos de ejemplo ----------
-     Muestran a proposito los dos casos que mas se confunden:
+     Muestran a propósito los dos casos que mas se confunden:
      una compra con tarjeta (gasto) y el pago de esa tarjeta
      (transferencia, no un segundo gasto).                      */
   function cargarEjemplo() {
@@ -269,7 +269,7 @@ const Datos = (() => {
       { tipo: 'gasto',   monto: 8900,   categoria: 'restaurante', nota: 'Almuerzo',       fecha: dia(6),  cuentaOrigen: rut.id },
       { tipo: 'gasto',   monto: 6500,   categoria: 'restaurante', nota: 'Cafe',           fecha: dia(7),  cuentaOrigen: rut.id },
       { tipo: 'gasto',   monto: 9990,   categoria: 'suscripcion', nota: 'Streaming',      fecha: dia(8),  cuentaOrigen: rut.id },
-      // Compra con la tarjeta: el gasto se cuenta HOY, aunque la plata salga despues
+      // Compra con la tarjeta: el gasto se cuenta HOY, aunque la plata salga después
       { tipo: 'gasto',   monto: 78000,  categoria: 'ropa',        nota: 'Zapatillas',     fecha: dia(9),  cuentaOrigen: cmr.id },
       { tipo: 'gasto',   monto: 34000,  categoria: 'ocio',        nota: 'Salida',         fecha: dia(10), cuentaOrigen: rut.id },
       { tipo: 'gasto',   monto: 7200,   categoria: 'restaurante', nota: 'Delivery',       fecha: dia(12), cuentaOrigen: rut.id },
@@ -281,7 +281,7 @@ const Datos = (() => {
     e.movimientos = [];
     for (const m of ejemplos) agregarMovimiento(m);
 
-    // La cuenta vacia con que venia la app estorba en el ejemplo: se va,
+    // La cuenta vacía con que venia la app estorba en el ejemplo: se va,
     // pero solo si no tiene ni un movimiento anotado.
     e.cuentas = e.cuentas.filter(c =>
       c.id === rut.id || c.id === cmr.id || movimientosDeCuenta(c.id) > 0);

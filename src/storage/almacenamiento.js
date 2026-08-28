@@ -3,7 +3,7 @@
    Leer y escribir en el dispositivo. Nada mas.
    No calcula (eso es /src/core) y no dibuja (eso es /src/ui).
 
-   Lo delicado de este archivo es el arranque, porque es el unico
+   Lo delicado de este archivo es el arranque, porque es el único
    momento en que se pueden perder datos. El orden es siempre:
      1. leer lo que hay
      2. si esta viejo, GUARDAR UN RESPALDO
@@ -17,7 +17,7 @@ const Almacenamiento = (() => {
   let estado = null;
   let hayEspacio = true;          // false si el navegador nos bloqueo la escritura
 
-  /* Que paso en el ultimo arranque. La interfaz lo usa para avisar. */
+  /* Que paso en el último arranque. La interfaz lo usa para avisar. */
   const arranque = {
     migro: false,
     desde: null,
@@ -72,7 +72,7 @@ const Almacenamiento = (() => {
       veniaDeLlaveVieja = Boolean(crudo);
     }
 
-    // 2. Instalacion nueva: estado limpio con su cuenta por defecto.
+    // 2. Instalación nueva: estado limpio con su cuenta por defecto.
     if (!crudo) {
       estado = Esquema.estadoNuevo();
       estado.cuentas = [Esquema.cuentaPorDefecto()];
@@ -88,13 +88,13 @@ const Almacenamiento = (() => {
     } catch (e) {
       console.error('Los datos guardados no se pudieron leer.', e);
       arranque.error = 'No pudimos leer tus datos guardados. '
-        + 'No los borramos: siguen en este dispositivo. Escribenos antes de anotar cosas nuevas.';
+        + 'No los borramos: siguen en este dispositivo. Escríbenos antes de anotar cosas nuevas.';
       estado = Esquema.estadoNuevo();
       estado.cuentas = [Esquema.cuentaPorDefecto()];
       return estado;
     }
 
-    // 4. Si hay que migrar, primero el respaldo. Siempre, sin excepcion.
+    // 4. Si hay que migrar, primero el respaldo. Siempre, sin excepción.
     const version = Migraciones.versionDe(guardado);
     if (version !== Esquema.VERSION_ESQUEMA) {
       arranque.respaldoGuardado = escribirCrudo(Esquema.LLAVE_RESPALDO, crudo);
@@ -103,7 +103,7 @@ const Almacenamiento = (() => {
         // Sin respaldo no migramos. Preferimos una app que no arranca
         // a una app que arranca habiendo perdido los datos de alguien.
         arranque.error = 'No pudimos guardar una copia de seguridad antes de actualizar tus datos, '
-          + 'asi que no los tocamos. Libera espacio en el navegador y vuelve a abrir la app.';
+          + 'así que no los tocamos. Libera espacio en el navegador y vuelve a abrir la app.';
         estado = normalizar(guardado);
         return estado;
       }
@@ -116,11 +116,11 @@ const Almacenamiento = (() => {
         arranque.hasta = r.hasta;
         guardar();                       // se escribe entero, de una sola vez
         if (veniaDeLlaveVieja) {
-          // La llave antigua se deja donde esta hasta la proxima apertura:
-          // si algo salio mal, todavia se puede recuperar a mano.
+          // La llave antigua se deja donde esta hasta la próxima apertura:
+          // si algo salio mal, todavía se puede recuperar a mano.
         }
       } catch (e) {
-        console.error('Fallo la migracion.', e);
+        console.error('Fallo la migración.', e);
         arranque.error = e.message || 'No pudimos actualizar el formato de tus datos.';
         estado = normalizar(guardado);
       }
@@ -133,8 +133,8 @@ const Almacenamiento = (() => {
 
   /**
    * Rellena las llaves que falten sin pisar las que vienen.
-   * Es un cinturon de seguridad, no un reemplazo de las migraciones:
-   * aqui solo se agregan cajones vacios, nunca se transforma nada.
+   * Es un cinturón de seguridad, no un reemplazo de las migraciones:
+   * aquí solo se agregan cajones vacíos, nunca se transforma nada.
    */
   function normalizar(entrante) {
     const base = Esquema.estadoNuevo();
@@ -149,7 +149,7 @@ const Almacenamiento = (() => {
                          'ingresosPrevistos', 'estacionales', 'simulaciones', 'metas']) {
       if (!Array.isArray(salida[lista])) salida[lista] = [];
     }
-    // Nadie puede quedarse sin ninguna cuenta: los movimientos quedarian sueltos.
+    // Nadie puede quedarse sin ninguna cuenta: los movimientos quedarían sueltos.
     if (!salida.cuentas.length) salida.cuentas = [Esquema.cuentaPorDefecto()];
     return salida;
   }
@@ -159,7 +159,7 @@ const Almacenamiento = (() => {
     return JSON.stringify(estado, null, 2);
   }
 
-  /** El respaldo automatico que se guardo antes de migrar, o null. */
+  /** El respaldo automático que se guardo antes de migrar, o null. */
   const respaldoPrevio = () => leerCrudo(Esquema.LLAVE_RESPALDO);
 
   /**
@@ -178,7 +178,7 @@ const Almacenamiento = (() => {
       throw new Error('Ese archivo no es un respaldo de Mi Bolsillo.');
     }
     if (!Array.isArray(entrante.movimientos)) {
-      throw new Error('Ese archivo no tiene la lista de movimientos, asi que no es un respaldo valido.');
+      throw new Error('Ese archivo no tiene la lista de movimientos, así que no es un respaldo valido.');
     }
 
     const r = Migraciones.aplicar(entrante);   // tira error si viene del futuro
