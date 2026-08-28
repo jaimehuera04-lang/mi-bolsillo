@@ -20,6 +20,9 @@ estacionales − aportes a metas. Si una función no ayuda a entender o proteger
 10. **Esto es una app, no una página web.** Nada de `alert`/`confirm`/`prompt`, el documento no
     scrollea, y el botón atrás cierra capas antes de salir. Las ocho reglas de la cáscara están
     en [ARQUITECTURA.md](ARQUITECTURA.md#la-cáscara-de-app).
+11. **Se escribe con tildes y eñes**, y las preguntas llevan `¿?`. Vale también para los
+    comentarios del código. Nunca en nombres del programa (clases CSS, claves, ids). Regla 7 de
+    [VOZ.md](VOZ.md).
 
 ## Los demás documentos
 - [PRODUCTO.md](PRODUCTO.md) — idea central, las tres funciones, no-goals, contexto chileno.

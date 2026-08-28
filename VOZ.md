@@ -71,6 +71,20 @@ no es un logro.
 ❌ "🎉 ¡Genial! Registraste un gasto. ¡Sigue así!"
 ✅ "Pagaste la última cuota del refrigerador. Tu fecha de liberación se adelantó de agosto a junio."
 
+## 7. Se escribe bien
+
+Tildes y eñes, siempre. Un "Cuanto necesitas juntar?" es una app a medio hacer, y se nota
+antes que cualquier otra cosa. Las preguntas llevan sus dos signos: `¿…?`. Esto vale
+igual para los comentarios del código, porque Jaime los lee.
+
+❌ "Que tipo de cuenta es?" · "Durante (anos)" · "Tecnicas de ahorro"
+✅ "¿Qué tipo de cuenta es?" · "Durante (años)" · "Técnicas de ahorro"
+
+Cuidado con las que cambian de significado: *esta* cuenta / la memoria *está* llena;
+*que* funciona / por *qué* funciona; una cifra *seria* / *sería* un número sin sentido.
+Y nunca acentuar un nombre del programa: la clase CSS `pestanas-grafico` y la clave
+`categoria` se quedan como están.
+
 ---
 
 ## Lista de chequeo antes de publicar cualquier texto
@@ -81,3 +95,4 @@ no es un logro.
 - [ ] ¿Vale la pena interrumpir al usuario con esto?
 - [ ] Si es una proyección, ¿dice en qué se basa y que es una estimación?
 - [ ] Si celebra, ¿celebra un logro real?
+- [ ] ¿Tildes, eñes y signos `¿?` en su lugar?
