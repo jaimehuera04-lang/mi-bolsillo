@@ -33,6 +33,8 @@
     antesDeLeer: null,
     // Las líneas que encontramos en una cartola, esperando revisión.
     cartola: [],
+    // A qué movimiento ya anotado le estamos colgando un respaldo.
+    adjuntandoA: null,
     // 'entrar' o 'crear': en qué modo está la pantalla de bienvenida
     pasoEntrada: 'correo',
   };
@@ -77,13 +79,26 @@
     history.back();
   }
 
+  /**
+   * Esconde una hoja y suelta el foco si se había quedado adentro.
+   *
+   * Sin el blur, el cursor sigue dentro de un campo que ya no se ve: en
+   * el teléfono el teclado queda colgando y en el computador todo lo que
+   * escribas (Ctrl+V incluido) se lo lleva un campo invisible.
+   */
+  function ocultarHoja(id) {
+    const hoja = $$$(id);
+    hoja.classList.remove('abierto');
+    if (hoja.contains(document.activeElement)) document.activeElement.blur();
+  }
+
   const abrirHoja = id => {
     $$$(id).classList.add('abierto');
-    anotarCapa(() => $$$(id).classList.remove('abierto'));
+    anotarCapa(() => ocultarHoja(id));
   };
   const cerrarHoja = id => {
     if (!$$$(id).classList.contains('abierto')) return;
-    $$$(id).classList.remove('abierto');
+    ocultarHoja(id);
     olvidarCapa();
     // Si se cerró el formulario sin guardar, los respaldos que se
     // adjuntaron ahí no le pertenecen a nadie: se van de la bodega.
@@ -346,15 +361,18 @@
       return c ? `${c.icono} ${c.nombre}` : 'Cuenta borrada';
     };
 
-    // El clip solo aparece si el movimiento trae respaldo. No preguntamos
-    // acá si el archivo está en ESTE aparato: eso obligaría a consultar la
-    // bodega antes de dibujar. Se resuelve al tocarlo, y si la foto se
-    // quedó en el otro teléfono, el visor lo dice sin rodeos.
+    // El clip va SIEMPRE, apagado cuando no hay nada: es la única forma
+    // de poder adjuntarle la boleta a un gasto que anotaste al paso y
+    // fotografiaste después, que es como pasa en la vida real.
+    // No preguntamos acá si el archivo está en ESTE aparato: eso obligaría
+    // a consultar la bodega antes de dibujar. Se resuelve al tocarlo, y si
+    // la foto se quedó en el otro teléfono, el visor lo dice sin rodeos.
     const cuantos = (m.adjuntos || []).length;
-    const clip = cuantos
-      ? `<button class="clip" data-adjuntos="${m.id}"
-                 aria-label="${cuantos === 1 ? 'Ver el respaldo' : `Ver los ${cuantos} respaldos`}">📎</button>`
-      : '';
+    const clip = `
+      <button class="clip ${cuantos ? '' : 'vacio'}" data-adjuntos="${m.id}"
+              aria-label="${cuantos
+                ? (cuantos === 1 ? 'Ver el respaldo' : `Ver los ${cuantos} respaldos`)
+                : 'Adjuntar un respaldo'}">📎</button>`;
 
     if (m.tipo === 'transferencia') {
       return `
@@ -773,7 +791,7 @@
     dibujarAdjuntosDelFormulario();
   }
 
-  const EMOJI_ARCHIVO = { imagen: '🖼️', pdf: '📄', texto: '📃', desconocido: '📎' };
+  const EMOJI_ARCHIVO = { imagen: '🖼️', pdf: '📄', hoja: '📊', texto: '📃', desconocido: '📎' };
 
   function dibujarAdjuntosDelFormulario() {
     const caja = $$$('adjuntosDelFormulario');
@@ -962,13 +980,30 @@
 
   async function abrirVisorDeAdjuntos(movimientoId) {
     const mov = Datos.obtener().movimientos.find(m => m.id === movimientoId);
-    if (!mov || !(mov.adjuntos || []).length) return;
+    if (!mov) return;
+
+    // Sin respaldos, el clip no abre una ventana vacía: va derecho a
+    // elegir el archivo, que es lo único que se puede hacer ahí.
+    if (!(mov.adjuntos || []).length) {
+      vista.adjuntandoA = movimientoId;
+      $$$('archivoRespaldoSuelto').click();
+      return;
+    }
+
+    $$$('visorAdjunto').innerHTML = '<p class="ayuda">Abriendo…</p>';
+    abrirHoja('telonAdjunto');
+    await pintarVisor(movimientoId);
+  }
+
+  /** Dibuja el contenido del visor. Separado de abrirlo, para poder
+      refrescarlo al agregar un respaldo sin apilar otra ventana. */
+  async function pintarVisor(movimientoId) {
+    const mov = Datos.obtener().movimientos.find(m => m.id === movimientoId);
+    if (!mov) return;
 
     const visor = $$$('visorAdjunto');
     $$$('tituloAdjunto').textContent =
       mov.adjuntos.length === 1 ? 'El respaldo' : `Los ${mov.adjuntos.length} respaldos`;
-    visor.innerHTML = '<p class="ayuda">Abriendo…</p>';
-    abrirHoja('telonAdjunto');
 
     const partes = [];
     for (const ficha of mov.adjuntos) {
@@ -1012,10 +1047,50 @@
     }
 
     visor.innerHTML = partes.join('') + `
-      <button type="button" class="boton fantasma chico" data-quitar-respaldos="${esc(mov.id)}"
+      <button type="button" class="boton secundario" data-agregar-respaldo="${esc(mov.id)}"
               style="margin-top:16px">
+        📎 Agregar otro respaldo
+      </button>
+      <button type="button" class="boton fantasma chico" data-quitar-respaldos="${esc(mov.id)}"
+              style="margin-top:8px">
         Quitar los respaldos de este movimiento
       </button>`;
+  }
+
+  /**
+   * Le cuelga archivos a un movimiento que YA está anotado.
+   * Acá no se lee nada: el movimiento existe y sus números están puestos.
+   * Cambiárselos por lo que diga un papel sería pasar por encima de algo
+   * que la persona ya decidió.
+   */
+  async function adjuntarAMovimientoExistente(movimientoId, archivos) {
+    if (!Adjuntos.disponible()) {
+      avisar('Este navegador no nos deja guardar archivos');
+      return;
+    }
+    avisar('Guardando el respaldo…');
+
+    const fichas = [];
+    for (const archivo of archivos) {
+      const leido = await Archivos.leer(archivo);
+      const ficha = await Adjuntos.guardar({
+        id: 'adj-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+        movimientoId,
+        nombre: leido.nombre,
+        tipo: leido.tipo,
+        blob: leido.blob,
+      });
+      if (ficha) fichas.push(ficha);
+      else avisar(`"${leido.nombre}" pesa más de ${Archivos.pesoLegible(Adjuntos.MAXIMO_POR_ARCHIVO)}`);
+    }
+
+    if (!fichas.length) return;
+    Datos.adjuntarAMovimiento(movimientoId, fichas);
+    mostrarPesoDeRespaldos();
+    dibujarMovimientos();
+    // si el visor está abierto, que muestre lo recién agregado
+    if ($$$('telonAdjunto').classList.contains('abierto')) await pintarVisor(movimientoId);
+    avisar(fichas.length === 1 ? 'Respaldo guardado 📎' : `${fichas.length} respaldos guardados 📎`);
   }
 
   /* ---------------- Leer una cartola completa ---------------- */
@@ -1036,7 +1111,17 @@
 
     const cartola = Lector.leerCartola(leido.texto, { hoy: Datos.hoyISO() });
     if (!cartola.filas.length) {
-      await Dialogos.avisar({
+      // Distinguir los dos "no hay nada" importa: si las líneas estaban y
+      // se fueron por venir con fecha de mañana, decir "no encontramos
+      // nada" es mentira y deja a la persona sin saber qué hacer.
+      await Dialogos.avisar(cartola.futuras ? {
+        titulo: 'Esa cartola viene adelantada',
+        texto: `Encontramos ${cartola.futuras} `
+             + `${cartola.futuras === 1 ? 'movimiento' : 'movimientos'}, pero con fecha `
+             + 'posterior a hoy, así que no los anotamos: serían gastos que todavía no pasaron.\n\n'
+             + 'Si son cargos que vienen (una cuota, un pago automático), van a entrar solos '
+             + 'cuando llegue el día. Vuelve a leer la cartola entonces.',
+      } : {
         titulo: 'No encontramos movimientos ahí',
         texto: 'Buscamos líneas que tengan una fecha y un monto y no apareció ninguna. '
              + 'Si el archivo es un comprobante suelto, adjúntalo con el botón + al anotar '
@@ -1045,10 +1130,10 @@
       return;
     }
 
-    abrirRevisionDeCartola(cartola.filas, leido.nombre);
+    abrirRevisionDeCartola(cartola.filas, leido.nombre, cartola.futuras);
   }
 
-  function abrirRevisionDeCartola(filas, nombreArchivo) {
+  function abrirRevisionDeCartola(filas, nombreArchivo, futuras) {
     // Cada fila se marca sola, salvo las que ya parecen anotadas.
     vista.cartola = filas.map((f, i) => {
       const repetido = Datos.movimientoParecido(f);
@@ -1057,9 +1142,11 @@
 
     const repetidos = vista.cartola.filter(f => f.repetido).length;
     $$$('resumenCartola').textContent =
-      `De ${esc(nombreArchivo)} sacamos ${filas.length} `
+      `De ${nombreArchivo} sacamos ${filas.length} `
       + `${filas.length === 1 ? 'movimiento' : 'movimientos'}`
-      + (repetidos ? `, y ${repetidos} ya ${repetidos === 1 ? 'estaba anotado' : 'estaban anotados'}.` : '.');
+      + (repetidos ? `, y ${repetidos} ya ${repetidos === 1 ? 'estaba anotado' : 'estaban anotados'}` : '')
+      + '.'
+      + (futuras ? ` Dejamos fuera ${futuras} con fecha posterior a hoy.` : '');
 
     $$$('cuentaCartola').innerHTML = opcionesDeCuenta(vista.cuentaOrigen);
     dibujarCartola();
@@ -1130,6 +1217,70 @@
     } else {
       avisar(`${r.anotados.length} ${r.anotados.length === 1 ? 'movimiento anotado' : 'movimientos anotados'} ✅`);
     }
+  }
+
+  /* ---------------- Arrastrar y pegar (solo computador) ----------------
+
+     En el teléfono no existe ninguna de las dos cosas, así que esto no
+     le quita nada a nadie: es comodidad de escritorio. Arrastrar un
+     comprobante encima de la app o pegar una captura con Ctrl+V hace lo
+     mismo que el botón de adjuntar, sin ir a buscar el archivo.        */
+
+  function prepararArrastreDeArchivos() {
+    const marco = $$$('app') || document.body;
+
+    // Sin esto el navegador se lleva el archivo a una pestaña nueva y
+    // te saca de la app, que es exactamente lo contrario de lo que
+    // esperabas al soltarlo.
+    ['dragenter', 'dragover'].forEach(evento =>
+      marco.addEventListener(evento, e => {
+        if (!traeArchivos(e)) return;
+        e.preventDefault();
+        marco.classList.add('recibiendo-archivo');
+      }));
+
+    ['dragleave', 'drop'].forEach(evento =>
+      marco.addEventListener(evento, e => {
+        // dragleave salta también al pasar por encima de los hijos: solo
+        // apagamos el aviso cuando el puntero salió del marco de verdad
+        if (evento === 'dragleave' && e.relatedTarget && marco.contains(e.relatedTarget)) return;
+        marco.classList.remove('recibiendo-archivo');
+      }));
+
+    marco.addEventListener('drop', async e => {
+      const archivos = [...((e.dataTransfer || {}).files || [])];
+      if (!archivos.length) return;
+      e.preventDefault();
+      await recibirArchivosDeAfuera(archivos);
+    });
+
+    // Pegar una captura de pantalla del comprobante con Ctrl+V.
+    document.addEventListener('paste', async e => {
+      // si estás escribiendo en un campo, pegar es pegar texto y punto
+      const donde = document.activeElement;
+      if (donde && /^(INPUT|TEXTAREA|SELECT)$/.test(donde.tagName)) return;
+
+      const archivos = [...((e.clipboardData || {}).files || [])];
+      if (!archivos.length) return;
+      e.preventDefault();
+      await recibirArchivosDeAfuera(archivos);
+    });
+  }
+
+  const traeArchivos = e =>
+    Boolean(e.dataTransfer && [...(e.dataTransfer.types || [])].includes('Files'));
+
+  /**
+   * Un archivo que llegó arrastrado o pegado. Si el formulario ya está
+   * abierto se suma ahí; si no, lo abrimos nosotros. No adivinamos si es
+   * cartola o comprobante: de eso ya se encarga adjuntarArchivos().
+   */
+  async function recibirArchivosDeAfuera(archivos) {
+    if (!$$$('telonMovimiento').classList.contains('abierto')) {
+      abrirFormularioMovimiento();
+      await new Promise(r => setTimeout(r, 280));   // que alcance a entrar la hoja
+    }
+    await adjuntarArchivos(archivos);
   }
 
   /* ---------------- Cuánto ocupan los respaldos ---------------- */
@@ -2316,7 +2467,25 @@
       if (e.target.closest('#botonDeshacerLectura')) deshacerLectura();
     });
 
+    // Adjuntarle un respaldo a un movimiento que ya está anotado.
+    $$$('archivoRespaldoSuelto').addEventListener('change', async e => {
+      const archivos = [...e.target.files];
+      e.target.value = '';
+      const movimientoId = vista.adjuntandoA;
+      vista.adjuntandoA = null;
+      if (archivos.length && movimientoId) {
+        await adjuntarAMovimientoExistente(movimientoId, archivos);
+      }
+    });
+
     $$$('visorAdjunto').addEventListener('click', async e => {
+      const agregar = e.target.closest('[data-agregar-respaldo]');
+      if (agregar) {
+        vista.adjuntandoA = agregar.dataset.agregarRespaldo;
+        $$$('archivoRespaldoSuelto').click();
+        return;
+      }
+
       const b = e.target.closest('[data-quitar-respaldos]');
       if (!b) return;
       const seguro = await Dialogos.confirmar({
@@ -2669,6 +2838,7 @@
     Datos.cargar();
     prepararMarco();
     prepararBotonAtras();
+    prepararArrastreDeArchivos();
     conectarEventos();
     prepararNube();
     actualizarSaludo();

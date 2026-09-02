@@ -736,3 +736,40 @@ input[readonly] {
   cursor: default;
 }
 .boton:disabled:active { transform: none; }
+
+/* El clip apagado: el movimiento no tiene respaldo todavía, pero se
+   puede tocar para agregarle uno. Sin esto no habría forma de
+   adjuntarle la boleta a un gasto que anotaste al paso. */
+.movimiento .clip.vacio { opacity: .18; }
+.movimiento .clip.vacio:hover { opacity: .5; }
+
+/* Arrastrar un archivo encima de la app (solo en el computador).
+   Van dos capas: el marco punteado marca la zona, y la pastilla lleva
+   el texto. Con una sola, la frase queda flotando encima de los
+   números y no se sabe si es parte de la pantalla o del arrastre. */
+.app.recibiendo-archivo::before,
+.app.recibiendo-archivo::after {
+  position: absolute;
+  z-index: 140;
+  pointer-events: none;
+}
+.app.recibiendo-archivo::before {
+  content: "";
+  inset: 10px;
+  border: 2px dashed var(--verde);
+  border-radius: var(--radio);
+  background: rgba(16, 160, 114, .12);
+}
+.app.recibiendo-archivo::after {
+  content: "Suéltalo para leerlo";
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 13px 20px;
+  border-radius: 999px;
+  background: var(--verde);
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  box-shadow: var(--sombra-alta);
+  white-space: nowrap;
+}

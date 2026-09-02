@@ -224,6 +224,17 @@ revisar('lo que llega sin signo es ingreso',
   { t: 'ingreso', m: 50000 });
 revisar('Netflix cae en suscripciones', pegada.filas[3].categoria, 'suscripcion');
 
+/* ---- Lo que viene con fecha de manana ---- */
+console.log('\nUna cartola adelantada');
+const adelantada = Lector.leerCartola(
+  `Fecha;Descripcion;Cargo;Abono;Saldo
+02/08/2026;COMPRA JUMBO;68.450;;431.550
+15/12/2026;CUOTA QUE VIENE;45.000;;386.550
+20/12/2026;OTRA CUOTA QUE VIENE;45.000;;341.550
+`, { hoy: HOY });
+revisar('solo anota lo que ya paso', adelantada.filas.length, 1);
+revisar('cuenta las que dejo fuera', adelantada.futuras, 2);
+
 /* ---- Fechas ---- */
 console.log('\nFechas');
 revisar('dd/mm/aaaa se lee a la chilena',

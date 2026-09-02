@@ -13,6 +13,12 @@
    está el límite honesto de la función:
 
      .csv .txt .html   texto directo. Sale entero.
+     .xlsx             es un ZIP con XML adentro, igual que el que
+                       arma excel.js para exportar. Se desarma a mano.
+                       Es el formato en que los bancos chilenos dan la
+                       cartola, así que sin esto la función queda coja.
+                       El .xls antiguo NO: ese es otro formato entero y
+                       la app le dice a la persona cómo convertirlo.
      .pdf              se descomprime y se sacan las letras. Funciona
                        con los comprobantes del banco y las boletas
                        electrónicas, que traen texto de verdad
@@ -47,6 +53,7 @@ const Archivos = (() => {
     const nombre = nombreEnMinusculas(archivo);
     if (tipo.startsWith('image/') || /\.(jpe?g|png|gif|webp|heic|heif|avif)$/.test(nombre)) return 'imagen';
     if (tipo === 'application/pdf' || nombre.endsWith('.pdf')) return 'pdf';
+    if (/\.xlsx?$/.test(nombre) || tipo.includes('spreadsheet') || tipo.includes('ms-excel')) return 'hoja';
     if (tipo.startsWith('text/') || EXTENSIONES_TEXTO.some(e => nombre.endsWith(e))) return 'texto';
     return 'desconocido';
   }
@@ -266,7 +273,233 @@ const Archivos = (() => {
   }
 
   /* ============================================================
-     3. Fotos
+     3. Cartolas en Excel
+
+     Los bancos chilenos casi nunca dan la cartola en .csv: la dan en
+     .xlsx. Y un .xlsx es un ZIP con XML adentro, que es exactamente
+     lo que /src/ui/excel.js arma al revés para exportar. Acá lo
+     desarmamos, con el mismo criterio: sin librerías.
+
+     Del archivo solo nos interesan tres piezas:
+       xl/sharedStrings.xml   el texto, guardado una sola vez y
+                              referenciado por número desde las celdas
+       xl/worksheets/sheet1.xml  las filas y columnas
+       xl/styles.xml          para saber qué celdas son FECHAS, porque
+                              Excel las guarda como el número 46235 y
+                              sin esto la fecha llegaría ilegible
+     ============================================================ */
+
+  /** Abre un ZIP en memoria. Devuelve un mapa nombre -> bytes. */
+  async function abrirZip(bytes) {
+    const vista = new DataView(bytes.buffer, bytes.byteOffset, bytes.length);
+    const archivos = new Map();
+
+    // El índice del ZIP va al FINAL, no al principio: hay que buscar
+    // su marca de atrás hacia adelante.
+    let fin = -1;
+    for (let i = bytes.length - 22; i >= 0 && i > bytes.length - 65558; i--) {
+      if (vista.getUint32(i, true) === 0x06054b50) { fin = i; break; }
+    }
+    if (fin === -1) return archivos;
+
+    const cuantos = vista.getUint16(fin + 10, true);
+    let puntero = vista.getUint32(fin + 16, true);
+
+    for (let n = 0; n < cuantos; n++) {
+      if (puntero + 46 > bytes.length || vista.getUint32(puntero, true) !== 0x02014b50) break;
+
+      const metodo    = vista.getUint16(puntero + 10, true);
+      const comprimido = vista.getUint32(puntero + 20, true);
+      const largoNombre = vista.getUint16(puntero + 28, true);
+      const largoExtra  = vista.getUint16(puntero + 30, true);
+      const largoNota   = vista.getUint16(puntero + 32, true);
+      const dondeEmpieza = vista.getUint32(puntero + 42, true);
+
+      const nombre = new TextDecoder()
+        .decode(bytes.subarray(puntero + 46, puntero + 46 + largoNombre));
+
+      // La cabecera local repite el nombre y los extras, y su largo puede
+      // no coincidir con el del índice: hay que leerlo de nuevo ahí.
+      const nombreLocal = vista.getUint16(dondeEmpieza + 26, true);
+      const extraLocal  = vista.getUint16(dondeEmpieza + 28, true);
+      const datos = dondeEmpieza + 30 + nombreLocal + extraLocal;
+      const crudo = bytes.subarray(datos, datos + comprimido);
+
+      if (metodo === 0) {
+        archivos.set(nombre, crudo);
+      } else if (metodo === 8) {
+        const abierto = await inflarCrudo(crudo);
+        if (abierto) archivos.set(nombre, abierto);
+      }
+      // cualquier otro método de compresión no lo tocamos
+
+      puntero += 46 + largoNombre + largoExtra + largoNota;
+    }
+    return archivos;
+  }
+
+  /** Dentro de un ZIP el deflate va sin cabecera zlib. */
+  async function inflarCrudo(bytes) {
+    if (typeof DecompressionStream === 'undefined') return null;
+    try {
+      const flujo = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+      return new Uint8Array(await new Response(flujo).arrayBuffer());
+    } catch (e) {
+      return null;
+    }
+  }
+
+  const textoDeBytes = bytes => new TextDecoder().decode(bytes);
+
+  const desescaparXml = t => String(t)
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/&amp;/g, '&');
+
+  /** El texto compartido: cada <si> puede venir partido en varios <t>. */
+  function textosCompartidos(xml) {
+    if (!xml) return [];
+    return (xml.match(/<si\b[\s\S]*?<\/si>|<si\s*\/>/g) || []).map(si =>
+      desescaparXml((si.match(/<t[^>]*>([\s\S]*?)<\/t>/g) || [])
+        .map(t => t.replace(/<[^>]+>/g, '')).join('')));
+  }
+
+  /* Los formatos de fecha que Excel trae de fábrica. Del 14 al 22 son
+     fechas y horas; del 45 al 47, duraciones. */
+  const FORMATOS_FECHA = new Set([14, 15, 16, 17, 18, 19, 20, 21, 22, 45, 46, 47]);
+
+  /**
+   * Qué estilos son fechas. Excel guarda "2 de agosto de 2026" como el
+   * número 46235, y lo único que lo distingue de un monto es el formato
+   * que tiene aplicado. Sin esto, la columna Fecha llega como 46235 y el
+   * lector no encuentra una sola fecha en toda la cartola.
+   */
+  function estilosDeFecha(xml) {
+    const esFecha = new Set();
+    if (!xml) return esFecha;
+
+    // los formatos que el propio archivo define (dd/mm/yyyy y compañía)
+    const propios = new Set();
+    for (const m of xml.matchAll(/<numFmt[^>]*numFmtId="(\d+)"[^>]*formatCode="([^"]*)"/g)) {
+      // si el formato menciona días, meses o años, es una fecha
+      if (/[dmyDMY]/.test(m[2].replace(/\[[^\]]*\]/g, '').replace(/"[^"]*"/g, ''))) {
+        propios.add(Number(m[1]));
+      }
+    }
+
+    const bloque = (xml.match(/<cellXfs[\s\S]*?<\/cellXfs>/) || [''])[0];
+    let indice = 0;
+    for (const m of bloque.matchAll(/<xf\b[^>]*>/g)) {
+      const id = Number((m[0].match(/numFmtId="(\d+)"/) || [])[1] || 0);
+      if (FORMATOS_FECHA.has(id) || propios.has(id)) esFecha.add(indice);
+      indice++;
+    }
+    return esFecha;
+  }
+
+  /**
+   * El número de serie de Excel a 'dd/mm/aaaa'.
+   * El día 0 es el 30 de diciembre de 1899 por el famoso error de Excel,
+   * que cree que 1900 fue bisiesto. Se respeta el error a propósito: es
+   * lo que hace que las fechas calcen con lo que muestra Excel.
+   */
+  function fechaDeSerie(serie) {
+    const n = Number(serie);
+    if (!Number.isFinite(n) || n < 1 || n > 80000) return '';
+    const f = new Date(Date.UTC(1899, 11, 30) + Math.floor(n) * 86400000);
+    const dd = String(f.getUTCDate()).padStart(2, '0');
+    const mm = String(f.getUTCMonth() + 1).padStart(2, '0');
+    return `${dd}/${mm}/${f.getUTCFullYear()}`;
+  }
+
+  /** La letra de la columna de una celda: de "BC12" saca 54. */
+  function numeroDeColumna(referencia) {
+    const letras = String(referencia || '').match(/^[A-Z]+/);
+    if (!letras) return -1;
+    let n = 0;
+    for (const c of letras[0]) n = n * 26 + (c.charCodeAt(0) - 64);
+    return n - 1;
+  }
+
+  /** Una hoja de cálculo a texto separado por tabulaciones. */
+  function textoDeHoja(xml, compartidos, esFecha) {
+    const lineas = [];
+
+    for (const fila of (xml.match(/<row\b[\s\S]*?<\/row>/g) || [])) {
+      const celdas = [];
+      for (const m of fila.matchAll(/<c\b([^>]*)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
+        const atributos = m[1] || '';
+        const cuerpo = m[2] || '';
+        const donde = numeroDeColumna((atributos.match(/r="([A-Z]+\d+)"/) || [])[1]);
+        const tipo = (atributos.match(/t="([^"]+)"/) || [])[1] || 'n';
+        const estilo = Number((atributos.match(/s="(\d+)"/) || [])[1] || -1);
+        const valor = (cuerpo.match(/<v[^>]*>([\s\S]*?)<\/v>/) || [])[1];
+
+        let texto = '';
+        if (tipo === 's') {
+          texto = compartidos[Number(valor)] || '';
+        } else if (tipo === 'inlineStr') {
+          texto = desescaparXml((cuerpo.match(/<t[^>]*>([\s\S]*?)<\/t>/g) || [])
+            .map(t => t.replace(/<[^>]+>/g, '')).join(''));
+        } else if (tipo === 'str') {
+          texto = desescaparXml(valor || '');
+        } else if (valor !== undefined) {
+          texto = esFecha.has(estilo) ? (fechaDeSerie(valor) || valor) : valor;
+        }
+
+        if (donde >= 0) celdas[donde] = texto;
+        else celdas.push(texto);
+      }
+      // el tabulador es el separador: ninguna glosa de banco lo trae adentro
+      lineas.push([...celdas].map(c => (c === undefined ? '' : c)).join('\t'));
+    }
+    return lineas.join('\n');
+  }
+
+  async function leerHojaDeCalculo(archivo) {
+    const bytes = new Uint8Array(await archivo.arrayBuffer());
+
+    // Un .xls de los antiguos no es un ZIP: empieza con la firma de los
+    // documentos compuestos de Office. No lo sabemos leer y hay que
+    // decirlo con la salida concreta, no con un "formato no soportado".
+    if (bytes[0] === 0xD0 && bytes[1] === 0xCF) {
+      return {
+        texto: '',
+        aviso: 'Ese es un Excel de los antiguos (.xls). Ábrelo en Excel y usa '
+             + 'Guardar como → .xlsx o .csv, y ahí sí lo leemos.',
+      };
+    }
+
+    const zip = await abrirZip(bytes);
+    if (!zip.size) {
+      return { texto: '', aviso: 'Ese archivo de Excel viene dañado o con clave.' };
+    }
+
+    const compartidos = textosCompartidos(
+      zip.has('xl/sharedStrings.xml') ? textoDeBytes(zip.get('xl/sharedStrings.xml')) : '');
+    const esFecha = estilosDeFecha(
+      zip.has('xl/styles.xml') ? textoDeBytes(zip.get('xl/styles.xml')) : '');
+
+    // Las hojas en orden: sheet1, sheet2… Leemos todas y las pegamos,
+    // porque hay bancos que parten la cartola en dos.
+    const hojas = [...zip.keys()]
+      .filter(n => /^xl\/worksheets\/sheet\d+\.xml$/.test(n))
+      .sort((a, b) => Number(a.match(/\d+/)[0]) - Number(b.match(/\d+/)[0]));
+
+    const texto = hojas
+      .map(n => textoDeHoja(textoDeBytes(zip.get(n)), compartidos, esFecha))
+      .join('\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+
+    return texto
+      ? { texto, aviso: '' }
+      : { texto: '', aviso: 'Esa planilla vino vacía.' };
+  }
+
+  /* ============================================================
+     4. Fotos
      ============================================================ */
 
   /**
@@ -416,6 +649,11 @@ const Archivos = (() => {
       return { ...base, texto: r.texto, aviso: r.aviso };
     }
 
+    if (clase === 'hoja') {
+      const r = await leerHojaDeCalculo(archivo);
+      return { ...base, texto: r.texto, aviso: r.aviso };
+    }
+
     if (clase === 'imagen') {
       const [fechaFoto, codigo, blob] = await Promise.all([
         fechaDeLaFoto(archivo), codigoDe(archivo), achicar(archivo),
@@ -447,5 +685,6 @@ const Archivos = (() => {
     return `${(n / (1024 * 1024)).toFixed(1)} MB`;
   }
 
-  return { leer, claseDe, pesoLegible, sacarEtiquetas, textoDeFlujo, pareceTexto };
+  return { leer, claseDe, pesoLegible, sacarEtiquetas, textoDeFlujo, pareceTexto,
+           abrirZip, textoDeHoja, textosCompartidos, estilosDeFecha, fechaDeSerie };
 })();

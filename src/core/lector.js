@@ -407,7 +407,12 @@ const Lector = (() => {
     const o = opciones || {};
     const hoy = o.hoy || null;
     const lineas = String(texto || '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    if (lineas.length < 2) return { filas: [], conEncabezado: false, aviso: '' };
+    if (lineas.length < 2) return { filas: [], conEncabezado: false, futuras: 0 };
+
+    // Cuántas líneas se descartaron por venir con fecha de mañana. Sin este
+    // dato la pantalla diría "no encontramos nada" cuando en realidad
+    // encontró todo y lo dejó fuera, que es lo peor de los dos mundos.
+    const futuras = { cuantas: 0 };
 
     const elegido = separadorDe(lineas.slice(0, 40));
     if (elegido) {
@@ -418,17 +423,21 @@ const Lector = (() => {
         const hayMonto = mapa.monto !== undefined || mapa.cargo !== undefined || mapa.abono !== undefined;
         if (mapa.fecha !== undefined && hayMonto) {
           return {
-            filas: filasDeTabla(partido.slice(i + 1), mapa, hoy),
+            filas: filasDeTabla(partido.slice(i + 1), mapa, hoy, futuras),
             separador: elegido.sep,
             conEncabezado: true,
-            aviso: '',
+            futuras: futuras.cuantas,
           };
         }
       }
     }
 
     // Sin encabezados: cada línea que traiga una fecha y un monto es candidata.
-    return { filas: filasDeLineas(lineas, hoy), conEncabezado: false, aviso: '' };
+    return {
+      filas: filasDeLineas(lineas, hoy, futuras),
+      conEncabezado: false,
+      futuras: futuras.cuantas,
+    };
   }
 
   /** Parte una línea respetando las comillas del CSV. */
@@ -452,11 +461,12 @@ const Lector = (() => {
     return celdas;
   }
 
-  function filasDeTabla(filas, mapa, hoy) {
+  function filasDeTabla(filas, mapa, hoy, futuras) {
     const salida = [];
     for (const celdas of filas) {
       const fecha = fechaDeCelda(celdas[mapa.fecha]);
-      if (!fecha || (hoy && fecha > hoy)) continue;
+      if (!fecha) continue;
+      if (hoy && fecha > hoy) { futuras.cuantas++; continue; }
 
       let monto = null;
       let tipo = null;
@@ -478,15 +488,15 @@ const Lector = (() => {
     return salida;
   }
 
-  function filasDeLineas(lineas, hoy) {
+  function filasDeLineas(lineas, hoy, futuras) {
     const salida = [];
     for (const linea of lineas) {
       const fechas = fechasDe(linea);
       if (!fechas.length) continue;
       const fecha = fechas[0].iso;
-      if (hoy && fecha > hoy) continue;
 
       const monto = montoDe(linea);
+      if (hoy && fecha > hoy) { if (monto) futuras.cuantas++; continue; }
       if (!monto) continue;
 
       // el signo menos pegado al número manda sobre las palabras

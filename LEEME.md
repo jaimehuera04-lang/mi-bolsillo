@@ -220,10 +220,14 @@ le pegas el link de tu app publicada y te genera el paquete de Play Store.
 
 - Registro con correo la primera vez (y sin instrucciones después)
 - Anotar ingresos y gastos con 15 categorías, nota y fecha
-- **Adjuntar la foto o el archivo** que respalda cada movimiento, y verlo después con el 📎
-- **Llenar el formulario leyendo el comprobante**: de un PDF, un CSV o un correo del banco salen
-  el monto, la fecha, el comercio y la categoría, y la app te muestra de qué línea sacó cada uno
-- **Leer una cartola completa** y revisar línea por línea antes de anotar, marcando lo repetido
+- **Adjuntar la foto o el archivo** que respalda cada movimiento, y verlo después con el 📎.
+  El clip está en todos: sirve también para colgarle la boleta a algo que anotaste ayer
+- **Llenar el formulario leyendo el comprobante**: de un PDF, un Excel, un CSV o un correo del
+  banco salen el monto, la fecha, el comercio y la categoría, y la app te muestra de qué línea
+  sacó cada uno
+- **Leer una cartola completa** (`.xlsx` o `.csv`, como la baja el banco) y revisar línea por
+  línea antes de anotar, con lo repetido ya marcado
+- En el computador, **arrastrar el archivo encima de la app o pegarlo con Ctrl+V**
 - Cuentas múltiples: Cuenta RUT, corriente, vista, ahorro, efectivo, billetera digital y tarjeta de crédito
 - Mover plata entre tus cuentas sin que cuente como gasto ni como ingreso
 - Patrimonio: lo que tienes menos lo que debes, con el detalle por cuenta

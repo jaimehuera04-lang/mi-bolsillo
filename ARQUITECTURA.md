@@ -116,9 +116,19 @@ que llene el formulario**. Son dos cosas distintas y conviene no mezclarlas:
 
 | Archivo | Qué sale |
 |---|---|
-| `.csv` `.txt` `.html` `.eml` | el texto completo. Es el caso ideal: la cartola que baja del banco. |
+| `.csv` `.txt` `.html` `.eml` | el texto completo. Es el caso más simple. |
+| `.xlsx` | **el formato en que los bancos chilenos dan la cartola**, así que sin esto la función quedaba coja. Un `.xlsx` es un ZIP con XML adentro —lo mismo que `excel.js` arma al exportar—, así que se desarma a mano: el índice del ZIP, `sharedStrings.xml` para el texto y `styles.xml` para saber qué celdas son fechas. Ese último no es opcional: Excel guarda el 2 de agosto como el número `46236`, y sin mirar el formato aplicado la columna Fecha llega ilegible. El `.xls` antiguo **no** es un ZIP y no se lee; la app dice cómo convertirlo. |
 | `.pdf` | se descomprimen sus flujos y se sacan las letras. Funciona con los comprobantes de transferencia y las boletas electrónicas. **No** funciona con un PDF que por dentro es un escaneo: ahí no hay letras, hay píxeles, y la app lo dice. |
 | `.jpg` `.png` `.heic` | una foto son píxeles. Sin OCR no hay monto que leer, y OCR es Fase 7. Lo que sí sale: la **fecha en que se tomó** (va escrita en el EXIF del archivo) y el **código QR** si la boleta trae uno y el teléfono sabe leerlo (`BarcodeDetector`: Android sí, iPhone todavía no). El monto lo escribe la persona, y así se le dice. |
+
+### Las cuatro puertas de entrada
+
+| Dónde | Qué hace |
+|---|---|
+| **Adjuntar** en la hoja de anotar | guarda el archivo y, si trae texto, llena el formulario |
+| **Leer una cartola** en Movimientos | abre la pantalla de revisión con todas las líneas |
+| **El clip** de un movimiento ya anotado | le cuelga un respaldo después. Va siempre visible, apagado cuando no hay nada: es la única forma de fotografiar la boleta de un gasto que anotaste al paso. Acá **no se lee** el archivo: el movimiento ya existe y cambiarle los números por lo que diga un papel sería pasar por encima de algo ya decidido. |
+| **Arrastrar o pegar** (solo computador) | soltar un archivo sobre la app, o Ctrl+V con una captura, hace lo mismo que adjuntar. Si el formulario está cerrado, se abre solo. Pegar estando dentro de un campo no se toca: ahí pegar es pegar texto. |
 
 ### Las cuatro reglas de esta función
 
@@ -137,7 +147,7 @@ que llene el formulario**. Son dos cosas distintas y conviene no mezclarlas:
 ```
 /src/data/pistas.js      diccionario chileno: JUMBO -> supermercado, "abono" -> entró plata
 /src/core/lector.js      texto -> propuesta. Función pura, se prueba en Node
-/src/ui/archivos.js      archivo -> texto. Acá viven FileReader, canvas y el PDF
+/src/ui/archivos.js      archivo -> texto. Acá viven FileReader, canvas, el PDF y el ZIP del .xlsx
 /src/storage/adjuntos.js la bodega de archivos (IndexedDB)
 ```
 
