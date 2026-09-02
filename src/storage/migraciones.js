@@ -95,9 +95,37 @@ const Migraciones = (() => {
     return nuevo;
   }
 
-  /* La cadena. Para agregar el esquema 3, se suma una línea aquí. */
+  /* ------------------------------------------------------------
+     Esquema 2 -> 3  (septiembre 2026)
+
+     Que cambia:
+       - Cada movimiento gana 'adjuntos': la lista de respaldos
+         (la foto de la boleta, el PDF del comprobante).
+
+     Es el salto más chico que hemos hecho, y aun así lleva
+     migración propia: un movimiento viejo sin la llave 'adjuntos'
+     obligaría a preguntar "¿y si no existe?" en cada línea de la
+     pantalla. Mejor que todos tengan la lista, aunque venga vacía.
+
+     Ojo con lo que NO se toca: los archivos mismos viven en
+     IndexedDB, no en el estado. Acá no hay nada que mover, solo la
+     lista de fichas, que para los movimientos viejos está vacía
+     porque cuando se anotaron no existían los respaldos.
+     ------------------------------------------------------------ */
+  function migrate_2_a_3(viejo) {
+    const nuevo = { ...viejo };
+    nuevo.movimientos = (viejo.movimientos || []).map(m => ({
+      ...m,
+      adjuntos: Array.isArray(m.adjuntos) ? m.adjuntos : [],
+    }));
+    nuevo.meta = { ...(viejo.meta || {}), schemaVersion: 3 };
+    return nuevo;
+  }
+
+  /* La cadena. Para agregar el esquema 4, se suma una línea aquí. */
   const CADENA = {
     1: migrate_1_a_2,
+    2: migrate_2_a_3,
   };
 
   /** Que versión tiene este objeto. El esquema 1 usaba 'versión' suelto. */
@@ -137,5 +165,5 @@ const Migraciones = (() => {
     return { estado: actual, desde, hasta: v, migro: desde !== v };
   }
 
-  return { aplicar, versionDe, migrate_1_a_2 };
+  return { aplicar, versionDe, migrate_1_a_2, migrate_2_a_3 };
 })();

@@ -154,6 +154,12 @@ const Almacenamiento = (() => {
     }
     // Nadie puede quedarse sin ninguna cuenta: los movimientos quedarían sueltos.
     if (!salida.cuentas.length) salida.cuentas = [Esquema.cuentaPorDefecto()];
+    // Cinturón de seguridad del esquema 3: la pantalla recorre esta lista sin
+    // preguntar si existe, y un movimiento que llegue de la nube desde una app
+    // más vieja no la trae.
+    for (const m of salida.movimientos) {
+      if (!Array.isArray(m.adjuntos)) m.adjuntos = [];
+    }
     return salida;
   }
 
