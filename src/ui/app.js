@@ -176,6 +176,30 @@
   }
 
   /** Le pone sombra al encabezado cuando hay contenido pasando por debajo. */
+  /**
+   * Sube un campo al centro de su propio contenedor, sin tocar nada más.
+   * El contenedor es la hoja abierta o la pantalla; si el campo no vive
+   * dentro de ninguno de los dos, no se mueve nadie.
+   */
+  function acomodarCampo(campo) {
+    const caja = campo.closest('.hoja') || campo.closest('#contenido');
+    if (!caja) return;
+
+    const cCaja = caja.getBoundingClientRect();
+    const cCampo = campo.getBoundingClientRect();
+    // dónde queda el centro del campo respecto del centro de su contenedor
+    const corrimiento = (cCampo.top + cCampo.height / 2) - (cCaja.top + cCaja.height / 2);
+
+    // menos de 40 píxeles no vale la pena: mover la pantalla por nada
+    // se siente como un salto raro, no como una ayuda
+    if (Math.abs(corrimiento) < 40) return;
+
+    const destino = Math.max(0, Math.min(
+      caja.scrollTop + corrimiento,
+      caja.scrollHeight - caja.clientHeight));
+    caja.scrollTo({ top: destino, behavior: 'smooth' });
+  }
+
   function marcarDesplazamiento() {
     $$$('app').classList.toggle('desplazado', $$$('contenido').scrollTop > 4);
   }
@@ -197,13 +221,23 @@
     $$$('contenido').addEventListener('scroll', marcarDesplazamiento, { passive: true });
     prepararArrastreDeHojas();
 
+    /* Que el marco de la app NO se pueda desplazar no se arregla desde
+       acá: se arregla en el CSS, recortando el telón (ver .telon en
+       estilos.css). Un elemento con overflow:hidden ni siquiera avisa
+       cuando algo lo desplaza —Chrome no dispara el evento scroll—, así
+       que un vigilante en JavaScript sería letra muerta. */
+
     // Con el marco fijo, el navegador ya no acomoda solo el campo que
     // estás llenando. Lo hacemos nosotros: al tocar un campo, lo
     // subimos al centro de lo que quede visible sobre el teclado.
+    //
+    // Se hace a mano y no con scrollIntoView porque ese sube TODOS los
+    // contenedores que puedan subir —incluido el marco de la app— y ese
+    // era justamente el problema.
     document.addEventListener('focusin', evento => {
       const campo = evento.target;
       if (!campo.matches || !campo.matches('input, select, textarea')) return;
-      setTimeout(() => campo.scrollIntoView({ block: 'center', behavior: 'smooth' }), 250);
+      setTimeout(() => acomodarCampo(campo), 250);
     });
   }
 

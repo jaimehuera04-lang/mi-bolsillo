@@ -384,6 +384,13 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--verde); out
   background: rgba(12, 20, 28, 0);
   visibility: hidden;
   transition: background .26s ease, visibility 0s linear .3s;
+  /* Sin esto, la hoja cerrada —que vive empujada hacia abajo con
+     translateY(101%)— sobresale del telón y vuelve DESPLAZABLE al marco
+     de la app. Basta un scrollIntoView de cualquier parte para que la
+     app entera se corra hacia arriba y aparezca una banda gris abajo.
+     Recortar acá lo mata de raíz: el marco deja de tener a dónde
+     correrse. La hoja sigue deslizándose igual, solo que recortada. */
+  overflow: hidden;
 }
 .telon.abierto {
   background: rgba(12, 20, 28, .5);
