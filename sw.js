@@ -8,7 +8,7 @@
    Así el celular sabe que tiene que bajar la versión nueva.
    ============================================================ */
 
-const VERSION = 'mi-bolsillo-v17';
+const VERSION = 'mi-bolsillo-v18';
 
 const ARCHIVOS = [
   './',
@@ -40,10 +40,28 @@ const ARCHIVOS = [
 ];
 
 // 1. Al instalar: guardamos una copia de todo
+//
+// El "cache: 'reload'" de acá abajo no es un adorno, y costó encontrarlo:
+// cache.addAll() pide los archivos pasando por la caché normal del
+// navegador, y GitHub Pages los manda con "max-age=600". O sea que
+// durante diez minutos después de publicar, el ayudante guarda la
+// versión NUEVA bajo el nombre nuevo... con el contenido VIEJO adentro.
+// Subir la VERSIÓN de arriba no sirve de nada si pasa eso: el celular
+// se queda con el diseño anterior y no hay forma de darse cuenta.
+// Con 'reload' cada archivo se pide de nuevo al servidor, sin atajos.
 self.addEventListener('install', evento => {
   evento.waitUntil(
     caches.open(VERSION)
-      .then(cache => cache.addAll(ARCHIVOS))
+      .then(cache => Promise.all(ARCHIVOS.map(archivo =>
+        fetch(new Request(archivo, { cache: 'reload' }))
+          .then(respuesta => {
+            // una respuesta con error no se guarda: mejor no tener copia
+            // que tener guardada una página de error
+            if (respuesta && respuesta.ok) return cache.put(archivo, respuesta);
+          })
+          // que falte uno no puede impedir que la app se instale
+          .catch(() => {})
+      )))
       .then(() => self.skipWaiting())
   );
 });
