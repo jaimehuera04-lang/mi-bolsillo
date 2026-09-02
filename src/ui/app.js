@@ -24,6 +24,15 @@
     categoria: 'comida',
     cuentaOrigen: null,
     cuentaDestino: null,
+    // Respaldos que se adjuntaron mientras el formulario está abierto.
+    // Ya están guardados en la bodega pero todavía no tienen dueño: si
+    // la persona cierra sin guardar, se borran.
+    adjuntosPendientes: [],
+    // Lo que había escrito antes de que el lector rellenara, para poder
+    // deshacer sin perder lo tipeado.
+    antesDeLeer: null,
+    // Las líneas que encontramos en una cartola, esperando revisión.
+    cartola: [],
     // 'entrar' o 'crear': en qué modo está la pantalla de bienvenida
     pasoEntrada: 'correo',
   };
@@ -76,6 +85,9 @@
     if (!$$$(id).classList.contains('abierto')) return;
     $$$(id).classList.remove('abierto');
     olvidarCapa();
+    // Si se cerró el formulario sin guardar, los respaldos que se
+    // adjuntaron ahí no le pertenecen a nadie: se van de la bodega.
+    if (id === 'telonMovimiento') soltarAdjuntosPendientes();
   };
 
   const esMesActual = () =>
@@ -334,6 +346,16 @@
       return c ? `${c.icono} ${c.nombre}` : 'Cuenta borrada';
     };
 
+    // El clip solo aparece si el movimiento trae respaldo. No preguntamos
+    // acá si el archivo está en ESTE aparato: eso obligaría a consultar la
+    // bodega antes de dibujar. Se resuelve al tocarlo, y si la foto se
+    // quedó en el otro teléfono, el visor lo dice sin rodeos.
+    const cuantos = (m.adjuntos || []).length;
+    const clip = cuantos
+      ? `<button class="clip" data-adjuntos="${m.id}"
+                 aria-label="${cuantos === 1 ? 'Ver el respaldo' : `Ver los ${cuantos} respaldos`}">📎</button>`
+      : '';
+
     if (m.tipo === 'transferencia') {
       return `
         <li class="movimiento">
@@ -343,6 +365,7 @@
             <span class="detalle">${esc(nombreCuenta(m.cuentaOrigen))} → ${esc(nombreCuenta(m.cuentaDestino))}</span>
           </span>
           <span class="monto transferencia">${esc(dinero(m.monto))}</span>
+          ${clip}
           <button class="borrar" data-borrar="${m.id}" aria-label="Borrar">✕</button>
         </li>`;
     }
@@ -357,6 +380,7 @@
           <span class="detalle">${esc(cat.nombre)} · ${esc(nombreCuenta(cuenta))}</span>
         </span>
         <span class="monto ${m.tipo}">${m.tipo === 'ingreso' ? '+' : '-'}${esc(dinero(m.monto))}</span>
+        ${clip}
         <button class="borrar" data-borrar="${m.id}" aria-label="Borrar">✕</button>
       </li>`;
   }
@@ -684,6 +708,7 @@
   }
 
   function abrirFormularioMovimiento() {
+    limpiarZonaDeRespaldo();
     $$$('campoMonto').value = '';
     $$$('campoNota').value = '';
     // si estás mirando un mes pasado, la fecha por defecto es el día 1 de ese mes
@@ -714,6 +739,412 @@
     $$$('bloqueCategorias').hidden = tipo === 'transferencia';
     dibujarCategorias();
     dibujarCuentasDelFormulario();
+  }
+
+  /* ---------------- 9b. Respaldos y lectura de archivos ----------------
+
+     Dos cosas distintas que conviene no confundir:
+
+       ADJUNTAR  guardar la foto o el PDF junto al movimiento, para
+                 poder mirarlo después. Funciona con cualquier archivo.
+       LEER      sacar el monto, la fecha y el comercio del archivo
+                 para llenar el formulario. Solo funciona con lo que
+                 tiene texto adentro: PDF, CSV, correos. De una foto
+                 se saca la fecha y nada más, y así se dice.
+
+     Regla que no se negocia: nada se anota solo. El lector propone y
+     muestra de qué línea sacó cada dato; la persona confirma. Un
+     lector que anota por su cuenta te ensucia el mes en silencio.  */
+
+  /** Deja la zona de respaldo como recién abierta. */
+  function limpiarZonaDeRespaldo() {
+    soltarAdjuntosPendientes();
+    vista.antesDeLeer = null;
+    $$$('resultadoLectura').hidden = true;
+    $$$('resultadoLectura').innerHTML = '';
+    $$$('archivoAdjunto').value = '';
+    dibujarAdjuntosDelFormulario();
+  }
+
+  /** Borra de la bodega los archivos que quedaron sin movimiento. */
+  function soltarAdjuntosPendientes() {
+    for (const ficha of vista.adjuntosPendientes) Adjuntos.borrar(ficha.id);
+    vista.adjuntosPendientes = [];
+    dibujarAdjuntosDelFormulario();
+  }
+
+  const EMOJI_ARCHIVO = { imagen: '🖼️', pdf: '📄', texto: '📃', desconocido: '📎' };
+
+  function dibujarAdjuntosDelFormulario() {
+    const caja = $$$('adjuntosDelFormulario');
+    if (!caja) return;
+
+    caja.innerHTML = vista.adjuntosPendientes.map(a => `
+      <div class="tira-adjunto" data-adjunto="${esc(a.id)}">
+        <span class="miniatura" data-mini="${esc(a.id)}">${EMOJI_ARCHIVO[a.clase] || '📎'}</span>
+        <span class="info">
+          <span class="nombre">${esc(a.nombre)}</span>
+          <span class="detalle">${esc(Archivos.pesoLegible(a.tamano))}</span>
+        </span>
+        <button type="button" class="quitar" data-quitar="${esc(a.id)}" aria-label="Quitar">✕</button>
+      </div>`).join('');
+
+    // La miniatura de las fotos se pide a la bodega después de dibujar,
+    // porque leer un archivo es asíncrono y la lista no puede esperar.
+    for (const a of vista.adjuntosPendientes) {
+      if (a.clase !== 'imagen') continue;
+      Adjuntos.obtener(a.id).then(registro => {
+        const hueco = caja.querySelector(`[data-mini="${a.id}"]`);
+        if (!registro || !hueco) return;
+        const url = URL.createObjectURL(registro.blob);
+        hueco.innerHTML = `<img src="${url}" alt="">`;
+        hueco.querySelector('img').onload = () => URL.revokeObjectURL(url);
+      });
+    }
+  }
+
+  /**
+   * La persona eligió uno o más archivos en el formulario.
+   * Se guardan todos como respaldo; del primero que traiga texto
+   * intentamos además llenar los campos.
+   */
+  async function adjuntarArchivos(archivos) {
+    if (!Adjuntos.disponible()) {
+      avisar('Este navegador no nos deja guardar archivos');
+      return;
+    }
+
+    const boton = $$$('botonAdjuntar');
+    const textoOriginal = boton.textContent;
+    boton.disabled = true;
+    boton.textContent = 'Leyendo…';
+
+    let paraLeer = null;
+    let avisoDelArchivo = '';
+
+    try {
+      for (const archivo of archivos) {
+        const leido = await Archivos.leer(archivo);
+
+        const ficha = await Adjuntos.guardar({
+          id: 'adj-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+          nombre: leido.nombre,
+          tipo: leido.tipo,
+          blob: leido.blob,
+        });
+
+        if (!ficha) {
+          avisar(`"${leido.nombre}" pesa más de ${Archivos.pesoLegible(Adjuntos.MAXIMO_POR_ARCHIVO)}`);
+          continue;
+        }
+
+        vista.adjuntosPendientes.push({ ...ficha, clase: leido.clase });
+        if (!paraLeer && (leido.texto || leido.fechaFoto)) paraLeer = leido;
+        if (!avisoDelArchivo && leido.aviso) avisoDelArchivo = leido.aviso;
+      }
+    } finally {
+      boton.disabled = false;
+      boton.textContent = textoOriginal;
+      dibujarAdjuntosDelFormulario();
+    }
+
+    if (!paraLeer) {
+      mostrarLectura(null, avisoDelArchivo);
+      return;
+    }
+
+    // Si el archivo trae muchas líneas con fecha y monto, no es un
+    // comprobante: es una cartola, y esa se revisa en su propia ventana.
+    const cartola = Lector.leerCartola(paraLeer.texto, { hoy: Datos.hoyISO() });
+    if (cartola.filas.length >= 3) {
+      cerrarHojaSinSoltarAdjuntos('telonMovimiento');
+      abrirRevisionDeCartola(cartola.filas, paraLeer.nombre);
+      return;
+    }
+
+    const propuesta = Lector.leerComprobante(paraLeer.texto, {
+      hoy: Datos.hoyISO(),
+      fechaAlternativa: paraLeer.fechaFoto,
+    });
+    aplicarLectura(propuesta, avisoDelArchivo);
+  }
+
+  /** Cierra el formulario dejando los respaldos vivos (van a otra ventana). */
+  function cerrarHojaSinSoltarAdjuntos(id) {
+    const pendientes = vista.adjuntosPendientes;
+    vista.adjuntosPendientes = [];
+    cerrarHoja(id);
+    vista.adjuntosPendientes = pendientes;
+  }
+
+  /** Rellena el formulario con lo que se entendió y deja constancia. */
+  function aplicarLectura(propuesta, avisoExtra) {
+    // guardamos lo que había, para que "lo lleno yo" no borre lo tipeado
+    vista.antesDeLeer = {
+      monto: $$$('campoMonto').value,
+      nota: $$$('campoNota').value,
+      fecha: $$$('campoFecha').value,
+      tipo: vista.tipo,
+      categoria: vista.categoria,
+    };
+
+    // Solo le damos vuelta el tipo si el papel de verdad lo dice. Si no
+    // dice nada, mandas tú: ya lo habías elegido antes de adjuntar.
+    if (propuesta.tipoDetectado && propuesta.tipo !== vista.tipo) fijarTipo(propuesta.tipo);
+    if (propuesta.monto) $$$('campoMonto').value = propuesta.monto;
+    if (propuesta.fecha) $$$('campoFecha').value = propuesta.fecha;
+    if (propuesta.nota && !$$$('campoNota').value) $$$('campoNota').value = propuesta.nota;
+    if (propuesta.categoria) {
+      vista.categoria = propuesta.categoria;
+      dibujarCategorias();
+    }
+
+    mostrarLectura(propuesta, avisoExtra);
+  }
+
+  const ROTULO_CAMPO = {
+    monto: 'El monto',
+    fecha: 'La fecha',
+    tipo: 'Si entró o salió',
+    categoria: 'La categoría',
+  };
+
+  /** El panel verde que explica de dónde salió cada dato. */
+  function mostrarLectura(propuesta, avisoExtra) {
+    const caja = $$$('resultadoLectura');
+
+    if (!propuesta || !propuesta.encontrados) {
+      if (!avisoExtra) { caja.hidden = true; return; }
+      caja.hidden = false;
+      caja.innerHTML = `<strong>Guardamos el respaldo</strong>${esc(avisoExtra)}`;
+      return;
+    }
+
+    const lineas = propuesta.evidencia
+      .filter(e => ROTULO_CAMPO[e.campo])
+      .map(e => `<li>${esc(ROTULO_CAMPO[e.campo])}
+                     <span class="de-donde">← ${esc(e.linea)}</span></li>`)
+      .join('');
+
+    // Falta el monto y hay que decirlo, pero una sola vez: el aviso del
+    // archivo ("de una foto no se puede leer el monto") ya lo explica.
+    const faltaElMonto = !propuesta.monto && !avisoExtra
+      ? '<p style="margin:8px 0 0">El monto no aparecía en el archivo, así que ese lo pones tú.</p>'
+      : '';
+
+    caja.hidden = false;
+    caja.innerHTML = `
+      <strong>Esto sacamos del archivo</strong>
+      <ul>${lineas}</ul>
+      ${faltaElMonto}
+      ${avisoExtra ? `<p style="margin:8px 0 0">${esc(avisoExtra)}</p>` : ''}
+      <button type="button" class="boton fantasma chico" id="botonDeshacerLectura">
+        Prefiero llenarlo yo
+      </button>`;
+  }
+
+  /** Devuelve el formulario a como estaba antes de leer el archivo. */
+  function deshacerLectura() {
+    const antes = vista.antesDeLeer;
+    if (!antes) return;
+    $$$('campoMonto').value = antes.monto;
+    $$$('campoNota').value = antes.nota;
+    $$$('campoFecha').value = antes.fecha;
+    vista.categoria = antes.categoria;
+    if (antes.tipo !== vista.tipo) fijarTipo(antes.tipo);
+    else dibujarCategorias();
+    vista.antesDeLeer = null;
+    $$$('resultadoLectura').hidden = true;
+    avisar('Listo, los campos quedaron como estaban');
+  }
+
+  /* ---------------- Ver un respaldo ya guardado ---------------- */
+
+  async function abrirVisorDeAdjuntos(movimientoId) {
+    const mov = Datos.obtener().movimientos.find(m => m.id === movimientoId);
+    if (!mov || !(mov.adjuntos || []).length) return;
+
+    const visor = $$$('visorAdjunto');
+    $$$('tituloAdjunto').textContent =
+      mov.adjuntos.length === 1 ? 'El respaldo' : `Los ${mov.adjuntos.length} respaldos`;
+    visor.innerHTML = '<p class="ayuda">Abriendo…</p>';
+    abrirHoja('telonAdjunto');
+
+    const partes = [];
+    for (const ficha of mov.adjuntos) {
+      const registro = await Adjuntos.obtener(ficha.id);
+
+      if (!registro) {
+        // El movimiento llegó por la nube, pero el archivo no: los
+        // respaldos no viajan. Decirlo es mejor que mostrar un hueco.
+        partes.push(`
+          <div class="consejo aviso" style="margin-bottom:12px">
+            <strong>${esc(ficha.nombre)}</strong>
+            Este respaldo se quedó en el aparato donde lo sacaste. Las fotos y los archivos no
+            suben a la nube: solo viajan tus movimientos.
+          </div>`);
+        continue;
+      }
+
+      const url = URL.createObjectURL(registro.blob);
+      // claseDe espera un File (name/type); la bodega guarda nombre/tipo
+      const clase = Archivos.claseDe({ name: registro.nombre, type: registro.tipo });
+      const encabezado = `
+        <p class="ayuda" style="margin:14px 0 6px">
+          ${esc(registro.nombre)} · ${esc(Archivos.pesoLegible(registro.tamano))}
+        </p>`;
+
+      if (clase === 'imagen') {
+        partes.push(encabezado + `<img src="${url}" alt="${esc(registro.nombre)}">`);
+      } else if (clase === 'texto') {
+        const texto = await registro.blob.text();
+        partes.push(encabezado
+          + `<div class="texto-archivo">${esc(texto.slice(0, 4000))}</div>`);
+      } else {
+        // Un PDF no se puede incrustar dentro de la app instalada sin que
+        // se note el navegador, así que se ofrece abrirlo aparte.
+        partes.push(encabezado + `
+          <a class="boton secundario" href="${url}" target="_blank" rel="noopener"
+             style="display:block; text-align:center; text-decoration:none">
+            Abrir ${esc(registro.nombre)}
+          </a>`);
+      }
+    }
+
+    visor.innerHTML = partes.join('') + `
+      <button type="button" class="boton fantasma chico" data-quitar-respaldos="${esc(mov.id)}"
+              style="margin-top:16px">
+        Quitar los respaldos de este movimiento
+      </button>`;
+  }
+
+  /* ---------------- Leer una cartola completa ---------------- */
+
+  async function leerCartolaDeArchivo(archivo) {
+    avisar('Leyendo la cartola…');
+    const leido = await Archivos.leer(archivo);
+
+    if (!leido.texto) {
+      await Dialogos.avisar({
+        titulo: 'No pudimos leer ese archivo',
+        texto: leido.aviso
+          || 'Ese archivo no trae texto adentro. Una cartola sirve si la bajas del banco '
+           + 'en .csv o .txt, o si copias las líneas y las pegas en un archivo de texto.',
+      });
+      return;
+    }
+
+    const cartola = Lector.leerCartola(leido.texto, { hoy: Datos.hoyISO() });
+    if (!cartola.filas.length) {
+      await Dialogos.avisar({
+        titulo: 'No encontramos movimientos ahí',
+        texto: 'Buscamos líneas que tengan una fecha y un monto y no apareció ninguna. '
+             + 'Si el archivo es un comprobante suelto, adjúntalo con el botón + al anotar '
+             + 'el movimiento: ahí sí lo leemos.',
+      });
+      return;
+    }
+
+    abrirRevisionDeCartola(cartola.filas, leido.nombre);
+  }
+
+  function abrirRevisionDeCartola(filas, nombreArchivo) {
+    // Cada fila se marca sola, salvo las que ya parecen anotadas.
+    vista.cartola = filas.map((f, i) => {
+      const repetido = Datos.movimientoParecido(f);
+      return { ...f, indice: i, marcada: !repetido, repetido: Boolean(repetido) };
+    });
+
+    const repetidos = vista.cartola.filter(f => f.repetido).length;
+    $$$('resumenCartola').textContent =
+      `De ${esc(nombreArchivo)} sacamos ${filas.length} `
+      + `${filas.length === 1 ? 'movimiento' : 'movimientos'}`
+      + (repetidos ? `, y ${repetidos} ya ${repetidos === 1 ? 'estaba anotado' : 'estaban anotados'}.` : '.');
+
+    $$$('cuentaCartola').innerHTML = opcionesDeCuenta(vista.cuentaOrigen);
+    dibujarCartola();
+    abrirHoja('telonCartola');
+  }
+
+  function dibujarCartola() {
+    const opcionesCategoria = (tipo, elegida) => {
+      const lista = tipo === 'ingreso' ? Datos.CATEGORIAS_INGRESO : Datos.CATEGORIAS_GASTO;
+      return lista.map(c =>
+        `<option value="${c.id}" ${c.id === elegida ? 'selected' : ''}>${c.emoji} ${esc(c.nombre)}</option>`
+      ).join('');
+    };
+
+    $$$('listaCartola').innerHTML = vista.cartola.map(f => `
+      <div class="fila-cartola ${f.repetido ? 'repetido' : ''}">
+        <input type="checkbox" data-fila="${f.indice}" ${f.marcada ? 'checked' : ''}
+               aria-label="Anotar este movimiento">
+        <div class="cuerpo">
+          <div class="encabezado">
+            <span class="nombre">${esc(f.nota || 'Sin detalle')}</span>
+            <span class="monto ${f.tipo}">${f.tipo === 'ingreso' ? '+' : '-'}${esc(dinero(f.monto))}</span>
+          </div>
+          <div class="detalle">
+            ${esc(Datos.fechaLegible(f.fecha))}
+            ${f.repetido ? '<span class="pastilla-repetido">repetido</span>' : ''}
+          </div>
+          <select data-categoria-fila="${f.indice}">
+            ${opcionesCategoria(f.tipo, f.categoria || (f.tipo === 'ingreso' ? 'otro-in' : 'otro'))}
+          </select>
+        </div>
+      </div>`).join('');
+
+    const marcadas = vista.cartola.filter(f => f.marcada).length;
+    $$$('botonGuardarCartola').textContent = marcadas
+      ? `Anotar ${marcadas} ${marcadas === 1 ? 'movimiento' : 'movimientos'}`
+      : 'No hay nada marcado';
+    $$$('botonGuardarCartola').disabled = !marcadas;
+  }
+
+  function guardarCartola() {
+    const cuenta = $$$('cuentaCartola').value;
+    const elegidas = vista.cartola.filter(f => f.marcada);
+    if (!elegidas.length || !cuenta) return;
+
+    const r = Datos.agregarVarios(elegidas.map(f => ({
+      tipo: f.tipo,
+      monto: f.monto,
+      categoria: f.categoria || (f.tipo === 'ingreso' ? 'otro-in' : 'otro'),
+      nota: f.nota,
+      fecha: f.fecha,
+      cuentaOrigen:  f.tipo === 'ingreso' ? null : cuenta,
+      cuentaDestino: f.tipo === 'gasto'   ? null : cuenta,
+    })));
+
+    cerrarHoja('telonCartola');
+    vista.cartola = [];
+
+    // Saltamos al mes del primer movimiento anotado, o el usuario no ve nada.
+    if (r.anotados.length) {
+      const [a, m] = r.anotados[0].fecha.split('-').map(Number);
+      vista.anio = a; vista.mes = m - 1;
+    }
+    dibujar();
+
+    if (r.errores.length) {
+      avisar(`${r.anotados.length} anotados · ${r.errores.length} no se pudieron`);
+    } else {
+      avisar(`${r.anotados.length} ${r.anotados.length === 1 ? 'movimiento anotado' : 'movimientos anotados'} ✅`);
+    }
+  }
+
+  /* ---------------- Cuánto ocupan los respaldos ---------------- */
+
+  function mostrarPesoDeRespaldos() {
+    const caja = $$$('pesoRespaldos');
+    if (!caja) return;
+    Adjuntos.peso().then(({ cantidad, bytes }) => {
+      caja.textContent = cantidad
+        ? `Tienes ${cantidad} ${cantidad === 1 ? 'respaldo guardado' : 'respaldos guardados'} `
+          + `(${Archivos.pesoLegible(bytes)}). Las fotos y los archivos se quedan en este `
+          + 'aparato: ni suben a la nube ni entran en la copia de seguridad.'
+        : 'Las fotos y archivos que adjuntes se quedan en este aparato: ni suben a la nube '
+          + 'ni entran en la copia de seguridad.';
+    });
   }
 
   /* ---------------- 10. Registro ----------------
@@ -1836,12 +2267,20 @@
           fecha: $$$('campoFecha').value || Datos.hoyISO(),
           cuentaOrigen:  t === 'ingreso' ? null : $$$('campoCuentaOrigen').value,
           cuentaDestino: t === 'gasto'   ? null : $$$('campoCuentaDestino').value,
+          // Solo la ficha; el archivo ya está en la bodega y recién ahora
+          // se entera de a qué movimiento pertenece.
+          adjuntos: vista.adjuntosPendientes.map(
+            ({ id, nombre, tipo, tamano }) => ({ id, nombre, tipo, tamano })),
         });
       } catch (error) {
         avisar(error.message);
         return;
       }
 
+      // Se guardaron con el movimiento: ya tienen dueño, así que cerrar
+      // la hoja no debe borrarlos.
+      vista.adjuntosPendientes = [];
+      mostrarPesoDeRespaldos();
       cerrarHoja('telonMovimiento');
       // si anotaste algo de otro mes, saltamos a ese mes para que lo veas
       const [a, m] = ($$$('campoFecha').value || Datos.hoyISO()).split('-').map(Number);
@@ -1852,6 +2291,89 @@
            : 'Plata movida entre tus cuentas ✅');
     });
 
+    /* ---- Respaldos: adjuntar y leer ----
+       El input de archivo va escondido y lo dispara un botón nuestro:
+       el input que trae el navegador dice "Examinar… ningún archivo
+       seleccionado" y delata al tiro que esto es una página. */
+    $$$('botonAdjuntar').addEventListener('click', () => $$$('archivoAdjunto').click());
+
+    $$$('archivoAdjunto').addEventListener('change', async e => {
+      const archivos = [...e.target.files];
+      e.target.value = '';                 // para poder elegir el mismo dos veces
+      if (archivos.length) await adjuntarArchivos(archivos);
+    });
+
+    $$$('adjuntosDelFormulario').addEventListener('click', e => {
+      const b = e.target.closest('[data-quitar]');
+      if (!b) return;
+      const id = b.dataset.quitar;
+      Adjuntos.borrar(id);
+      vista.adjuntosPendientes = vista.adjuntosPendientes.filter(a => a.id !== id);
+      dibujarAdjuntosDelFormulario();
+    });
+
+    $$$('resultadoLectura').addEventListener('click', e => {
+      if (e.target.closest('#botonDeshacerLectura')) deshacerLectura();
+    });
+
+    $$$('visorAdjunto').addEventListener('click', async e => {
+      const b = e.target.closest('[data-quitar-respaldos]');
+      if (!b) return;
+      const seguro = await Dialogos.confirmar({
+        titulo: '¿Quitar los respaldos?',
+        texto: 'El movimiento se queda tal cual: lo que se borra son las fotos y archivos '
+             + 'que le habías adjuntado. No se puede deshacer.',
+        aceptar: 'Quitar', peligro: true,
+      });
+      if (!seguro) return;
+      const mov = Datos.obtener().movimientos.find(m => m.id === b.dataset.quitarRespaldos);
+      if (mov) for (const a of [...(mov.adjuntos || [])]) Datos.quitarAdjunto(mov.id, a.id);
+      cerrarHoja('telonAdjunto');
+      mostrarPesoDeRespaldos();
+      dibujarMovimientos();
+      avisar('Respaldos quitados');
+    });
+
+    // ---- Leer una cartola del banco ----
+    $$$('botonCartola').addEventListener('click', () => $$$('archivoCartola').click());
+
+    $$$('archivoCartola').addEventListener('change', async e => {
+      const archivo = e.target.files[0];
+      e.target.value = '';
+      if (archivo) await leerCartolaDeArchivo(archivo);
+    });
+
+    $$$('listaCartola').addEventListener('change', e => {
+      const marca = e.target.closest('[data-fila]');
+      if (marca) {
+        const fila = vista.cartola[Number(marca.dataset.fila)];
+        if (fila) fila.marcada = marca.checked;
+        // solo se actualiza el botón: redibujar la lista entera perdería
+        // el lugar donde iba la persona
+        const marcadas = vista.cartola.filter(f => f.marcada).length;
+        $$$('botonGuardarCartola').textContent = marcadas
+          ? `Anotar ${marcadas} ${marcadas === 1 ? 'movimiento' : 'movimientos'}`
+          : 'No hay nada marcado';
+        $$$('botonGuardarCartola').disabled = !marcadas;
+        return;
+      }
+      const categoria = e.target.closest('[data-categoria-fila]');
+      if (categoria) {
+        const fila = vista.cartola[Number(categoria.dataset.categoriaFila)];
+        if (fila) fila.categoria = categoria.value;
+      }
+    });
+
+    $$$('marcarTodoCartola').addEventListener('click', () => {
+      vista.cartola.forEach(f => { f.marcada = true; });
+      dibujarCartola();
+    });
+    $$$('desmarcarTodoCartola').addEventListener('click', () => {
+      vista.cartola.forEach(f => { f.marcada = false; });
+      dibujarCartola();
+    });
+    $$$('botonGuardarCartola').addEventListener('click', guardarCartola);
+
     // ---- Lista de movimientos ----
     $$$('filtroTipo').addEventListener('change', e => {
       vista.filtroMovimientos = e.target.value;
@@ -1859,6 +2381,9 @@
     });
 
     $$$('listaMovimientos').addEventListener('click', async e => {
+      const clip = e.target.closest('[data-adjuntos]');
+      if (clip) { abrirVisorDeAdjuntos(clip.dataset.adjuntos); return; }
+
       const b = e.target.closest('[data-borrar]');
       if (!b) return;
       const seguro = await Dialogos.confirmar({
@@ -2148,6 +2673,7 @@
     prepararNube();
     actualizarSaludo();
     cargarAjustesEnFormulario();
+    mostrarPesoDeRespaldos();
     dibujarTecnicas();
     calcularAhorro();
     fijarTipo('gasto');

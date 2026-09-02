@@ -101,6 +101,69 @@ números del motor (`mejorarDesdeElReparto`). Siempre con una salida concreta, c
 [VOZ.md](VOZ.md). Cuando el mes anterior no tiene nada anotado, la comparación muestra una raya
 y no un 0%, que parecería un dato.
 
+## Entradas de datos — respaldos y lectura de archivos
+
+Hasta ahora los movimientos entraban de una sola forma: escribiéndolos. Desde septiembre de
+2026 se puede además **adjuntar el papel** y, cuando ese papel tiene texto adentro, **dejar
+que llene el formulario**. Son dos cosas distintas y conviene no mezclarlas:
+
+| | Qué hace | Con qué funciona |
+|---|---|---|
+| **Adjuntar** | guarda la foto o el archivo junto al movimiento para poder mirarlo después | cualquier archivo |
+| **Leer** | saca monto, fecha, comercio y categoría, y llena los campos | solo lo que trae texto adentro |
+
+### Qué se puede leer, y qué no
+
+| Archivo | Qué sale |
+|---|---|
+| `.csv` `.txt` `.html` `.eml` | el texto completo. Es el caso ideal: la cartola que baja del banco. |
+| `.pdf` | se descomprimen sus flujos y se sacan las letras. Funciona con los comprobantes de transferencia y las boletas electrónicas. **No** funciona con un PDF que por dentro es un escaneo: ahí no hay letras, hay píxeles, y la app lo dice. |
+| `.jpg` `.png` `.heic` | una foto son píxeles. Sin OCR no hay monto que leer, y OCR es Fase 7. Lo que sí sale: la **fecha en que se tomó** (va escrita en el EXIF del archivo) y el **código QR** si la boleta trae uno y el teléfono sabe leerlo (`BarcodeDetector`: Android sí, iPhone todavía no). El monto lo escribe la persona, y así se le dice. |
+
+### Las cuatro reglas de esta función
+
+1. **Nada se anota solo.** El lector *propone*; la persona confirma. Un lector que anota por su
+   cuenta te ensucia el mes en silencio, que es peor que no tener lector.
+2. **Se muestra de dónde salió cada dato.** El panel verde dice *"El monto ← Monto transferido:
+   $45.990"*. Es la regla 5 de [VOZ.md](VOZ.md) aplicada a esto.
+3. **No hay IA ni internet.** Todo sale de expresiones regulares y del diccionario de
+   `/src/data/pistas.js`. Ni una llamada a la red en todo el camino. La regla 1 sigue intacta.
+4. **No se inventa lo que no se encontró.** Sin monto, el campo queda vacío, nunca en cero. Y si
+   el papel no dice si la plata entró o salió (una foto no dice nada), no se toca el tipo que la
+   persona ya había elegido.
+
+### Los archivos y por qué están donde están
+
+```
+/src/data/pistas.js      diccionario chileno: JUMBO -> supermercado, "abono" -> entró plata
+/src/core/lector.js      texto -> propuesta. Función pura, se prueba en Node
+/src/ui/archivos.js      archivo -> texto. Acá viven FileReader, canvas y el PDF
+/src/storage/adjuntos.js la bodega de archivos (IndexedDB)
+```
+
+`lector.js` no abre archivos y `archivos.js` no decide nada. Esa división es la que permite
+correr `node herramientas/probar-lector.js` con comprobantes chilenos de verdad, sin navegador.
+
+### Por qué las fotos van a IndexedDB y no al estado
+
+`localStorage` guarda texto y suele topar en 5 MB. **Una sola foto de celular pesa 3 MB.** Meter
+los respaldos ahí dejaría a la app sin espacio para guardar los movimientos, que es lo único
+que de verdad no se puede perder. Así que:
+
+- el archivo va a **IndexedDB** (`storage/adjuntos.js`), que es la bodega grande del navegador;
+- el estado guarda solo la ficha: `{ id, nombre, tipo, tamano }`;
+- las fotos se comprimen a 1600 píxeles de lado antes de guardarse (de 3 MB a ~250 KB).
+
+**Consecuencia honesta, y hay que decirla en pantalla: los respaldos no viajan.** No suben a la
+nube y no entran en el `.json` de la copia de seguridad. Si suben, el nombre del comercio, tu
+tarjeta y la hora de cada compra terminan en un servidor, que es exactamente lo que la sección
+*Privacidad e IA* dice que no pasa. Cuando un movimiento llega por la nube desde otro aparato,
+el clip aparece igual y el visor explica que la foto se quedó allá, en vez de mostrar un hueco.
+
+Los archivos huérfanos —los de un formulario que se cerró sin guardar, o los de un movimiento
+borrado en otro teléfono— se barren solos: al cerrar la hoja y, como red, en cada arranque
+(`Adjuntos.limpiar()` con los ids que todavía figuran en el estado).
+
 ## La nube
 
 `/src/storage/nube.js` habla con Supabase por `fetch` pelado, sin su SDK. Se guarda **el objeto
@@ -254,6 +317,14 @@ cada peso. Un número sin desglose no cumple la regla 5 de [VOZ.md](VOZ.md).
 
 Consecuencia: **de la Fase 0 a la Fase 5 no se usa IA en absoluto.** Todo el valor del producto,
 incluida la función estrella, se construye con lógica determinística.
+
+**El lector de comprobantes no es una excepción a esto.** Se pidió el 2026-09-01 "que la foto
+rellene la tabla sola", y se resolvió sin IA: expresiones regulares más un diccionario chileno
+(`/src/data/pistas.js`). Lee lo que tiene letras adentro —PDF, CSV, correos— y de una foto solo
+saca la fecha del EXIF, diciéndole a la persona que el monto lo escribe ella. Se evaluaron las
+otras dos salidas y se descartaron: mandar la foto a un modelo rompía esta sección entera y
+adelantaba la Fase 6; meter Tesseract desde un CDN rompía "sin librerías ni compilación", pesaba
+megas y con boletas chilenas acierta a medias. Ver *Entradas de datos*.
 
 ## Distribución
 

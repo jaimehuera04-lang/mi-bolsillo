@@ -94,23 +94,28 @@ mi-bolsillo/
 ├── src/
 │   ├── datos.js        La puerta de entrada: lo único que la pantalla conoce
 │   ├── data/           Listas fijas: categorías, tipos de cuenta, técnicas de ahorro
+│   │   └── pistas.js       Diccionario chileno: JUMBO → supermercado, "abono" → entró plata
 │   ├── core/           El motor. Funciones puras: calculan y no tocan nada más
 │   │   ├── fechas.js       Días y meses en ISO, sin líos de zona horaria
 │   │   ├── dinero.js       Pesos chilenos enteros y cómo se muestran
 │   │   ├── calculos.js     Totales, categorías, saldos de cuentas, patrimonio
+│   │   ├── lector.js       Saca el monto, la fecha y el comercio del texto de un papel
 │   │   └── sugerencias.js  Mira tus números y decide qué vale la pena decir
 │   ├── storage/        Guardar y leer en el dispositivo
 │   │   ├── esquema.js      La forma exacta de los datos guardados
 │   │   ├── migraciones.js  Cómo pasan de un esquema al siguiente sin perder nada
+│   │   ├── adjuntos.js     La bodega de fotos y archivos (IndexedDB)
 │   │   └── almacenamiento.js  localStorage, respaldos, importar y exportar
 │   └── ui/             La pantalla
 │       ├── estilos.css     Colores, tamaños, diseño
+│       ├── archivos.js     Abre el archivo que elegiste y lo convierte en texto
 │       ├── graficos.js     Dona, barras y línea (SVG a mano, sin librerías)
 │       └── app.js          Escucha los toques y decide qué se muestra
 ├── iconos/             Los íconos de la app
 └── herramientas/
     ├── servidor.js            Servidor local para probar
     ├── probar-migracion.js    Revisa que una migración no pierda ni un peso
+    ├── probar-lector.js       Le pasa comprobantes chilenos al lector y revisa qué entendió
     └── generar-iconos.js      Vuelve a crear los íconos si cambias el color
 ```
 
@@ -127,6 +132,8 @@ cuentas.** Los detalles están en [ARQUITECTURA.md](ARQUITECTURA.md).
 | Los textos de las técnicas | `src/data/tecnicas.js` | `TECNICAS` |
 | Los consejos automáticos | `src/core/sugerencias.js` | `function sugerir` |
 | Los pasos del tutorial | `src/ui/app.js` | `const PASOS` |
+| Que reconozca un comercio nuevo | `src/data/pistas.js` | `COMERCIOS` |
+| Qué palabras significan "entró plata" | `src/data/pistas.js` | `ENTRA` |
 
 ⚠️ Si agregas un archivo nuevo dentro de `src/`, acuérdate de sumarlo **en dos lugares**: la lista de
 `<script>` al final de `index.html` y la lista `ARCHIVOS` de `sw.js`. Si no, funciona en el computador
@@ -166,6 +173,15 @@ En el **almacenamiento del propio navegador o celular** (`localStorage`). Eso si
 Por eso está el botón **Ajustes → Descargar copia**: guarda un archivo `.json` que
 después puedes restaurar con **Restaurar**. Hazlo de vez en cuando.
 
+**Las fotos y archivos que adjuntas son la excepción.** No caben en `localStorage` (una sola
+foto pesa más que todos tus movimientos juntos), así que viven en otra bodega del navegador
+llamada IndexedDB. Consecuencia que conviene tener clara:
+
+- ⚠️ **no suben a la nube** ni entran en el `.json` de la copia de seguridad;
+- ⚠️ **se quedan en el aparato donde las sacaste**. Si anotas el gasto en el celular y después
+  abres la app en el computador, el movimiento aparece y la foto no. La app te lo dice.
+- ✅ a cambio, la boleta con el nombre del local, tu tarjeta y la hora **no sale de tu teléfono**.
+
 ---
 
 ## 🔧 Después de cambiar archivos
@@ -204,6 +220,10 @@ le pegas el link de tu app publicada y te genera el paquete de Play Store.
 
 - Registro con correo la primera vez (y sin instrucciones después)
 - Anotar ingresos y gastos con 15 categorías, nota y fecha
+- **Adjuntar la foto o el archivo** que respalda cada movimiento, y verlo después con el 📎
+- **Llenar el formulario leyendo el comprobante**: de un PDF, un CSV o un correo del banco salen
+  el monto, la fecha, el comercio y la categoría, y la app te muestra de qué línea sacó cada uno
+- **Leer una cartola completa** y revisar línea por línea antes de anotar, marcando lo repetido
 - Cuentas múltiples: Cuenta RUT, corriente, vista, ahorro, efectivo, billetera digital y tarjeta de crédito
 - Mover plata entre tus cuentas sin que cuente como gasto ni como ingreso
 - Patrimonio: lo que tienes menos lo que debes, con el detalle por cuenta
