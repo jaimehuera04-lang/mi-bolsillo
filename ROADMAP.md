@@ -53,8 +53,18 @@ Cuentas de usuario, nube, sincronización, voz, OCR.
 
 > **Adelantado el 2026-08-28, a pedido de Jaime.** Las cuentas de usuario y la sincronización
 > con Supabase ya están hechas, fuera de orden. Nacen apagadas: sin `src/config-nube.js`
-> configurado la app sigue siendo local. Ver [SUPABASE.md](SUPABASE.md). Queda pendiente de
-> esta fase: voz y OCR.
+> configurado la app sigue siendo local. Ver [SUPABASE.md](SUPABASE.md).
+>
+> **Adelantado el 2026-09-01, a pedido de Jaime.** Se pueden adjuntar fotos y archivos a un
+> movimiento, y de los archivos con texto (PDF, CSV, correos del banco) se llena el formulario
+> solo. Una cartola completa abre una pantalla de revisión donde se confirma línea por línea.
+> Todo determinístico y sin salir del teléfono: ver *Entradas de datos* en
+> [ARQUITECTURA.md](ARQUITECTURA.md). Se prueba con `node herramientas/probar-lector.js`.
+>
+> **Queda pendiente de esta fase: voz, y el OCR de verdad.** Hoy de una foto se saca la fecha
+> del EXIF y el QR donde el teléfono sepa leerlo, pero el monto lo escribe la persona. Leer los
+> números de una foto necesita OCR, y OCR necesita o una librería pesada en el teléfono o el
+> backend de la Fase 6. Ninguna de las dos entra todavía.
 
 ---
 

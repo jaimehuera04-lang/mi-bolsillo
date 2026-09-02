@@ -18,6 +18,10 @@ const Datos = (() => {
     // La nube se entera de que existimos y le dejamos una forma de
     // pedirnos el objeto completo cuando le toque subir.
     if (typeof Nube !== 'undefined') Nube.iniciar(() => estado());
+    // Barrido de respaldos huérfanos: los que quedaron de un formulario
+    // que se cerró sin guardar, o de un movimiento borrado en otro
+    // aparato. Va sin await, en segundo plano, porque no bloquea nada.
+    if (typeof Adjuntos !== 'undefined') Adjuntos.limpiar(idsDeAdjuntosVivos());
     return r;
   }
 
@@ -124,7 +128,7 @@ const Datos = (() => {
        transferencia -> sale de una y entra a otra. No es ingreso ni
                         gasto: tu patrimonio queda igual.            */
   function agregarMovimiento({ tipo, monto, categoria, nota, descripcion, fecha,
-                               cuentaOrigen, cuentaDestino, compromisoId }) {
+                               cuentaOrigen, cuentaDestino, compromisoId, adjuntos }) {
     if (!['ingreso', 'gasto', 'transferencia'].includes(tipo)) {
       throw new Error('Tipo de movimiento desconocido.');
     }
@@ -157,16 +161,93 @@ const Datos = (() => {
       nota: (nota || '').trim(),
       etiquetas: [],
       compromisoId: compromisoId || null,
+      // Solo las fichas: { id, nombre, tipo, tamano }. El archivo mismo
+      // ya quedó en IndexedDB antes de llegar acá.
+      adjuntos: Array.isArray(adjuntos) ? adjuntos : [],
       creado: new Date().toISOString(),
     };
     estado().movimientos.push(mov);
     guardar();
+
+    // Los archivos se guardaron sueltos mientras la persona llenaba el
+    // formulario, sin dueño. Recién ahora sabemos a qué movimiento
+    // pertenecen, y sin eso "borrar el movimiento" no sabría qué borrar.
+    if (typeof Adjuntos !== 'undefined') {
+      for (const a of mov.adjuntos) Adjuntos.asignarMovimiento(a.id, mov.id);
+    }
     return mov;
   }
 
+  /**
+   * Anota varios de una vez (la cartola del banco).
+   * Devuelve { anotados, errores } en vez de tirar el error: si la
+   * línea 12 de 40 viene mala, las otras 39 tienen que entrar igual.
+   */
+  function agregarVarios(lista) {
+    const anotados = [];
+    const errores = [];
+    for (const entrada of (lista || [])) {
+      try {
+        anotados.push(agregarMovimiento(entrada));
+      } catch (e) {
+        errores.push({ entrada, mensaje: e.message });
+      }
+    }
+    return { anotados, errores };
+  }
+
+  /**
+   * ¿Ya está anotado algo así? Mismo día, mismo monto y mismo tipo.
+   * Sirve para no duplicar cuando importas la cartola de un mes que ya
+   * habías anotado a mano. No es infalible a propósito: dos cafés de
+   * $2.500 el mismo día son dos movimientos de verdad, así que esto
+   * avisa y deja decidir, nunca descarta solo.
+   */
+  function movimientoParecido({ tipo, monto, fecha }) {
+    const valor = Dinero.entero(monto);
+    return estado().movimientos.find(m =>
+      m.tipo === tipo && m.monto === valor && m.fecha === fecha) || null;
+  }
+
   function borrarMovimiento(id) {
+    const mov = estado().movimientos.find(m => m.id === id);
     estado().movimientos = estado().movimientos.filter(m => m.id !== id);
     guardar();
+    // Los respaldos de un movimiento borrado no le sirven a nadie, y una
+    // foto olvidada en la bodega ocupa espacio para siempre.
+    if (mov && typeof Adjuntos !== 'undefined') Adjuntos.borrarDeMovimiento(id);
+  }
+
+  /** Los ids de respaldo que todavía figuran en algún movimiento. */
+  function idsDeAdjuntosVivos() {
+    const vivos = new Set();
+    for (const m of estado().movimientos) {
+      for (const a of (m.adjuntos || [])) if (a && a.id) vivos.add(a.id);
+    }
+    return vivos;
+  }
+
+  /** Le cuelga una ficha de respaldo a un movimiento que ya existe. */
+  function adjuntarAMovimiento(movimientoId, fichas) {
+    const mov = estado().movimientos.find(m => m.id === movimientoId);
+    if (!mov) return null;
+    if (!Array.isArray(mov.adjuntos)) mov.adjuntos = [];
+    mov.adjuntos.push(...fichas);
+    guardar();
+    if (typeof Adjuntos !== 'undefined') {
+      for (const f of fichas) Adjuntos.asignarMovimiento(f.id, movimientoId);
+    }
+    return mov;
+  }
+
+  /** Le quita un respaldo a un movimiento y lo borra de la bodega. */
+  function quitarAdjunto(movimientoId, adjuntoId) {
+    const mov = estado().movimientos.find(m => m.id === movimientoId);
+    if (!mov) return null;
+    mov.adjuntos = (mov.adjuntos || []).filter(a => a.id !== adjuntoId);
+    guardar();
+    if (typeof Adjuntos !== 'undefined') Adjuntos.borrar(adjuntoId);
+    return mov;
   }
 
   /* ---------- Metas de ahorro ---------- */
@@ -261,7 +342,12 @@ const Datos = (() => {
   const importar = texto => Almacenamiento.importar(texto);
   const marcarRespaldo = () => Almacenamiento.marcarRespaldo();
   const respaldoPrevio = () => Almacenamiento.respaldoPrevio();
-  const borrarTodo = () => Almacenamiento.borrarTodo();
+
+  /** Borrar todo es borrar todo: también las fotos de la bodega. */
+  function borrarTodo() {
+    if (typeof Adjuntos !== 'undefined') Adjuntos.borrarTodo();
+    return Almacenamiento.borrarTodo();
+  }
 
   /* ---------- Datos de ejemplo ----------
      Muestran a propósito los dos casos que más se confunden:
@@ -329,7 +415,8 @@ const Datos = (() => {
     tipoCuenta: Categorias.tipoCuenta,
 
     // movimientos, metas, topes
-    agregarMovimiento, borrarMovimiento,
+    agregarMovimiento, agregarVarios, borrarMovimiento, movimientoParecido,
+    adjuntarAMovimiento, quitarAdjunto, idsDeAdjuntosVivos,
     agregarMeta, abonarMeta, borrarMeta,
     fijarPresupuesto, guardarAjustes,
 

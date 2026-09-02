@@ -10,7 +10,7 @@
 
 const Esquema = (() => {
 
-  const VERSION_ESQUEMA = 2;
+  const VERSION_ESQUEMA = 3;
 
   // La llave ya no lleva el número de versión: la versión vive DENTRO
   // del objeto. Poner "v1" en el nombre invita a crear otra llave en
@@ -41,7 +41,13 @@ const Esquema = (() => {
       cuentas: [],
 
       /* movimientos: tipo 'ingreso' | 'gasto' | 'transferencia'.
-         monto siempre positivo y entero. El signo lo da el tipo.   */
+         monto siempre positivo y entero. El signo lo da el tipo.
+
+         Desde el esquema 3 cada movimiento lleva 'adjuntos': la lista
+         de fichas { id, nombre, tipo, tamano } de sus respaldos. Ojo:
+         acá va SOLO la ficha. El archivo mismo vive en IndexedDB
+         (ver storage/adjuntos.js), porque una foto no cabe en
+         localStorage y no queremos mandarla a la nube.              */
       movimientos: [],
 
       /* compromisos: plata que ya prometiste y todavía no sale.

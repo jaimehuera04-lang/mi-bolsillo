@@ -37,7 +37,7 @@ for (const archivo of [
 }
 // Los archivos declaran sus modulos con const, así que no quedan colgando del
 // objeto global: hay que pedirlos con una expresion dentro del mismo contexto.
-const { Migraciones, Calculos } =
+const { Migraciones, Calculos, Esquema } =
   vm.runInContext('({ Migraciones, Calculos, Esquema })', contexto);
 
 /* ------------------------------------------------------------
@@ -148,9 +148,17 @@ function main() {
   });
   revisar('Las metas conservan objetivo y ahorrado', metasOk);
 
-  /* --- 5. El esquema quedó marcado --- */
-  revisar('El objeto quedó marcado como esquema 2',
-    nuevo.meta.schemaVersion === 2, `es ${nuevo.meta.schemaVersion}`);
+  /* --- 5. El esquema quedó marcado ---
+     Se compara contra la constante y no contra un número escrito a mano:
+     cada vez que suba el esquema, esta prueba tiene que seguir sirviendo
+     sin que haya que acordarse de venir a editarla. */
+  revisar(`El objeto quedó marcado como esquema ${Esquema.VERSION_ESQUEMA}`,
+    nuevo.meta.schemaVersion === Esquema.VERSION_ESQUEMA, `es ${nuevo.meta.schemaVersion}`);
+
+  /* --- 5b. Esquema 3: todos traen su lista de respaldos --- */
+  revisar('Cada movimiento tiene su lista de respaldos',
+    nuevo.movimientos.every(m => Array.isArray(m.adjuntos)),
+    `${nuevo.movimientos.filter(m => !Array.isArray(m.adjuntos)).length} sin lista`);
 
   /* --- 6. El registro y el nombre siguen ahí --- */
   const a = (viejo.ajustes || {});

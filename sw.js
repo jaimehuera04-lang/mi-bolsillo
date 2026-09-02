@@ -8,7 +8,7 @@
    Así el celular sabe que tiene que bajar la versión nueva.
    ============================================================ */
 
-const VERSION = 'mi-bolsillo-v15';
+const VERSION = 'mi-bolsillo-v16';
 
 const ARCHIVOS = [
   './',
@@ -17,16 +17,20 @@ const ARCHIVOS = [
   './src/config-nube.js',
   './src/data/categorias.js',
   './src/data/tecnicas.js',
+  './src/data/pistas.js',
   './src/core/fechas.js',
   './src/core/dinero.js',
   './src/core/calculos.js',
   './src/core/sugerencias.js',
+  './src/core/lector.js',
   './src/storage/esquema.js',
   './src/storage/migraciones.js',
   './src/storage/almacenamiento.js',
+  './src/storage/adjuntos.js',
   './src/storage/nube.js',
   './src/datos.js',
   './src/ui/dialogos.js',
+  './src/ui/archivos.js',
   './src/ui/excel.js',
   './src/ui/graficos.js',
   './src/ui/app.js',

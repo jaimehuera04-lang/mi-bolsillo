@@ -285,7 +285,15 @@
           <option value="transferencia">Solo movidas entre cuentas</option>
         </select>
       </div>
+      <button type="button" class="boton secundario" id="botonCartola" style="margin-bottom:14px">
+        📄 Leer una cartola del banco
+      </button>
+      <input type="file" id="archivoCartola" hidden
+             accept=".csv,.tsv,.txt,.xlsx,.xls,.pdf,application/pdf,text/csv,text/plain">
       <div id="listaMovimientos"></div>
+      <!-- El clip de un movimiento sin respaldo abre directo este selector -->
+      <input type="file" id="archivoRespaldoSuelto" multiple hidden
+             accept="image/*,application/pdf,.pdf,.csv,.txt,.html,.htm,.eml,.xlsx,.xls">
     </div>
   </main>
 
@@ -524,6 +532,7 @@ create policy "cada quien actualiza lo suyo"
         <button class="boton secundario" id="botonImportar">⬆️ Restaurar</button>
       </div>
       <input type="file" id="archivoImportar" accept="application/json,.json" hidden>
+      <p class="ayuda" id="pesoRespaldos"></p>
     </section>
 
     <section class="tarjeta">
@@ -584,6 +593,22 @@ create policy "cada quien actualiza lo suyo"
         <button type="button" id="tipoTransferencia" class="transferencia">🔄 Mover</button>
       </div>
 
+      <!-- El respaldo va PRIMERO a propósito: si adjuntas el comprobante
+           antes de escribir, los campos de abajo se llenan solos. -->
+      <div class="zona-respaldo">
+        <button type="button" class="boton secundario" id="botonAdjuntar">
+          📎 Adjuntar foto o comprobante
+        </button>
+        <input type="file" id="archivoAdjunto" multiple hidden
+               accept="image/*,application/pdf,.pdf,.csv,.txt,.html,.htm,.eml,.xlsx,.xls">
+        <p class="ayuda" id="ayudaAdjuntar">
+          De un PDF, un Excel o un CSV llenamos los datos solos. De una foto sacamos el día en
+          que la tomaste; el monto lo escribes tú.
+        </p>
+        <div class="tiras-adjuntos" id="adjuntosDelFormulario"></div>
+        <div class="consejo lectura" id="resultadoLectura" hidden></div>
+      </div>
+
       <form id="formMovimiento">
         <label for="campoMonto">¿Cuánto?</label>
         <input type="number" id="campoMonto" inputmode="numeric" min="1" step="1" required
@@ -618,6 +643,49 @@ create policy "cada quien actualiza lo suyo"
 
         <button class="boton" type="submit" style="margin-top:18px">Guardar</button>
       </form>
+    </div>
+  </div>
+
+  <!-- ================= VENTANA: REVISAR UNA CARTOLA =================
+       Nada de lo que sale acá entra solo. Se muestra lo que entendimos,
+       la persona corrige lo que quiera y recién entonces se anota. -->
+  <div class="telon" id="telonCartola">
+    <div class="hoja">
+      <div class="hoja-agarradera"></div>
+      <div class="tarjeta-titulo">
+        <h2>Lo que dice tu cartola</h2>
+        <button class="boton fantasma chico" data-cerrar="telonCartola">Cerrar</button>
+      </div>
+
+      <p class="ayuda" id="resumenCartola" style="margin-top:0"></p>
+
+      <label for="cuentaCartola">¿De qué cuenta es esta cartola?</label>
+      <select id="cuentaCartola"></select>
+
+      <div class="fila-botones" style="margin:14px 0 4px">
+        <button type="button" class="boton secundario chico" id="marcarTodoCartola">Marcar todo</button>
+        <button type="button" class="boton secundario chico" id="desmarcarTodoCartola">Desmarcar todo</button>
+      </div>
+
+      <div id="listaCartola"></div>
+
+      <button class="boton" id="botonGuardarCartola" style="margin-top:16px">Anotar lo marcado</button>
+      <p class="ayuda">
+        Los que aparecen como repetidos ya estaban anotados el mismo día por el mismo monto.
+        Vienen desmarcados, pero si de verdad fueron dos compras distintas, márcalos.
+      </p>
+    </div>
+  </div>
+
+  <!-- ================= VENTANA: VER UN RESPALDO ================= -->
+  <div class="telon" id="telonAdjunto">
+    <div class="hoja">
+      <div class="hoja-agarradera"></div>
+      <div class="tarjeta-titulo">
+        <h2 id="tituloAdjunto">Respaldo</h2>
+        <button class="boton fantasma chico" data-cerrar="telonAdjunto">Cerrar</button>
+      </div>
+      <div id="visorAdjunto"></div>
     </div>
   </div>
 
@@ -705,16 +773,20 @@ create policy "cada quien actualiza lo suyo"
   <script src="src/config-nube.js"></script>
   <script src="src/data/categorias.js"></script>
   <script src="src/data/tecnicas.js"></script>
+  <script src="src/data/pistas.js"></script>
   <script src="src/core/fechas.js"></script>
   <script src="src/core/dinero.js"></script>
   <script src="src/core/calculos.js"></script>
   <script src="src/core/sugerencias.js"></script>
+  <script src="src/core/lector.js"></script>
   <script src="src/storage/esquema.js"></script>
   <script src="src/storage/migraciones.js"></script>
   <script src="src/storage/almacenamiento.js"></script>
+  <script src="src/storage/adjuntos.js"></script>
   <script src="src/storage/nube.js"></script>
   <script src="src/datos.js"></script>
   <script src="src/ui/dialogos.js"></script>
+  <script src="src/ui/archivos.js"></script>
   <script src="src/ui/excel.js"></script>
   <script src="src/ui/graficos.js"></script>
   <script src="src/ui/app.js"></script>

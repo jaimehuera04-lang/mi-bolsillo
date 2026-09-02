@@ -26,6 +26,11 @@ estacionales − aportes a metas. Si una función no ayuda a entender o proteger
 11. **Se escribe con tildes y eñes**, y las preguntas llevan `¿?`. Vale también para los
     comentarios del código. Nunca en nombres del programa (clases CSS, claves, ids). Regla 7 de
     [VOZ.md](VOZ.md).
+12. **Los respaldos no salen del aparato.** Las fotos y archivos adjuntos viven en IndexedDB
+    (`storage/adjuntos.js`); el estado guarda solo la ficha `{ id, nombre, tipo, tamano }`. No
+    suben a la nube ni entran en el `.json`: una boleta lleva el local, la tarjeta y la hora.
+    Y el lector de comprobantes (`core/lector.js`) **propone y nunca anota solo**, mostrando de
+    qué línea sacó cada dato. Ver *Entradas de datos* en [ARQUITECTURA.md](ARQUITECTURA.md).
 
 ## Los demás documentos
 - [PRODUCTO.md](PRODUCTO.md) — idea central, las tres funciones, no-goals, contexto chileno.
