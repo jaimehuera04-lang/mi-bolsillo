@@ -225,6 +225,8 @@ le pegas el link de tu app publicada y te genera el paquete de Play Store.
 - **Llenar el formulario leyendo el comprobante**: de un PDF, un Excel, un CSV o un correo del
   banco salen el monto, la fecha, el comercio y la categoría, y la app te muestra de qué línea
   sacó cada uno
+- **Anotar desde una captura de pantalla**: en Fotos le copias el texto a la captura (el iPhone
+  y Android ya saben leer imágenes) y tocas *Pegar texto*. Se llena todo
 - **Leer una cartola completa** (`.xlsx` o `.csv`, como la baja el banco) y revisar línea por
   línea antes de anotar, con lo repetido ya marcado
 - En el computador, **arrastrar el archivo encima de la app o pegarlo con Ctrl+V**

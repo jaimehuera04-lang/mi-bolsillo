@@ -186,6 +186,42 @@ revisar('no se inventa el tipo', soloFecha.tipoDetectado, false);
 revisar('no se inventa el monto', soloFecha.monto, null);
 revisar('si usa la fecha en que se tomo', soloFecha.fecha, '2026-07-15');
 
+/* ------------------------------------------------------------
+   El texto que copia el iPhone de una CAPTURA DE PANTALLA.
+
+   Es el caso mas comun de todos y el mas desordenado: los rotulos
+   quedan en una linea y los valores en la siguiente, viene la hora
+   del telefono arriba, la tarjeta enmascarada y el numero de
+   comprobante. Nada de eso puede confundirse con el monto.
+   ------------------------------------------------------------ */
+const CAPTURA_DEL_BANCO = `9:41
+Banco de Chile
+Transferencia enviada
+Monto
+$45.990
+Destinatario
+SUPERMERCADO LIDER PROVIDENCIA
+Cuenta corriente ****4821
+Fecha
+28/08/2026
+Comprobante N 184920355
+Listo`;
+
+probarComprobante('Captura de pantalla de la app del banco', CAPTURA_DEL_BANCO, {
+  tipo: 'gasto',
+  monto: 45990,
+  fecha: '2026-08-28',
+  categoria: 'comida',
+});
+
+console.log('\nLo que no puede colarse desde una captura');
+revisar('la hora del telefono no es un monto',
+  (Lector.montoDe('9:41') || {}).valor, undefined);
+revisar('la tarjeta enmascarada tampoco',
+  (Lector.montoDe('Cuenta corriente ****4821') || {}).valor, undefined);
+revisar('el numero de comprobante tampoco',
+  (Lector.montoDe('Comprobante N 184920355') || {}).valor, undefined);
+
 /* ---- Que NO se lleve el RUT ni el folio como monto ---- */
 console.log('\nNumeros que no son plata');
 revisar('el RUT del comercio no es un monto',

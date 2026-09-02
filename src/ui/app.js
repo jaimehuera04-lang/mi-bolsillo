@@ -815,7 +815,77 @@
     $$$('resultadoLectura').hidden = true;
     $$$('resultadoLectura').innerHTML = '';
     $$$('archivoAdjunto').value = '';
+    $$$('zonaPegar').hidden = true;
+    $$$('campoPegado').value = '';
     dibujarAdjuntosDelFormulario();
+  }
+
+  /* ---------------- Pegar el texto de una captura ----------------
+
+     Acá está la respuesta honesta al caso más común de todos: la
+     captura de pantalla de la app del banco.
+
+     Una captura son píxeles y sin OCR no hay nada que leer. Pero el
+     teléfono YA trae OCR: en el iPhone, Fotos deja seleccionar el
+     texto de cualquier imagen y copiarlo (el iconito de las líneas,
+     abajo a la derecha), y en Android lo hace Google Fotos con Lens.
+     O sea que el OCR ya lo hizo el teléfono y nosotros solo tenemos
+     que recibir el resultado.
+
+     No es un parche: es mejor que meterle OCR a la app. El de Apple
+     y el de Google están entrenados de verdad, corren en el aparato,
+     no pesan un byte de más y no rompen ninguna regla de la casa.  */
+
+  async function pegarTextoDeCaptura() {
+    // Primero probamos leer el portapapeles solos, que es un toque menos.
+    try {
+      if (navigator.clipboard && navigator.clipboard.readText) {
+        const texto = await navigator.clipboard.readText();
+        if (texto && texto.trim()) {
+          leerTextoPegado(texto);
+          return;
+        }
+        // portapapeles vacío: no es un error, es que no copió nada
+        avisar('No hay texto copiado todavía');
+        mostrarZonaDePegado();
+        return;
+      }
+    } catch (e) {
+      // el navegador no nos deja leerlo solos (pasa en iPhone según
+      // el caso): se lo pedimos a la persona, que siempre puede
+    }
+    mostrarZonaDePegado();
+  }
+
+  function mostrarZonaDePegado() {
+    $$$('zonaPegar').hidden = false;
+    $$$('campoPegado').focus();
+  }
+
+  /**
+   * Le pasa al motor un texto que llegó pegado, no desde un archivo.
+   * Si trae varias líneas con fecha y monto es una cartola pegada a
+   * mano, y eso ya tiene su propia pantalla.
+   */
+  function leerTextoPegado(texto) {
+    const cartola = Lector.leerCartola(texto, { hoy: Datos.hoyISO() });
+    if (cartola.filas.length >= 3) {
+      cerrarHojaSinSoltarAdjuntos('telonMovimiento');
+      abrirRevisionDeCartola(cartola.filas, 'lo que pegaste', cartola.futuras);
+      return;
+    }
+
+    const propuesta = Lector.leerComprobante(texto, { hoy: Datos.hoyISO() });
+    if (!propuesta.encontrados) {
+      $$$('zonaPegar').hidden = false;
+      mostrarLectura(null, 'De ese texto no pudimos sacar ni el monto ni la fecha. '
+        + 'Si viene de una captura, revisa que hayas copiado la parte donde salen.');
+      return;
+    }
+
+    $$$('zonaPegar').hidden = true;
+    $$$('campoPegado').value = '';
+    aplicarLectura(propuesta, '', 'texto');
   }
 
   /** Borra de la bodega los archivos que quedaron sin movimiento. */
@@ -929,8 +999,11 @@
     vista.adjuntosPendientes = pendientes;
   }
 
-  /** Rellena el formulario con lo que se entendió y deja constancia. */
-  function aplicarLectura(propuesta, avisoExtra) {
+  /**
+   * Rellena el formulario con lo que se entendió y deja constancia.
+   * @param origen 'archivo' o 'texto', solo para nombrarlo bien en pantalla
+   */
+  function aplicarLectura(propuesta, avisoExtra, origen) {
     // guardamos lo que había, para que "lo lleno yo" no borre lo tipeado
     vista.antesDeLeer = {
       monto: $$$('campoMonto').value,
@@ -951,7 +1024,7 @@
       dibujarCategorias();
     }
 
-    mostrarLectura(propuesta, avisoExtra);
+    mostrarLectura(propuesta, avisoExtra, origen);
   }
 
   const ROTULO_CAMPO = {
@@ -962,8 +1035,9 @@
   };
 
   /** El panel verde que explica de dónde salió cada dato. */
-  function mostrarLectura(propuesta, avisoExtra) {
+  function mostrarLectura(propuesta, avisoExtra, origen) {
     const caja = $$$('resultadoLectura');
+    const deDonde = origen === 'texto' ? 'del texto que pegaste' : 'del archivo';
 
     if (!propuesta || !propuesta.encontrados) {
       if (!avisoExtra) { caja.hidden = true; return; }
@@ -981,12 +1055,12 @@
     // Falta el monto y hay que decirlo, pero una sola vez: el aviso del
     // archivo ("de una foto no se puede leer el monto") ya lo explica.
     const faltaElMonto = !propuesta.monto && !avisoExtra
-      ? '<p style="margin:8px 0 0">El monto no aparecía en el archivo, así que ese lo pones tú.</p>'
+      ? `<p style="margin:8px 0 0">El monto no aparecía ${esc(deDonde)}, así que ese lo pones tú.</p>`
       : '';
 
     caja.hidden = false;
     caja.innerHTML = `
-      <strong>Esto sacamos del archivo</strong>
+      <strong>Esto sacamos ${esc(deDonde)}</strong>
       <ul>${lineas}</ul>
       ${faltaElMonto}
       ${avisoExtra ? `<p style="margin:8px 0 0">${esc(avisoExtra)}</p>` : ''}
@@ -1295,9 +1369,22 @@
       if (donde && /^(INPUT|TEXTAREA|SELECT)$/.test(donde.tagName)) return;
 
       const archivos = [...((e.clipboardData || {}).files || [])];
-      if (!archivos.length) return;
+      if (archivos.length) {
+        e.preventDefault();
+        await recibirArchivosDeAfuera(archivos);
+        return;
+      }
+
+      // Texto pegado: es el camino de las capturas de pantalla, donde el
+      // OCR ya lo hizo el propio teléfono y lo que llega es el resultado.
+      const texto = e.clipboardData ? e.clipboardData.getData('text') : '';
+      if (!texto || texto.trim().length < 12) return;
       e.preventDefault();
-      await recibirArchivosDeAfuera(archivos);
+      if (!$$$('telonMovimiento').classList.contains('abierto')) {
+        abrirFormularioMovimiento();
+        await new Promise(r => setTimeout(r, 280));
+      }
+      leerTextoPegado(texto);
     });
   }
 
@@ -2486,6 +2573,24 @@
       const archivos = [...e.target.files];
       e.target.value = '';                 // para poder elegir el mismo dos veces
       if (archivos.length) await adjuntarArchivos(archivos);
+    });
+
+    // ---- Pegar el texto de una captura ----
+    $$$('botonPegarTexto').addEventListener('click', pegarTextoDeCaptura);
+
+    // Se lee en cuanto pega, sin pedirle además que toque un botón.
+    $$$('campoPegado').addEventListener('paste', e => {
+      const texto = (e.clipboardData || {}).getData
+        ? e.clipboardData.getData('text') : '';
+      if (!texto.trim()) return;
+      e.preventDefault();
+      $$$('campoPegado').value = texto;
+      leerTextoPegado(texto);
+    });
+    // por si lo pega con el menú del sistema, que no siempre dispara 'paste'
+    $$$('campoPegado').addEventListener('input', e => {
+      const texto = e.target.value;
+      if (texto.trim().length > 12) leerTextoPegado(texto);
     });
 
     $$$('adjuntosDelFormulario').addEventListener('click', e => {

@@ -780,3 +780,8 @@ input[readonly] {
   box-shadow: var(--sombra-alta);
   white-space: nowrap;
 }
+
+/* Donde se pega el texto de una captura cuando el navegador no nos
+   deja leer el portapapeles solos. */
+#zonaPegar { margin-top: 12px; }
+#zonaPegar textarea { resize: vertical; min-height: 90px; line-height: 1.45; }

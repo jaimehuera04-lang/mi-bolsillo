@@ -119,7 +119,22 @@ que llene el formulario**. Son dos cosas distintas y conviene no mezclarlas:
 | `.csv` `.txt` `.html` `.eml` | el texto completo. Es el caso más simple. |
 | `.xlsx` | **el formato en que los bancos chilenos dan la cartola**, así que sin esto la función quedaba coja. Un `.xlsx` es un ZIP con XML adentro —lo mismo que `excel.js` arma al exportar—, así que se desarma a mano: el índice del ZIP, `sharedStrings.xml` para el texto y `styles.xml` para saber qué celdas son fechas. Ese último no es opcional: Excel guarda el 2 de agosto como el número `46236`, y sin mirar el formato aplicado la columna Fecha llega ilegible. El `.xls` antiguo **no** es un ZIP y no se lee; la app dice cómo convertirlo. |
 | `.pdf` | se descomprimen sus flujos y se sacan las letras. Funciona con los comprobantes de transferencia y las boletas electrónicas. **No** funciona con un PDF que por dentro es un escaneo: ahí no hay letras, hay píxeles, y la app lo dice. |
-| `.jpg` `.png` `.heic` | una foto son píxeles. Sin OCR no hay monto que leer, y OCR es Fase 7. Lo que sí sale: la **fecha en que se tomó** (va escrita en el EXIF del archivo) y el **código QR** si la boleta trae uno y el teléfono sabe leerlo (`BarcodeDetector`: Android sí, iPhone todavía no). El monto lo escribe la persona, y así se le dice. |
+| `.jpg` `.png` `.heic` | una foto son píxeles. Sin OCR no hay monto que leer, y OCR es Fase 7. Lo que sí sale: la **fecha en que se tomó** (va escrita en el EXIF del archivo, y una captura de pantalla no la trae) y el **código QR** si la boleta trae uno y el teléfono sabe leerlo (`BarcodeDetector`: Android sí, iPhone todavía no). El monto lo escribe la persona — salvo que use *Pegar texto*, más abajo. |
+
+### El OCR ya lo hizo el teléfono
+
+El caso más común no es la foto de una boleta de papel: es **la captura de pantalla de la app
+del banco**. Y ahí no hace falta meterle OCR a la app, porque el teléfono ya lo trae: en el
+iPhone, Fotos deja seleccionar el texto de cualquier imagen y copiarlo; en Android lo hace
+Google Fotos con Lens. El OCR ya corrió, gratis, en el aparato, y bien.
+
+Por eso existe el botón **Pegar texto**: recibe ese resultado y lo manda al mismo lector de
+siempre. Es mejor que empaquetar OCR propio por tres razones: el de Apple y el de Google están
+entrenados de verdad, no pesan un byte de más, y nada sale del teléfono.
+
+El texto que llega así viene desordenado —el rótulo en una línea y el valor en la siguiente,
+la hora del teléfono arriba, la tarjeta enmascarada, el número de comprobante—, así que el
+lector tiene que aguantarlo. Hay una prueba con una captura real en `probar-lector.js`.
 
 ### Las cuatro puertas de entrada
 
@@ -128,7 +143,14 @@ que llene el formulario**. Son dos cosas distintas y conviene no mezclarlas:
 | **Adjuntar** en la hoja de anotar | guarda el archivo y, si trae texto, llena el formulario |
 | **Leer una cartola** en Movimientos | abre la pantalla de revisión con todas las líneas |
 | **El clip** de un movimiento ya anotado | le cuelga un respaldo después. Va siempre visible, apagado cuando no hay nada: es la única forma de fotografiar la boleta de un gasto que anotaste al paso. Acá **no se lee** el archivo: el movimiento ya existe y cambiarle los números por lo que diga un papel sería pasar por encima de algo ya decidido. |
-| **Arrastrar o pegar** (solo computador) | soltar un archivo sobre la app, o Ctrl+V con una captura, hace lo mismo que adjuntar. Si el formulario está cerrado, se abre solo. Pegar estando dentro de un campo no se toca: ahí pegar es pegar texto. |
+| **Pegar texto** en la hoja de anotar | para las capturas de pantalla: recibe el texto que el propio teléfono sacó de la imagen. Ver abajo. |
+| **Arrastrar o pegar** (solo computador) | soltar un archivo sobre la app, o Ctrl+V con un archivo o con texto, hace lo mismo. Si el formulario está cerrado, se abre solo. Pegar estando dentro de un campo no se toca: ahí pegar es pegar texto. |
+
+> **Ojo con el `accept` de los `<input type="file">`.** En el iPhone, una lista larga de
+> extensiones —sobre todo `.eml`, `.htm` o `.xls`— hace que Safari muestre **solo Archivos y
+> esconda la Fototeca**, o sea que la persona no puede elegir su foto y parece que la app
+> estuviera rota. Los selectores donde se espera una foto van **sin `accept`**; el de la cartola
+> lleva solo extensiones que iOS reconoce sin dudar. La app mira el archivo y decide sola.
 
 ### Las cuatro reglas de esta función
 

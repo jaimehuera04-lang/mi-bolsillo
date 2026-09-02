@@ -664,10 +664,16 @@ const Archivos = (() => {
         tipo: blob.type || archivo.type || 'image/jpeg',
         texto: codigo,
         fechaFoto,
+        // Nunca se cierra una puerta sin abrir otra (regla 2 de VOZ.md).
+        // Decir "no se puede leer una foto" y quedarse ahí deja a la
+        // persona sin saber qué hacer, cuando la salida existe y es
+        // buena: el propio teléfono sabe leer el texto de una imagen.
         aviso: codigo
           ? ''
-          : 'De una foto no se puede leer el monto sin OCR, así que ese lo escribes tú. '
-            + (fechaFoto ? 'La fecha sí la sacamos del día en que la tomaste.' : ''),
+          : (fechaFoto ? 'De la foto sacamos el día en que la tomaste. ' : '')
+            + 'El monto no, porque una foto son píxeles. Si es una captura de pantalla, '
+            + 'ábrela en Fotos, copia su texto y toca "Pegar texto" acá arriba: '
+            + 'con eso se llena todo.',
       };
     }
 

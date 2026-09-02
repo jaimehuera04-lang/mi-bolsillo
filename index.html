@@ -288,12 +288,14 @@
       <button type="button" class="boton secundario" id="botonCartola" style="margin-bottom:14px">
         📄 Leer una cartola del banco
       </button>
-      <input type="file" id="archivoCartola" hidden
-             accept=".csv,.tsv,.txt,.xlsx,.xls,.pdf,application/pdf,text/csv,text/plain">
+      <!-- Solo extensiones que el iPhone reconoce sin dudar; una rara de
+           más y el selector deja de ofrecer la mitad de las opciones. -->
+      <input type="file" id="archivoCartola" hidden accept=".csv,.txt,.xlsx,.pdf">
       <div id="listaMovimientos"></div>
-      <!-- El clip de un movimiento sin respaldo abre directo este selector -->
-      <input type="file" id="archivoRespaldoSuelto" multiple hidden
-             accept="image/*,application/pdf,.pdf,.csv,.txt,.html,.htm,.eml,.xlsx,.xls">
+      <!-- El clip de un movimiento sin respaldo abre directo este selector.
+           Sin "accept", por lo mismo que el de arriba: acá casi siempre se
+           adjunta una foto, y es justo la que Safari escondía. -->
+      <input type="file" id="archivoRespaldoSuelto" multiple hidden>
     </div>
   </main>
 
@@ -596,15 +598,31 @@ create policy "cada quien actualiza lo suyo"
       <!-- El respaldo va PRIMERO a propósito: si adjuntas el comprobante
            antes de escribir, los campos de abajo se llenan solos. -->
       <div class="zona-respaldo">
-        <button type="button" class="boton secundario" id="botonAdjuntar">
-          📎 Adjuntar foto o comprobante
-        </button>
-        <input type="file" id="archivoAdjunto" multiple hidden
-               accept="image/*,application/pdf,.pdf,.csv,.txt,.html,.htm,.eml,.xlsx,.xls">
+        <div class="fila-botones">
+          <button type="button" class="boton secundario" id="botonAdjuntar">
+            📎 Adjuntar
+          </button>
+          <button type="button" class="boton secundario" id="botonPegarTexto">
+            📋 Pegar texto
+          </button>
+        </div>
+        <!-- Sin "accept": en el iPhone, poner una lista larga de extensiones
+             hace que Safari muestre solo Archivos y esconda la Fototeca, o
+             sea que no te deja elegir la foto. Da lo mismo lo que elijas:
+             la app mira el archivo y decide sola qué puede hacer con él. -->
+        <input type="file" id="archivoAdjunto" multiple hidden>
         <p class="ayuda" id="ayudaAdjuntar">
-          De un PDF, un Excel o un CSV llenamos los datos solos. De una foto sacamos el día en
-          que la tomaste; el monto lo escribes tú.
+          De un PDF, un Excel o un CSV llenamos los datos solos. De una captura de pantalla,
+          cópiale el texto en Fotos y toca <strong>Pegar texto</strong>.
         </p>
+
+        <!-- El respaldo del "Pegar texto": si el navegador no nos deja leer
+             el portapapeles solos, la persona pega acá con el dedo. -->
+        <div id="zonaPegar" hidden>
+          <label for="campoPegado">Pega aquí el texto de la captura</label>
+          <textarea id="campoPegado" rows="4"
+                    placeholder="Mantén apretado y elige Pegar"></textarea>
+        </div>
         <div class="tiras-adjuntos" id="adjuntosDelFormulario"></div>
         <div class="consejo lectura" id="resultadoLectura" hidden></div>
       </div>
