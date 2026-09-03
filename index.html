@@ -36,6 +36,10 @@
     /* La pantalla de arranque: se ve desde el primer instante y se
        desvanece sola cuando la app ya esta lista. */
     #arranque {
+      /* 200: sobre todo. Ver "el orden de las capas" en estilos.css.
+         Va con el número a la vista y no con la variable porque estos
+         estilos se aplican ANTES de que estilos.css llegue: si usara la
+         variable, la pantalla de arranque no taparía nada. */
       position: absolute; inset: 0; z-index: 200;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       gap: 10px;
@@ -61,8 +65,8 @@
 <!-- ============================================================
      .app es el marco de la aplicacion: ocupa la pantalla completa
      y no se mueve. Adentro, lo único que hace scroll es .contenido.
-     Gracias a eso el encabezado y la barra de abajo quedan fijos
-     como en una app de verdad, y el celular deja de hacer el rebote
+     Gracias a eso el encabezado queda fijo como en una app de verdad
+     y el celular deja de hacer el rebote
      y el "deslizar para recargar" del navegador.
      ============================================================ -->
 <div class="app" id="app">
@@ -918,6 +922,7 @@ create policy "cada quien actualiza lo suyo"
   <script src="src/storage/nube.js"></script>
   <script src="src/datos.js"></script>
   <script src="src/datos-negocio.js"></script>
+  <script src="src/ui/capas.js"></script>
   <script src="src/ui/dialogos.js"></script>
   <script src="src/ui/archivos.js"></script>
   <script src="src/ui/excel.js"></script>

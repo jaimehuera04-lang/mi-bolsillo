@@ -20,14 +20,13 @@
 const Dialogos = (() => {
   'use strict';
 
-  // La pila guarda las ventanas abiertas. Sirve para que el botón
-  // "atrás" del celular cierre la de más arriba y no salga de la app.
-  const pila = [];
+  /* Las ventanas abiertas NO se llevan acá: van a la misma pila que
+     las hojas y el menú, en src/ui/capas.js. Antes este archivo tenía
+     su propia lista además de aquella, o sea dos registros de lo
+     mismo que había que mantener de acuerdo a mano. Uno solo.
 
-  // app.js nos pasa dos funciones para que cada ventana deje (y quite)
-  // su huella en el historial del teléfono. Ver Dialogos.conectarHistorial.
-  let alAbrir = null;
-  let alCerrar = null;
+     Todas las ventanas entran con el id "dialogo": puede haber más de
+     una encima, y la pila las distingue por el orden. */
 
   const esc = t => String(t ?? '').replace(/[&<>"']/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -73,9 +72,7 @@ const Dialogos = (() => {
       function cerrar(respuesta) {
         if (yaCerro) return;
         yaCerro = true;
-        const i = pila.indexOf(cerrar);
-        if (i !== -1) pila.splice(i, 1);
-        if (alCerrar) alCerrar();
+        Capas.despilar('dialogo');
         document.removeEventListener('keydown', enTecla);
         telon.classList.remove('abierto');
         setTimeout(() => telon.remove(), 200);
@@ -109,8 +106,7 @@ const Dialogos = (() => {
 
       // guardamos la función de cierre por si el botón "atrás" la necesita
       cerrar.cancelar = () => cerrar(campo ? null : false);
-      pila.push(cerrar);
-      if (alAbrir) alAbrir(cerrar.cancelar);
+      Capas.apilar({ id: 'dialogo', forma: 'dialogo', cerrar: cerrar.cancelar });
     });
   }
 
@@ -127,20 +123,13 @@ const Dialogos = (() => {
     pedirMonto: ({ titulo, texto = '', etiqueta = 'Monto', placeholder = '0', aceptar = 'Guardar' }) =>
       abrir({ titulo, texto, campo: { etiqueta, placeholder }, aceptar, cancelar: 'Cancelar' }),
 
-    /** true si hay alguna ventana de estas abierta. */
-    hayAbierto: () => pila.length > 0,
-
-    /**
-     * app.js conecta acá su manejo del botón "atrás": le avisamos
-     * cuando se abre una ventana y cuando se cierra.
-     */
-    conectarHistorial(abre, cierra) { alAbrir = abre; alCerrar = cierra; },
+    /** true si lo de más arriba es una de estas ventanas. */
+    hayAbierto: () => {
+      const arriba = Capas.laDeArriba();
+      return Boolean(arriba && arriba.forma === 'dialogo');
+    },
 
     /** Cierra la de más arriba como si hubieran cancelado. */
-    cerrarUltimo() {
-      if (!pila.length) return false;
-      pila[pila.length - 1].cancelar();
-      return true;
-    },
+    cerrarUltimo: () => Capas.cerrarLaDeArriba(),
   };
 })();

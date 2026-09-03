@@ -57,61 +57,20 @@
     temporizadorMensaje = setTimeout(() => caja.classList.remove('visible'), 2600);
   }
 
-  /* --- Ventanas abiertas y el botón "atrás" del celular ---
-     En una app, "atrás" cierra lo que tengas abierto; nunca te saca a
-     la calle. Para conseguirlo llevamos una pila de lo que hay abierto
-     y una entrada de historial por cada cosa. */
-  const capas = [];            // funciones que cierran; la última es la de arriba
-  let cerrandoPorAtras = false;
+  /* --- Las capas: todo lo que se abre encima ---
 
-  /* Cuántos "atrás" pedimos nosotros y todavía no nos han llegado de vuelta.
-     Es un CONTADOR y no un sí/no, y eso importa: history.back() no ocurre al
-     tiro, avisa después con un evento. Si se cierran dos capas seguidas
-     —confirmar una ventana y acto seguido cerrar la hoja— quedan dos "atrás"
-     en vuelo; con un sí/no, el primero apagaba la bandera y el segundo se
-     colaba y cerraba de más lo que se acabara de abrir. Nos pasó al convertir
-     una cotización en venta: el comprobante se abría y desaparecía solo. */
-  let atrasProgramado = 0;
+     El sistema vive entero en src/ui/capas.js: la pila, el botón
+     "atrás", los gestos y el orden de las alturas. Acá quedan solo
+     los nombres cortos que usa el resto del archivo, y el aviso de
+     qué hacer cuando se cierra una hoja concreta.
 
-  /** Anota una ventana recién abierta para que "atrás" la cierre. */
-  function anotarCapa(cerrar) {
-    capas.push(cerrar);
-    history.pushState({ capa: capas.length }, '');
-  }
+     Antes esto estaba escrito tres veces —una para las hojas, otra
+     para el cajón del menú y otra para los diálogos— y las tres se
+     fueron desincronizando. Ahora hay una sola.                  */
 
-  /** La cerró el usuario con un botón: devolvemos su entrada de historial. */
-  function olvidarCapa() {
-    if (cerrandoPorAtras || !capas.length) return;
-    capas.pop();
-    atrasProgramado++;
-    history.back();
-  }
+  const abrirHoja  = id => Capas.abrir(id, "hoja");
+  const cerrarHoja = id => Capas.cerrar(id);
 
-  /**
-   * Esconde una hoja y suelta el foco si se había quedado adentro.
-   *
-   * Sin el blur, el cursor sigue dentro de un campo que ya no se ve: en
-   * el teléfono el teclado queda colgando y en el computador todo lo que
-   * escribas (Ctrl+V incluido) se lo lleva un campo invisible.
-   */
-  function ocultarHoja(id) {
-    const hoja = $$$(id);
-    hoja.classList.remove('abierto');
-    if (hoja.contains(document.activeElement)) document.activeElement.blur();
-  }
-
-  const abrirHoja = id => {
-    $$$(id).classList.add('abierto');
-    anotarCapa(() => ocultarHoja(id));
-  };
-  const cerrarHoja = id => {
-    if (!$$$(id).classList.contains('abierto')) return;
-    ocultarHoja(id);
-    olvidarCapa();
-    // Si se cerró el formulario sin guardar, los respaldos que se
-    // adjuntaron ahí no le pertenecen a nadie: se van de la bodega.
-    if (id === 'telonMovimiento') soltarAdjuntosPendientes();
-  };
 
   const esMesActual = () =>
     vista.anio === hoy.getFullYear() && vista.mes === hoy.getMonth();
@@ -152,107 +111,21 @@
 
   /* ---------------- El menú lateral ----------------
 
-     Antes esto era una barra de seis pestañas abajo. Seis no caben en
-     una pantalla de teléfono: los nombres se achican hasta que no se
-     leen y la barra se ve congestionada. Ahora es un cajón que entra
-     desde la izquierda.
-
-     Se abre con el botón ☰ o deslizando desde el borde izquierdo, y se
-     cierra tocando fuera, eligiendo un destino, deslizando hacia la
-     izquierda o con el botón "atrás" del teléfono, porque se anota
-     como una capa más (ver anotarCapa).                            */
+     Es una capa como cualquier otra: se abre, entra a la pila y el
+     botón "atrás" la cierra. Lo único suyo es el aria-expanded del
+     botón ☰, que hay que mover en los dos sentidos para que un
+     lector de pantalla sepa si está abierto.                     */
 
   function abrirMenu() {
-    const telon = $$$('telonMenu');
-    if (telon.classList.contains('abierto')) return;
-    telon.classList.add('abierto');
-    $$$('botonMenu').setAttribute('aria-expanded', 'true');
-    anotarCapa(cerrarMenuSinHistorial);
-  }
-
-  /** Cierra el cajón sin tocar el historial. La usa el botón "atrás". */
-  function cerrarMenuSinHistorial() {
-    const telon = $$$('telonMenu');
-    telon.classList.remove('abierto');
-    $$$('botonMenu').setAttribute('aria-expanded', 'false');
-    if (telon.contains(document.activeElement)) document.activeElement.blur();
+    if (Capas.abrir("telonMenu", "cajon")) {
+      $$$("botonMenu").setAttribute("aria-expanded", "true");
+    }
   }
 
   function cerrarMenu() {
-    if (!$$$('telonMenu').classList.contains('abierto')) return;
-    cerrarMenuSinHistorial();
-    olvidarCapa();
+    Capas.cerrar("telonMenu");
   }
 
-  /**
-   * Abrir arrastrando desde el borde izquierdo, y cerrar arrastrando
-   * hacia la izquierda.
-   *
-   * El gesto se escucha en TODA la pantalla pero solo cuenta si el dedo
-   * partió en los primeros 20 píxeles. Una franja que capturara toques
-   * se comería el toque de cualquier cosa pegada a ese borde, y ahí hay
-   * casillas y botones.
-   */
-  function prepararMenuLateral() {
-    const telon = $$$('telonMenu');
-    const cajon = $('.menu-lateral');
-    const ancho = () => cajon.offsetWidth || 280;
-
-    let partida = null;      // dónde empezó el dedo
-    let recorrido = 0;
-    let abriendo = false;    // true si partió del borde con el menú cerrado
-
-    const empezar = e => {
-      if (e.touches.length !== 1) return;
-      const x = e.touches[0].clientX;
-      const abierto = telon.classList.contains('abierto');
-      // Con algo más abierto encima (una hoja, un diálogo) el gesto no
-      // es para el menú: sería robarle el arrastre a la hoja.
-      if (!abierto && (capas.length || Dialogos.hayAbierto())) return;
-      if (!abierto && x > 20) return;
-      partida = x;
-      recorrido = 0;
-      abriendo = !abierto;
-      cajon.classList.add('arrastrando');
-      if (abriendo) telon.classList.add('abierto');
-    };
-
-    const mover = e => {
-      if (partida === null) return;
-      const dx = e.touches[0].clientX - partida;
-      recorrido = abriendo ? Math.max(0, dx) : Math.min(0, dx);
-      const posicion = abriendo
-        ? Math.min(0, -ancho() + recorrido)
-        : recorrido;
-      cajon.style.transform = `translateX(${posicion}px)`;
-    };
-
-    const soltar = () => {
-      if (partida === null) return;
-      partida = null;
-      cajon.classList.remove('arrastrando');
-      cajon.style.transform = '';
-      // Pasado un tercio del cajón, el gesto se completa; si no, vuelve.
-      const suficiente = Math.abs(recorrido) > ancho() / 3;
-      if (abriendo) {
-        // Durante el arrastre el telón ya estaba "abierto" para poder
-        // verse. Se quita antes de llamar a abrirMenu() porque esa
-        // función se sale sola si lo encuentra abierto, y entonces el
-        // menú se abría SIN registrar su capa: el botón "atrás" no lo
-        // cerraba y sacaba de la app.
-        telon.classList.remove('abierto');
-        if (suficiente) { vibrar(6); abrirMenu(); }
-      } else if (suficiente) {
-        vibrar(6);
-        cerrarMenu();
-      }
-    };
-
-    $$$('app').addEventListener('touchstart', empezar, { passive: true });
-    $$$('app').addEventListener('touchmove', mover, { passive: true });
-    $$$('app').addEventListener('touchend', soltar);
-    $$$('app').addEventListener('touchcancel', soltar);
-  }
 
   /** Una vibración cortita al tocar. Si el aparato no puede, no pasa nada. */
   function vibrar(ms) {
@@ -265,29 +138,28 @@
    * y recién ahí, estando en Inicio y sin nada abierto, sale.
    */
   function prepararBotonAtras() {
-    history.replaceState({ tab: 'inicio' }, '');
+    // El "atrás" y los gestos los resuelve capas.js, que es quien sabe
+    // qué hay abierto. Acá solo le decimos qué hacer cuando ya no queda
+    // ninguna capa: volver a la pestaña anterior.
+    Capas.prepararBotonAtras(tab => irA(tab, true));
 
-    window.addEventListener('popstate', evento => {
-      // este "atrás" lo pedimos nosotros al cerrar algo: ya está hecho
-      if (atrasProgramado > 0) { atrasProgramado--; return; }
-
-      // 1. hay algo abierto encima (una hoja o una ventana de confirmar)?
-      //    se cierra lo de más arriba y nos quedamos donde estábamos
-      if (capas.length) {
-        cerrandoPorAtras = true;
-        capas.pop()();
-        cerrandoPorAtras = false;
-        return;
-      }
-
-      // 2. estábamos en otra pestaña: volvemos a la anterior
-      if (evento.state && evento.state.tab) irA(evento.state.tab, true);
-
-      // 3. Inicio y nada abierto: dejamos que el celular cierre la app
+    Capas.prepararGestos($$$("app"), {
+      cajonId: "telonMenu",
+      abrirCajon: abrirMenu,
+      cerrarCajon: cerrarMenu,
+      vibrar,
     });
 
-    // las ventanas de confirmar usan la misma pila de capas
-    Dialogos.conectarHistorial(anotarCapa, olvidarCapa);
+    // Las ventanas de confirmar ya entran solas a la misma pila:
+    // dialogos.js habla directo con capas.js y no necesita puente.
+
+    // Cerrar el formulario de un movimiento sin guardar deja sus
+    // respaldos sin dueño: se sueltan de la bodega.
+    Capas.avisarmeAlCerrar("telonMovimiento", soltarAdjuntosPendientes);
+
+    // Y el ☰ tiene que volver a decir "cerrado" se cierre como se cierre.
+    Capas.avisarmeAlCerrar("telonMenu",
+      () => $$$("botonMenu").setAttribute("aria-expanded", "false"));
   }
 
   /** Le pone sombra al encabezado cuando hay contenido pasando por debajo. */
@@ -330,7 +202,6 @@
     // respiro de la barra de gestos, que el CSS saca solo de env().
 
     $$$('contenido').addEventListener('scroll', marcarDesplazamiento, { passive: true });
-    prepararArrastreDeHojas();
 
     /* Que el marco de la app NO se pueda desplazar no se arregla desde
        acá: se arregla en el CSS, recortando el telón (ver .telon en
@@ -358,40 +229,9 @@
    * ya está arriba del todo; si no, el dedo está haciendo scroll dentro
    * de ella y no hay que quitárselo.
    */
-  function prepararArrastreDeHojas() {
-    $$('.hoja').forEach(hoja => {
-      let partida = null;
-      let recorrido = 0;
-
-      hoja.addEventListener('touchstart', e => {
-        if (hoja.scrollTop > 0 || e.touches.length !== 1) return;
-        partida = e.touches[0].clientY;
-        recorrido = 0;
-        hoja.classList.add('arrastrando');
-      }, { passive: true });
-
-      hoja.addEventListener('touchmove', e => {
-        if (partida === null) return;
-        recorrido = Math.max(0, e.touches[0].clientY - partida);
-        hoja.style.transform = 'translateY(' + recorrido + 'px)';
-      }, { passive: true });
-
-      const soltar = () => {
-        if (partida === null) return;
-        partida = null;
-        hoja.classList.remove('arrastrando');
-        hoja.style.transform = '';
-        // pasado el tercio de la hoja, se cierra; si no, vuelve a su sitio
-        if (recorrido > Math.min(120, hoja.offsetHeight / 3)) {
-          vibrar(6);
-          cerrarHoja(hoja.closest('.telon').id);
-        }
-      };
-
-      hoja.addEventListener('touchend', soltar);
-      hoja.addEventListener('touchcancel', soltar);
-    });
-  }
+  /* El arrastre de las hojas y el del cajón los resuelve capas.js, en
+     un solo lugar que sabe qué hay abierto. Antes eran dos sistemas
+     que no se conocían y el del cajón le robaba el gesto a la hoja. */
 
   function cambiarMes(delta) {
     const f = new Date(vista.anio, vista.mes + delta, 1);
@@ -3206,7 +3046,6 @@
     Datos.cargar();
     prepararMarco();
     prepararBotonAtras();
-    prepararMenuLateral();
     prepararArrastreDeArchivos();
     conectarEventos();
     prepararNube();

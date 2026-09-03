@@ -40,6 +40,62 @@ Meta de estructura (se llega ahí por fases, no de un salto):
 10. **Esto es una app, no una página.** Ver la sección siguiente. Todo lo que delate al
     navegador se considera un error, no un detalle estético.
 
+## Las capas de la pantalla
+
+> No confundir con las **[Capas](#capas)** de más arriba, que son las del código
+> (núcleo, almacenamiento, interfaz). Estas son las que se ven.
+
+Todo lo que se pone encima de la pantalla —una hoja que sube, el cajón del menú, una ventana
+que pregunta— es una **capa**, y todas obedecen las mismas reglas. Eso es exactamente lo que
+se nota cuando *no* pasa.
+
+El sistema vive entero en **`src/ui/capas.js`**. Antes estaba escrito tres veces: un par de
+funciones para las hojas, otro par casi igual para el cajón, y `dialogos.js` con su propia
+pila aparte. Tres sistemas parecidos son tres sistemas que se desincronizan, y se
+desincronizaron: al agregar el menú, el botón "atrás" dejó de cerrarlo bien, y el gesto del
+cajón le robaba el arrastre a la hoja que estuviera encima.
+
+### Las tres reglas
+
+1. **Todo lo que se abre encima va a la misma pila.** Hoja, cajón o diálogo, da igual.
+2. **El botón "atrás" cierra la de más arriba**, una por vez, y nunca saca de la app mientras
+   quede alguna.
+3. **Cada capa se cierra con el dedo según su forma**: una hoja se arrastra hacia abajo, un
+   cajón hacia su borde. El gesto lo resuelve `capas.js`, que sabe qué hay abierto, y no cada
+   capa por su cuenta.
+
+### Las formas
+
+| Forma | Cómo entra | Cómo se cierra con el dedo |
+|---|---|---|
+| `hoja` | sube desde abajo | se arrastra hacia abajo, y solo si ya muestra su principio |
+| `cajon` | entra desde la izquierda | se arrastra hacia su borde; desde el borde se abre |
+| `dialogo` | aparece al centro | tocando fuera |
+
+### El orden de arriba abajo
+
+Las alturas están en `estilos.css` como variables `--capa-*`, **con nombre y explicadas una
+por una**. Antes eran nueve números sueltos repartidos por el archivo y no había forma de
+saber cuál iba sobre cuál sin buscarlos todos. Así fue como una vez las ventanas de confirmar
+quedaron por debajo de la bienvenida: invisibles e intocables, con la app esperando para
+siempre un toque imposible.
+
+```
+encabezado 5 · botón + 41 · hoja 50 · menú 70 · bienvenida 100
+          · diálogo 120 · aviso 130 · soltar archivo 140 · arranque 200
+```
+
+El menú va **sobre** las hojas porque es navegación, y la navegación manda sobre lo que estés
+mirando. El aviso de abajo va sobre los diálogos porque si algo salió mal hay que enterarse.
+La pantalla de arranque lleva su número a la vista en `index.html` y no la variable: esos
+estilos se aplican antes de que llegue `estilos.css`.
+
+### Enganches
+
+`Capas.avisarmeAlCerrar(id, quehacer)` para lo que tenga que pasar cuando una capa concreta se
+cierre, se cierre como se cierre. Hoy hay dos: soltar los respaldos de un formulario de
+movimiento abandonado, y devolver el `aria-expanded` del ☰ a "cerrado".
+
 ## La cáscara de app
 
 Mi Bolsillo se instala en el teléfono y tiene que comportarse como cualquier otra app de ahí.

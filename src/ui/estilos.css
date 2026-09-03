@@ -33,6 +33,55 @@
      teléfono, y eso lo sabe el propio navegador. */
   --alto-barra-inferior: env(safe-area-inset-bottom, 0px);
 
+  /* ============================================================
+     EL ORDEN DE LAS CAPAS
+
+     Todo lo que se pone encima de la pantalla tiene su altura acá,
+     con nombre y en orden. Antes eran nueve números sueltos
+     repartidos por el archivo (5, 41, 50, 70, 100, 120, 130, 140,
+     200) y no había forma de saber cuál iba sobre cuál sin ir a
+     buscarlos uno por uno. Así fue como una vez las ventanas de
+     confirmar quedaron DEBAJO de la bienvenida: invisibles e
+     intocables, con la app esperando para siempre un toque
+     imposible.
+
+     De abajo hacia arriba, y cada salto tiene su razón:
+     ============================================================ */
+
+  /* El encabezado verde: apenas sobre el contenido, para que su
+     sombra se dibuje encima al desplazar. */
+  --capa-encabezado: 5;
+
+  /* El botón + flota sobre el contenido, pero por debajo de
+     cualquier cosa que se abra. */
+  --capa-boton-flotante: 41;
+
+  /* Las hojas que suben desde abajo: formularios, listas, detalles. */
+  --capa-hoja: 50;
+
+  /* El cajón del menú va sobre las hojas: es navegación, y la
+     navegación manda sobre lo que estés mirando. */
+  --capa-menu: 70;
+
+  /* La bienvenida tapa la app entera mientras no te has registrado. */
+  --capa-bienvenida: 100;
+
+  /* Las ventanas de confirmar van SOBRE la bienvenida. Esto no es
+     un gusto: si quedan debajo, la app pregunta algo que nadie
+     puede contestar y se queda colgada. Ya pasó. */
+  --capa-dialogo: 120;
+
+  /* El mensajito de abajo se lee por encima de todo, incluso de una
+     ventana de confirmar: si algo salió mal, hay que enterarse. */
+  --capa-aviso: 130;
+
+  /* Arrastrar un archivo sobre la app pinta un marco por encima. */
+  --capa-soltar-archivo: 140;
+
+  /* La pantalla de arranque tapa absolutamente todo, porque mientras
+     está, la app todavía no existe. */
+  --capa-arranque: 200;
+
   /* El fondo de escritorio: lo que rodea al marco del teléfono */
   --fondo-escritorio: #dfe5ea;
 }
@@ -127,7 +176,7 @@ p  { margin: 0 0 10px; }
 
 /* ---------- Pantalla de registro (solo la primera vez) ---------- */
 .bienvenida {
-  position: absolute; inset: 0; z-index: 100;
+  position: absolute; inset: 0; z-index: var(--capa-bienvenida);
   background: linear-gradient(160deg, var(--verde), var(--verde-oscuro));
   display: flex; align-items: center; justify-content: center;
   padding: calc(env(safe-area-inset-top) + 20px) 18px calc(env(safe-area-inset-bottom) + 20px);
@@ -168,7 +217,7 @@ input.con-error:focus { outline-color: var(--rojo); }
 /* ---------- Encabezado ---------- */
 .cabecera {
   flex: 0 0 auto;
-  position: relative; z-index: 5;
+  position: relative; z-index: var(--capa-encabezado);
   padding: calc(env(safe-area-inset-top) + 18px) 18px 14px;
   background: linear-gradient(135deg, var(--verde), var(--verde-oscuro));
   color: #fff;
@@ -293,7 +342,7 @@ input.con-error:focus { outline-color: var(--rojo); }
 
 /* ---------- El menú lateral ---------- */
 .telon-menu {
-  position: absolute; inset: 0; z-index: 70;
+  position: absolute; inset: 0; z-index: var(--capa-menu);
   background: rgba(12, 20, 28, 0);
   visibility: hidden;
   transition: background .26s ease, visibility 0s linear .3s;
@@ -364,7 +413,7 @@ input.con-error:focus { outline-color: var(--rojo); }
   bottom: calc(var(--alto-barra-inferior) + 16px);
   width: 58px; height: 58px; border-radius: 50%;
   background: var(--verde); color: #fff; border: 0;
-  font-size: 30px; line-height: 1; cursor: pointer; z-index: 41;
+  font-size: 30px; line-height: 1; cursor: pointer; z-index: var(--capa-boton-flotante);
   box-shadow: var(--sombra-alta);
   transition: transform .12s ease;
 }
@@ -450,7 +499,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--verde); out
 /* La hoja entra y sale deslizandose, como las de cualquier app. Antes
    aparecia y desaparecia de golpe, que es lo que hace un sitio web. */
 .telon {
-  position: absolute; inset: 0; z-index: 50;
+  position: absolute; inset: 0; z-index: var(--capa-hoja);
   display: flex; align-items: flex-end; justify-content: center;
   background: rgba(12, 20, 28, 0);
   visibility: hidden;
@@ -562,7 +611,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--verde); out
   background: var(--texto); color: var(--fondo);
   padding: 11px 18px; border-radius: 999px; font-size: 13.5px; font-weight: 600;
   /* 130: los avisos van sobre todo, incluida la bienvenida */
-  z-index: 130; opacity: 0; pointer-events: none; transition: opacity .25s ease;
+  z-index: var(--capa-aviso); opacity: 0; pointer-events: none; transition: opacity .25s ease;
   max-width: 90vw; text-align: center;
 }
 .mensajito.visible { opacity: 1; }
@@ -608,7 +657,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--verde); out
    toque imposible. Si alguna vez subes el z-index de .bienvenida, sube
    también este. */
 .telon-dialogo {
-  position: absolute; inset: 0; z-index: 120;
+  position: absolute; inset: 0; z-index: var(--capa-dialogo);
   display: flex; align-items: center; justify-content: center;
   padding: 24px;
   background: rgba(12, 20, 28, 0);
@@ -828,7 +877,7 @@ input[readonly] {
 .app.recibiendo-archivo::before,
 .app.recibiendo-archivo::after {
   position: absolute;
-  z-index: 140;
+  z-index: var(--capa-soltar-archivo);
   pointer-events: none;
 }
 .app.recibiendo-archivo::before {

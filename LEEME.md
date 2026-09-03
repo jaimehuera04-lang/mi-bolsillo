@@ -114,6 +114,7 @@ mi-bolsillo/
 │       ├── estilos.css     Colores, tamaños, diseño
 │       ├── archivos.js     Abre el archivo que elegiste y lo convierte en texto
 │       ├── graficos.js     Dona, barras y línea (SVG a mano, sin librerías)
+│       ├── capas.js       Todo lo que se abre encima: hojas, menú, ventanas y el botón atrás
 │       ├── sueldo.js       La pantalla del sueldo libre y el simulador de cuotas
 │       ├── sueldo.css      Sus estilos
 │       ├── ocr.js          Lee el texto de un pantallazo del banco
