@@ -218,11 +218,21 @@ const Datos = (() => {
     if (mov && typeof Adjuntos !== 'undefined') Adjuntos.borrarDeMovimiento(id);
   }
 
-  /** Los ids de respaldo que todavía figuran en algún movimiento. */
+  /**
+   * Los ids de respaldo que todavía figuran en algún lado.
+   * Lo que no esté en esta lista se borra de IndexedDB al arrancar,
+   * así que acá tiene que estar TODO: si se olvida un cajón, esas
+   * fotos desaparecen solas al abrir la app la próxima vez.
+   */
   function idsDeAdjuntosVivos() {
     const vivos = new Set();
     for (const m of estado().movimientos) {
       for (const a of (m.adjuntos || [])) if (a && a.id) vivos.add(a.id);
+    }
+    // Las boletas de las ventas, las facturas de las compras y las
+    // fotos de los productos también son respaldos vivos.
+    if (typeof DatosNegocio !== 'undefined') {
+      for (const id of DatosNegocio.idsDeAdjuntosVivos()) vivos.add(id);
     }
     return vivos;
   }

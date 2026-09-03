@@ -34,6 +34,10 @@ const Categorias = (() => {
     { id: 'sueldo',    emoji: '💼', nombre: 'Sueldo',        color: '#10a072' },
     { id: 'extra',     emoji: '🧾', nombre: 'Trabajo extra', color: '#3b7dd8' },
     { id: 'venta',     emoji: '🏷️', nombre: 'Venta',         color: '#e8a33d' },
+    // Lo que te pagas a ti mismo desde tu negocio. Es la ÚNICA
+    // categoría por donde la plata del negocio entra a tu bolsillo
+    // personal: ver los retiros en datos-negocio.js.
+    { id: 'negocio',   emoji: '🏪', nombre: 'Mi negocio',    color: '#0b7554' },
     { id: 'regalo-in', emoji: '🎉', nombre: 'Regalo',        color: '#c455a5' },
     { id: 'interes',   emoji: '📈', nombre: 'Intereses',     color: '#7c5cd6' },
     { id: 'otro-in',   emoji: '➕', nombre: 'Otro',          color: '#8c99a6' },
