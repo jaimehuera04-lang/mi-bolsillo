@@ -50,6 +50,9 @@
   </style>
 
   <link rel="stylesheet" href="src/ui/estilos.css">
+  <!-- Los estilos de la pestaña Negocio van aparte: se leen, se cambian
+       y se sacarían enteros sin tocar el resto de la app. -->
+  <link rel="stylesheet" href="src/ui/negocio.css">
 </head>
 <body>
 
@@ -338,7 +341,16 @@
     </div>
   </main>
 
-  <!-- ================= 5. AJUSTES ================= -->
+  <!-- ================= 5. NEGOCIO =================
+       Toda esta pantalla la dibuja src/ui/negocio.js. Acá va solo el
+       cajón vacío: si el HTML llevara las doce secciones escritas a
+       mano, este archivo sería tres veces más largo y habría que
+       mantener el mismo texto en dos lugares. -->
+  <main class="pantalla" id="pantalla-negocio">
+    <div id="negocioHub"></div>
+  </main>
+
+  <!-- ================= 6. AJUSTES ================= -->
   <main class="pantalla" id="pantalla-ajustes">
     <section class="tarjeta">
       <h2>Tus datos</h2>
@@ -372,6 +384,11 @@
       </div>
       <div id="cuentasArchivadas" hidden></div>
     </section>
+
+    <!-- La rellena src/ui/negocio.js: si el negocio está apagado
+         muestra la invitación a encenderlo; si está encendido, un
+         acceso a la pestaña. -->
+    <section class="tarjeta" id="negocioEnAjustes"></section>
 
     <section class="tarjeta">
       <div class="tarjeta-titulo">
@@ -577,6 +594,8 @@ create policy "cada quien actualiza lo suyo"
     <button data-pantalla="movimientos"><span class="icono">📝</span>Movimientos</button>
     <button data-pantalla="metas"><span class="icono">🎯</span>Metas</button>
     <button data-pantalla="aprender"><span class="icono">💡</span>Aprender</button>
+    <!-- Nace escondida. La muestra app.js si el negocio está encendido. -->
+    <button data-pantalla="negocio" hidden><span class="icono">🏪</span>Negocio</button>
     <button data-pantalla="ajustes"><span class="icono">⚙️</span>Ajustes</button>
   </nav>
 
@@ -788,6 +807,45 @@ create policy "cada quien actualiza lo suyo"
 
   <!-- El orden importa: cada archivo usa los de más arriba.
        datos fijos -> motor de calculo -> almacenamiento -> fachada -> pantalla -->
+  <!-- ================= LAS HOJAS DEL NEGOCIO =================
+       Cuatro hojas y no dieciséis: cada una se rellena por dentro
+       según lo que toques. Así el botón "atrás" del teléfono cierra
+       siempre una sola cosa, y el texto de cada pantalla vive en un
+       único lugar (src/ui/negocio.js) en vez de duplicado acá. -->
+
+  <!-- La lista que estés mirando: inventario, ventas, clientes… -->
+  <div class="telon" id="telonNegocioSeccion">
+    <div class="hoja alta"><div class="hoja-agarradera"></div>
+      <div id="negocioSeccion"></div>
+    </div>
+  </div>
+
+  <!-- El formulario que estés llenando -->
+  <div class="telon" id="telonNegocioForm">
+    <div class="hoja"><div class="hoja-agarradera"></div>
+      <div id="negocioForm"></div>
+    </div>
+  </div>
+
+  <!-- Vender: la que más se usa, así que va con pantalla propia -->
+  <div class="telon" id="telonNegocioVender">
+    <div class="hoja alta"><div class="hoja-agarradera"></div>
+      <div id="negocioVender"></div>
+    </div>
+  </div>
+
+  <!-- El comprobante de una venta -->
+  <div class="telon" id="telonNegocioComprobante">
+    <div class="hoja"><div class="hoja-agarradera"></div>
+      <div id="negocioComprobante"></div>
+    </div>
+  </div>
+
+  <!-- Las fotos de producto. SIN "accept" a propósito: en iPhone,
+       poner extensiones esconde la Fototeca y parece que la app no
+       dejara subir la foto. Ya nos pasó con los respaldos. -->
+  <input type="file" id="archivoFotoNegocio" multiple hidden>
+
   <script src="src/config-nube.js"></script>
   <script src="src/data/categorias.js"></script>
   <script src="src/data/tecnicas.js"></script>
@@ -797,16 +855,22 @@ create policy "cada quien actualiza lo suyo"
   <script src="src/core/calculos.js"></script>
   <script src="src/core/sugerencias.js"></script>
   <script src="src/core/lector.js"></script>
+  <script src="src/core/negocio.js"></script>
   <script src="src/storage/esquema.js"></script>
   <script src="src/storage/migraciones.js"></script>
   <script src="src/storage/almacenamiento.js"></script>
   <script src="src/storage/adjuntos.js"></script>
   <script src="src/storage/nube.js"></script>
   <script src="src/datos.js"></script>
+  <script src="src/datos-negocio.js"></script>
   <script src="src/ui/dialogos.js"></script>
   <script src="src/ui/archivos.js"></script>
   <script src="src/ui/excel.js"></script>
   <script src="src/ui/graficos.js"></script>
+  <script src="src/ui/fotos.js"></script>
+  <script src="src/ui/catalogo.js"></script>
+  <script src="src/ui/reportes.js"></script>
+  <script src="src/ui/negocio.js"></script>
   <script src="src/ui/app.js"></script>
 </body>
 </html>

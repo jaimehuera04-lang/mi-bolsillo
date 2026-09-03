@@ -298,6 +298,46 @@ tarjeta, y el compromiso pasa a `pagado` con su `compromisoId` apuntando al movi
 nunca se cuenta dos veces el mismo peso, y el motor puede responder "cuánto debo en marzo"
 mirando solo compromisos pendientes.
 
+## El negocio, y la frontera con la plata personal
+
+Desde el **esquema 4** el objeto raíz lleva un cajón `negocio`, con su perfil, sus productos
+(cada uno con variantes y fotos), clientes, proveedores, empleados, ventas, compras,
+cotizaciones, un libro de existencias y los retiros. Nace con `activo: false`.
+
+**Es contabilidad aparte, y esa es la decisión que ordena todo el módulo.** Una venta no entra
+a `movimientos`. Una compra de mercadería tampoco. Ni una ni otra mueven el sueldo libre.
+
+El único puente es el **retiro**:
+
+```js
+retiros: [{
+  id, fecha, monto, concepto,
+  cuentaDestino,     // a qué cuenta TUYA entra
+  movimientoId,      // el ingreso personal que este retiro creó
+}]
+```
+
+`DatosNegocio.registrarRetiro()` crea primero el movimiento personal (tipo `ingreso`,
+categoría `negocio`) y recién después anota el retiro, guardándose su `id`. `borrarRetiro()`
+se lleva los dos. Sin ese `id`, borrar un retiro dejaría un ingreso huérfano inflando el mes.
+
+**Por qué no se mezclan.** Si la venta contara como ingreso tuyo, tu sueldo libre incluiría la
+plata que necesitas para reponer la mercadería. Se ve caja, se gasta, y llega el proveedor.
+
+Dos cosas más que viven en el esquema y conviene no reabrir:
+
+- **El stock no se guarda, se calcula.** `negocio.stock` es un libro de entradas y salidas con
+  su motivo; `Negocio.existencias()` lo suma. Un conteo a mano guarda la **diferencia**, no el
+  número final, así el stock de hoy siempre se explica hacia atrás.
+- **Cada línea de venta queda fotografiada** con el nombre, el precio y el costo del momento.
+  Subir un precio hoy no puede cambiar el total de un mes ya cerrado.
+
+Los adjuntos del negocio (fotos de producto, facturas) siguen la regla 12: van a IndexedDB y
+el estado guarda solo la ficha. `Datos.idsDeAdjuntosVivos()` **tiene que** incluirlos, o el
+barrido de huérfanos del arranque los borra.
+
+El detalle completo está en [NEGOCIO.md](NEGOCIO.md).
+
 ## Motor de compromisos
 
 Debe poder responder todo esto **sin IA**, con funciones puras y desglosables:

@@ -62,8 +62,16 @@
      la calle. Para conseguirlo llevamos una pila de lo que hay abierto
      y una entrada de historial por cada cosa. */
   const capas = [];            // funciones que cierran; la última es la de arriba
-  let atrasProgramado = false; // true cuando el "atrás" lo pedimos nosotros
   let cerrandoPorAtras = false;
+
+  /* Cuántos "atrás" pedimos nosotros y todavía no nos han llegado de vuelta.
+     Es un CONTADOR y no un sí/no, y eso importa: history.back() no ocurre al
+     tiro, avisa después con un evento. Si se cierran dos capas seguidas
+     —confirmar una ventana y acto seguido cerrar la hoja— quedan dos "atrás"
+     en vuelo; con un sí/no, el primero apagaba la bandera y el segundo se
+     colaba y cerraba de más lo que se acabara de abrir. Nos pasó al convertir
+     una cotización en venta: el comprobante se abría y desaparecía solo. */
+  let atrasProgramado = 0;
 
   /** Anota una ventana recién abierta para que "atrás" la cierre. */
   function anotarCapa(cerrar) {
@@ -75,7 +83,7 @@
   function olvidarCapa() {
     if (cerrandoPorAtras || !capas.length) return;
     capas.pop();
-    atrasProgramado = true;
+    atrasProgramado++;
     history.back();
   }
 
@@ -129,7 +137,9 @@
     $$('.pantalla').forEach(p => p.classList.toggle('activa', p.id === `pantalla-${nombre}`));
     $$('.navegacion button').forEach(b => b.classList.toggle('activa', b.dataset.pantalla === nombre));
     // el botón + solo tiene sentido en las pantallas de plata
-    $$$('botonAgregar').style.display = ['inicio', 'movimientos'].includes(nombre) ? '' : 'none';
+    $$$('botonAgregar').style.display = ['inicio', 'movimientos', 'negocio'].includes(nombre) ? '' : 'none';
+    // En el negocio el + no anota un gasto tuyo: vende.
+    $$$('botonAgregar').textContent = nombre === 'negocio' ? '🏷️' : '+';
 
     dibujar();
 
@@ -154,7 +164,7 @@
 
     window.addEventListener('popstate', evento => {
       // este "atrás" lo pedimos nosotros al cerrar algo: ya está hecho
-      if (atrasProgramado) { atrasProgramado = false; return; }
+      if (atrasProgramado > 0) { atrasProgramado--; return; }
 
       // 1. hay algo abierto encima (una hoja o una ventana de confirmar)?
       //    se cierra lo de más arriba y nos quedamos donde estábamos
@@ -299,7 +309,23 @@
     if (vista.pantalla === 'inicio')       dibujarInicio();
     if (vista.pantalla === 'movimientos')  dibujarMovimientos();
     if (vista.pantalla === 'metas')        dibujarMetas();
-    if (vista.pantalla === 'ajustes')    { dibujarEditorTopes(); dibujarCuentas(); }
+    if (vista.pantalla === 'negocio')      UiNegocio.dibujar();
+    if (vista.pantalla === 'ajustes')    { dibujarEditorTopes(); dibujarCuentas(); UiNegocio.dibujarEnAjustes(); }
+  }
+
+  /**
+   * Muestra o esconde la pestaña Negocio.
+   * Se llama al arrancar y cada vez que se enciende o se apaga, porque
+   * la barra de abajo pasa de cinco columnas a seis.
+   */
+  function acomodarPestanaNegocio() {
+    const activo = typeof DatosNegocio !== 'undefined' && DatosNegocio.estaActivo();
+    const boton = $('.navegacion button[data-pantalla="negocio"]');
+    if (boton) boton.hidden = !activo;
+    $('.navegacion').classList.toggle('con-negocio', activo);
+    // Si estabas parado en Negocio y lo apagaste, no te podemos dejar
+    // mirando una pantalla que ya no existe.
+    if (!activo && vista.pantalla === 'negocio') irA('inicio');
   }
 
   /* ---------------- 4. Inicio (dashboard) ---------------- */
@@ -2496,7 +2522,11 @@
     $$$('mesSiguiente').addEventListener('click', () => cambiarMes(1));
 
     // Botón +
-    $$$('botonAgregar').addEventListener('click', () => { vibrar(9); abrirFormularioMovimiento(); });
+    $$$('botonAgregar').addEventListener('click', () => {
+      vibrar(9);
+      if (vista.pantalla === 'negocio') UiNegocio.abrirVender();
+      else abrirFormularioMovimiento();
+    });
 
     // Cerrar ventanas tocando el fondo oscuro
     $$('.telon').forEach(t =>
@@ -2986,6 +3016,8 @@
     dibujarTecnicas();
     calcularAhorro();
     fijarTipo('gasto');
+    UiNegocio.conectar();
+    acomodarPestanaNegocio();
     irA('inicio');
     avisarDelArranque();
 
@@ -3137,6 +3169,34 @@
     });
   }
 
+
+  /* ---------------- 16. Lo que la cáscara le presta al negocio ----------------
+
+     El módulo del negocio (src/ui/negocio.js) vive aparte para que
+     app.js no se vuelva ilegible, pero necesita cuatro cosas de acá:
+     abrir y cerrar hojas —y así el botón "atrás" del teléfono las
+     cierra igual que las demás—, el mensajito de abajo, el mes que
+     está mirando la persona y el cambio de pestaña.
+
+     Se publica esto y nada más. Cuanto más chica sea esta ventana,
+     menos posibilidades hay de que un cambio en app.js rompa el
+     negocio sin avisar.                                            */
+  window.App = {
+    abrirHoja,
+    cerrarHoja,
+    avisar,
+    vibrar,
+    irA,
+    esc,
+    dinero,
+    mesEnPantalla: () => ({ anio: vista.anio, mes: vista.mes }),
+    /** La barra de abajo pasa de cinco a seis columnas y viceversa. */
+    acomodarPestanaNegocio,
+    /** Redibuja la pestaña del negocio si es la que está a la vista. */
+    refrescarNegocio() {
+      if (vista.pantalla === 'negocio' && typeof UiNegocio !== 'undefined') UiNegocio.dibujar();
+    },
+  };
 
   /** true cuando la app corre instalada, fuera del navegador. */
   function estaInstalada() {

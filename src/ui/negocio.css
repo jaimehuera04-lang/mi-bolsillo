@@ -1,0 +1,211 @@
+@charset "UTF-8";
+/* ============================================================
+   src/ui/negocio.css
+   Los estilos de la pestaña Negocio.
+
+   Van en un archivo aparte por lo mismo que negocio.js: para que
+   se puedan leer, cambiar o sacar enteros sin tocar el resto de
+   la app. Todo lo de acá usa las mismas variables de colores de
+   estilos.css, así que el modo oscuro y los colores de la marca
+   funcionan solos.
+   ============================================================ */
+
+/* Con el negocio encendido la barra de abajo pasa de cinco a seis
+   columnas. Seis en una pantalla angosta aprietan, así que la letra
+   baja un punto: es eso o cortar los nombres con puntos suspensivos. */
+.navegacion.con-negocio { grid-template-columns: repeat(6, 1fr); }
+.navegacion.con-negocio button { font-size: 9.5px; padding-left: 0; padding-right: 0; }
+.navegacion.con-negocio button .icono { font-size: 19px; }
+
+/* ---------- Colores de texto sueltos ---------- */
+.verde   { color: var(--verde); }
+.rojo    { color: var(--rojo); }
+.tachado { color: var(--texto-suave); text-decoration: line-through; font-weight: 600; }
+
+/* ---------- La cabecera del negocio ---------- */
+.negocio-marca { display: flex; align-items: center; gap: 12px; }
+.negocio-marca h2, .negocio-marca h3 { margin: 0; }
+.negocio-marca .ayuda { margin: 2px 0 0; }
+.negocio-emoji {
+  width: 48px; height: 48px; flex: 0 0 48px; border-radius: 15px;
+  display: grid; place-items: center; font-size: 25px; background: var(--fondo);
+}
+
+.negocio-cabecera .par-cifras > div {
+  background: var(--fondo); border-radius: 14px; padding: 11px 13px;
+  display: flex; flex-direction: column; gap: 1px;
+}
+.negocio-cabecera .par-cifras .etiqueta { font-size: 12px; color: var(--texto-suave); }
+.negocio-cabecera .par-cifras .cifra {
+  font-size: 20px; font-weight: 700; background: none; padding: 0;
+}
+.negocio-cabecera .par-cifras .ayuda { font-size: 11.5px; margin: 0; }
+
+.negocio-detalle {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; margin-top: 14px;
+}
+.negocio-detalle > div {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+  font-size: 13px; padding-bottom: 6px; border-bottom: 1px solid var(--borde);
+}
+.negocio-detalle span   { color: var(--texto-suave); }
+.negocio-detalle strong { white-space: nowrap; }
+.negocio-explicacion { margin: 14px 0 0; line-height: 1.5; }
+
+/* ---------- Los avisos ---------- */
+.aviso-negocio {
+  display: flex; gap: 11px; align-items: flex-start;
+  padding: 11px 12px; border-radius: 13px; margin-bottom: 8px;
+  background: var(--fondo); border-left: 4px solid var(--borde);
+}
+.aviso-negocio:last-child { margin-bottom: 0; }
+.aviso-negocio .icono  { font-size: 19px; line-height: 1.2; }
+.aviso-negocio strong  { display: block; font-size: 14px; }
+.aviso-negocio span    { font-size: 12.5px; color: var(--texto-suave); }
+.aviso-negocio.nivel-alto  { background: var(--rojo-suave);  border-left-color: var(--rojo); }
+.aviso-negocio.nivel-medio { background: #fff6e6;            border-left-color: var(--amarillo); }
+.aviso-negocio.nivel-bajo  { background: var(--verde-suave); border-left-color: var(--verde); }
+@media (prefers-color-scheme: dark) {
+  .aviso-negocio.nivel-medio { background: #3a2f14; }
+}
+
+/* ---------- Las fichas de acceso ---------- */
+.rejilla-negocio {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin: 12px 0 6px;
+}
+.ficha-negocio {
+  background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 16px;
+  padding: 13px 8px 11px; cursor: pointer; font-family: inherit; color: var(--texto);
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  box-shadow: var(--sombra); transition: transform .12s ease;
+}
+.ficha-negocio:active  { transform: scale(.95); }
+.ficha-negocio .icono  { font-size: 22px; line-height: 1; }
+.ficha-negocio .nombre { font-size: 12px; font-weight: 700; text-align: center; }
+.ficha-negocio .dato   { font-size: 10.5px; color: var(--texto-suave); text-align: center; }
+
+.boton.grande { padding: 16px; font-size: 17px; }
+
+/* ---------- Hoja alta: las listas largas parten casi arriba ---------- */
+.hoja.alta { max-height: 96%; min-height: 78%; }
+
+.buscador-negocio {
+  margin: 12px 0 4px;
+  /* Los campos donde SÍ se escribe recuperan la selección de texto,
+     que el reset global apaga en toda la app. */
+  -webkit-user-select: text; user-select: text;
+}
+
+/* ---------- Vender ---------- */
+.rejilla-productos {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px;
+  margin-top: 10px;
+}
+.boton-producto {
+  background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 14px;
+  padding: 11px 9px; cursor: pointer; font-family: inherit; color: var(--texto);
+  display: flex; flex-direction: column; gap: 2px; text-align: left;
+  transition: transform .1s ease, border-color .1s ease;
+}
+.boton-producto:active    { transform: scale(.94); border-color: var(--verde); }
+.boton-producto .nombre   { font-size: 12.5px; font-weight: 700; line-height: 1.25; }
+.boton-producto .variante { font-size: 11px; color: var(--verde); font-weight: 600; }
+.boton-producto .precio   { font-size: 14px; font-weight: 700; margin-top: 2px; }
+.boton-producto .stock    { font-size: 10.5px; color: var(--texto-suave); }
+/* Sin stock no se bloquea, solo se atenúa: en el mesón a veces hay que
+   vender igual y cuadrar la bodega después. */
+.boton-producto.sin-stock { opacity: .55; border-style: dashed; }
+
+.carrito { margin: 4px 0 0; }
+.linea-carrito {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 0; border-bottom: 1px solid var(--borde);
+}
+.linea-carrito .info { flex: 1; min-width: 0; }
+.linea-carrito .info strong { display: block; font-size: 14px; }
+.linea-carrito .info .ayuda { margin: 0; font-size: 11.5px; }
+.linea-carrito .contador { display: flex; align-items: center; gap: 4px; }
+.linea-carrito .contador span { min-width: 26px; text-align: center; font-weight: 700; }
+.linea-carrito .contador .boton { padding: 6px 11px; font-size: 16px; }
+.linea-carrito .monto-linea { font-size: 14px; min-width: 66px; text-align: right; }
+
+.total-venta {
+  background: var(--fondo); border-radius: 14px; padding: 12px 14px; margin-top: 12px;
+  display: flex; flex-direction: column; gap: 7px;
+}
+.total-venta > div { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.total-venta span  { font-size: 13px; color: var(--texto-suave); }
+.total-venta input {
+  width: 110px; margin: 0; padding: 7px 10px; text-align: right; font-size: 14px;
+}
+.total-venta .grande span   { font-size: 15px; color: var(--texto); font-weight: 600; }
+.total-venta .grande strong { font-size: 21px; }
+
+/* ---------- Formularios ---------- */
+.fila-dos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.fila-dos label { margin-top: 14px; }
+
+.interruptor {
+  display: flex; align-items: center; gap: 10px; margin-top: 15px;
+  font-weight: 600; font-size: 14px; cursor: pointer;
+}
+.interruptor input {
+  width: 20px; height: 20px; margin: 0; flex: 0 0 20px; accent-color: var(--verde);
+}
+
+.separador { border: 0; border-top: 1px solid var(--borde); margin: 20px 0 14px; }
+
+.linea-editable {
+  display: grid; grid-template-columns: 1fr 62px 82px 34px; gap: 6px;
+  align-items: center; margin-bottom: 7px;
+}
+.linea-editable select, .linea-editable input { margin: 0; padding: 9px 8px; font-size: 13px; }
+.linea-editable .boton { padding: 8px 0; }
+
+.lista-simple { margin: 8px 0 0; padding-left: 18px; font-size: 13.5px; line-height: 1.65; }
+.lista-simple li { margin-bottom: 4px; }
+
+/* La miniatura de una foto de producto, encima del cuadrito del emoji. */
+.movimiento .emoji.con-foto,
+.tira-adjunto.con-foto {
+  background-size: cover; background-position: center; font-size: 0;
+}
+.tira-adjunto.con-foto {
+  width: 54px; height: 54px; padding: 0; border-radius: 12px; display: inline-block;
+}
+
+/* ---------- El comprobante ---------- */
+.comprobante {
+  background: var(--fondo); border-radius: 16px; padding: 18px 16px;
+  border: 1px dashed var(--borde);
+}
+.comprobante-cabecera { text-align: center; display: flex; flex-direction: column; gap: 1px; }
+.comprobante-cabecera .emoji { font-size: 30px; }
+.comprobante-cabecera strong { font-size: 16px; }
+.comprobante-cabecera span   { font-size: 11.5px; color: var(--texto-suave); }
+
+.comprobante-datos {
+  display: flex; flex-direction: column; gap: 1px; margin: 14px 0 10px;
+  padding: 9px 0; border-top: 1px dashed var(--borde); border-bottom: 1px dashed var(--borde);
+  font-size: 12px; color: var(--texto-suave);
+}
+
+.comprobante-tabla { width: 100%; border-collapse: collapse; font-size: 13px; }
+.comprobante-tabla td { padding: 4px 0; vertical-align: top; }
+.comprobante-tabla td:first-child { width: 34px; color: var(--texto-suave); }
+.comprobante-tabla .derecha { text-align: right; white-space: nowrap; }
+.comprobante-tabla .suave td { color: var(--texto-suave); font-size: 12px; }
+.comprobante-tabla .total td {
+  border-top: 1px solid var(--borde); padding-top: 8px;
+  font-weight: 700; font-size: 16px;
+}
+.comprobante-tabla .pendiente td { color: var(--rojo); font-weight: 700; }
+
+.comprobante-pie {
+  margin: 14px 0 0; text-align: center; font-size: 11.5px; color: var(--texto-suave);
+}
+
+/* Ojo: acá NO va una consulta @media de ancho. En el computador la app
+   se dibuja dentro de un marco de teléfono angosto, pero @media mide la
+   VENTANA, no el marco: cuatro columnas se veían apretadas justo en la
+   pantalla donde había espacio de sobra. Tres, siempre. */

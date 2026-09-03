@@ -122,10 +122,57 @@ const Migraciones = (() => {
     return nuevo;
   }
 
-  /* La cadena. Para agregar el esquema 4, se suma una línea aquí. */
+  /* ------------------------------------------------------------
+     Esquema 3 -> 4  (septiembre 2026)
+
+     Que cambia:
+       - Aparece el cajón 'negocio' completo, con su perfil, sus
+         productos, clientes, proveedores, empleados, ventas,
+         compras, cotizaciones, libro de stock y retiros.
+
+     Nace APAGADO (negocio.activo = false). Quien solo lleva sus
+     finanzas personales no ve absolutamente ningún cambio: la
+     pestaña Negocio no aparece hasta que la enciende en Ajustes.
+
+     Lo que NO se toca, y es a propósito: ni un movimiento, ni una
+     cuenta, ni una meta. La plata del negocio es un mundo aparte
+     del sueldo libre; lo único que los une es el retiro, y ese lo
+     crea la persona cuando se paga a sí misma.
+
+     Se copia campo por campo en vez de hacer { ...nuevo, ...viejo }
+     para que un negocio a medio llenar de una versión anterior no
+     entre sin las llaves que se agregaron después.
+     ------------------------------------------------------------ */
+  function migrate_3_a_4(viejo) {
+    const nuevo = { ...viejo };
+    const base = Esquema.negocioNuevo();
+    const previo = viejo.negocio || {};
+
+    nuevo.negocio = {
+      ...base,
+      ...previo,
+      perfil:  { ...base.perfil,  ...(previo.perfil  || {}) },
+      ajustes: {
+        ...base.ajustes,
+        ...(previo.ajustes || {}),
+        catalogo: { ...base.ajustes.catalogo, ...((previo.ajustes || {}).catalogo || {}) },
+      },
+    };
+    // Las listas: si venían de otra parte se respetan, si no, vacías.
+    ['productos', 'clientes', 'proveedores', 'empleados',
+     'ventas', 'compras', 'cotizaciones', 'stock', 'retiros'].forEach(lista => {
+      nuevo.negocio[lista] = Array.isArray(previo[lista]) ? previo[lista] : [];
+    });
+
+    nuevo.meta = { ...(viejo.meta || {}), schemaVersion: 4 };
+    return nuevo;
+  }
+
+  /* La cadena. Para agregar el esquema 5, se suma una línea aquí. */
   const CADENA = {
     1: migrate_1_a_2,
     2: migrate_2_a_3,
+    3: migrate_3_a_4,
   };
 
   /** Que versión tiene este objeto. El esquema 1 usaba 'versión' suelto. */
@@ -165,5 +212,5 @@ const Migraciones = (() => {
     return { estado: actual, desde, hasta: v, migro: desde !== v };
   }
 
-  return { aplicar, versionDe, migrate_1_a_2, migrate_2_a_3 };
+  return { aplicar, versionDe, migrate_1_a_2, migrate_2_a_3, migrate_3_a_4 };
 })();
