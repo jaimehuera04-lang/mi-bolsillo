@@ -944,6 +944,41 @@
     }
   }
 
+  /* ---------------- Lo que se dijo hablando ----------------
+
+     Llega lo que entendió core/voz.js y hay que llevarlo a alguna
+     parte. Se reusan las dos pantallas que ya existen y ya están
+     probadas, en vez de inventar una tercera:
+
+       un movimiento  -> se llena el formulario, igual que cuando lo
+                         saca de una boleta;
+       varios         -> la pantalla de revisar de las cartolas, con
+                         sus casillas para desmarcar.
+
+     Nada se anota solo, ni siquiera cuando se entendió todo. */
+
+  function recibirLoHablado(propuestas) {
+    if (propuestas.length === 1) {
+      const p = propuestas[0];
+      if (!$$$("telonMovimiento").classList.contains("abierto")) abrirFormularioMovimiento();
+      // Un respiro para que la hoja termine de subir antes de escribirle
+      // los campos: si no, se ve cómo se rellena a medio camino.
+      setTimeout(() => aplicarLectura(p, "", "voz"), 260);
+      return;
+    }
+
+    const filas = propuestas.map(p => ({
+      fecha: p.fecha,
+      tipo: p.tipo,
+      monto: p.monto,
+      categoria: p.categoria,
+      nota: p.nota,
+      crudo: p.texto,
+    }));
+    cerrarHojaSinSoltarAdjuntos("telonMovimiento");
+    abrirRevisionDeCartola(filas, "lo que dijiste");
+  }
+
   /** La barra de "voy en esto". Sin ella la app parece colgada. */
   function mostrarProgresoDeLectura(que, pct) {
     const caja = $$$('resultadoLectura');
@@ -1083,7 +1118,12 @@
   /** El panel verde que explica de dónde salió cada dato. */
   function mostrarLectura(propuesta, avisoExtra, origen) {
     const caja = $$$('resultadoLectura');
-    const deDonde = origen === 'texto' ? 'del texto que pegaste' : 'del archivo';
+    // De dónde vino lo que se está mostrando. Importa que lo diga con
+    // precisión: no es lo mismo "esto sacamos del archivo" que "esto te
+    // entendí", y la persona tiene que poder discutirle a la app.
+    const deDonde = origen === 'texto' ? 'del texto que pegaste'
+                  : origen === 'voz'   ? 'de lo que dijiste'
+                  : 'del archivo';
 
     if (!propuesta || !propuesta.encontrados) {
       if (!avisoExtra) { caja.hidden = true; return; }
@@ -1095,7 +1135,11 @@
     const lineas = propuesta.evidencia
       .filter(e => ROTULO_CAMPO[e.campo])
       .map(e => `<li>${esc(ROTULO_CAMPO[e.campo])}
-                     <span class="de-donde">← ${esc(e.linea)}</span></li>`)
+                     <span class="de-donde">← ${esc(e.linea || e.dicho)}</span></li>`)
+
+      // 'linea' cuando viene de un papel y 'dicho' cuando viene del
+      // micrófono: es la misma idea con el nombre que le calza a cada
+      // origen. Sin este 'o', la evidencia de la voz salía en blanco.
       .join('');
 
     // Falta el monto y hay que decirlo, pero una sola vez: el aviso del
@@ -3055,6 +3099,10 @@
     dibujarTecnicas();
     calcularAhorro();
     fijarTipo('gasto');
+    UiVoz.conectar(recibirLoHablado);
+    // El botón de hablar solo aparece si este teléfono sabe dictar.
+    // Ofrecer un botón que no hace nada es peor que no ofrecerlo.
+    $$$("botonHablar").hidden = !UiVoz.sePuede();
     UiSueldo.conectar();
     UiNegocio.conectar();
     acomodarPestanaNegocio();

@@ -40,6 +40,57 @@ Meta de estructura (se llega ahí por fases, no de un salto):
 10. **Esto es una app, no una página.** Ver la sección siguiente. Todo lo que delate al
     navegador se considera un error, no un detalle estético.
 
+## Hablar
+
+`src/ui/voz.js` prende el micrófono y `src/core/voz.js` entiende lo que se dijo. La división
+importa: **el que entiende no escucha, y se puede probar entero en Node** con
+`node herramientas/probar-voz.js`.
+
+### Lo difícil no es el micrófono
+
+Pasar voz a texto lo hace el teléfono. Lo que ninguna app hace es entender **cómo se habla de
+plata en Chile**:
+
+| Se dice | Son |
+|---|---|
+| cinco lucas | 5.000 |
+| medio palo | 500.000 |
+| doscientos cincuenta mil | 250.000 |
+| una gamba | 100 |
+| treinta y cinco mil | 35.000 |
+
+Y el mismo monto llega como `50000`, `50 mil`, `cincuenta mil` o `cincuenta lucas` según cómo
+lo diga la persona y cómo lo escriba el dictado. Nada de esto necesita un modelo: son reglas
+del idioma que se escriben, se leen y se prueban. **Regla 1 intacta.**
+
+Lo segundo que hay que acertar es si **entró o salió**. "Gané" y "gasté" suenan parecido y
+significan lo contrario; confundirlos no es un error de detalle, es anotar al revés. Gana el
+verbo que se dice **primero**: lo primero que uno dice es lo que está anotando.
+
+### Varias cosas en una frase
+
+"Ayer gasté 5 lucas en comida y 20 mil en bencina" son **dos** movimientos. Se parte por los
+"y" y las comas, y solo cuentan los pedazos que traen su propio monto —si no, "compré pan y
+leche por 3 lucas" se rompería en dos—. El tipo y la fecha se dicen una vez y **se heredan**,
+y la pantalla dice cuáles heredó.
+
+### La privacidad, dicha de frente
+
+El dictado lo hace el teléfono con el servicio de siempre: Google en Android, Apple en iPhone.
+**La voz sale del aparato**, y es la única parte de la app donde eso pasa. Por eso se avisa
+antes con todas sus letras y se pregunta una vez (queda en `mi-bolsillo:voz`). No se guarda
+audio en ninguna parte, y lo que se entiende de la frase se entiende aquí adentro, sin internet.
+
+Quien prefiera no usarlo tiene el mismo resultado escribiendo, o dictando con el micrófono de
+su propio teclado en *Pegar texto*: es exactamente el mismo servicio, pero activado por la
+persona y no por nosotros.
+
+### Dónde cae lo entendido
+
+No se inventó una tercera pantalla: **un** movimiento llena el formulario igual que cuando sale
+de una boleta, y **varios** abren la pantalla de revisar de las cartolas, con sus casillas para
+desmarcar. Y como siempre, se muestra de qué parte de la frase salió cada dato. Regla 12.
+
 ## Las capas de la pantalla
 
 > No confundir con las **[Capas](#capas)** de más arriba, que son las del código

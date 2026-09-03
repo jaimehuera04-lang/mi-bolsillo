@@ -58,6 +58,7 @@
        y se sacarían enteros sin tocar el resto de la app. -->
   <!-- Los estilos del sueldo libre, que es la pantalla principal. -->
   <link rel="stylesheet" href="src/ui/sueldo.css">
+  <link rel="stylesheet" href="src/ui/voz.css">
   <link rel="stylesheet" href="src/ui/negocio.css">
 </head>
 <body>
@@ -655,6 +656,13 @@ create policy "cada quien actualiza lo suyo"
         <button type="button" id="tipoTransferencia" class="transferencia">🔄 Mover</button>
       </div>
 
+      <!-- Hablar va antes que todo: es la forma más rápida de anotar,
+           y de eso se trata. Lo esconde app.js si el teléfono no sabe
+           dictar, para no ofrecer un botón que no va a hacer nada. -->
+      <button type="button" class="boton boton-hablar" id="botonHablar" data-voz="abrir" hidden>
+        🎤 Decirlo hablando
+      </button>
+
       <!-- El respaldo va PRIMERO a propósito: si adjuntas el comprobante
            antes de escribir, los campos de abajo se llenan solos. -->
       <div class="zona-respaldo">
@@ -848,6 +856,18 @@ create policy "cada quien actualiza lo suyo"
 
   <!-- El orden importa: cada archivo usa los de más arriba.
        datos fijos -> motor de calculo -> almacenamiento -> fachada -> pantalla -->
+  <!-- ================= HABLAR =================
+       La hoja del micrófono. Se rellena entera desde src/ui/voz.js. -->
+  <div class="telon" id="telonVoz">
+    <div class="hoja"><div class="hoja-agarradera"></div>
+      <div class="tarjeta-titulo">
+        <h2>Dímelo hablando</h2>
+        <button class="boton fantasma chico" data-cerrar="telonVoz">Cerrar</button>
+      </div>
+      <div id="cuerpoVoz"></div>
+    </div>
+  </div>
+
   <!-- ================= LAS HOJAS DEL SUELDO LIBRE =================
        Dos, rellenadas por dentro por src/ui/sueldo.js: la sección que
        estés mirando (desglose, compromisos, proyección, simulador,
@@ -914,6 +934,7 @@ create policy "cada quien actualiza lo suyo"
   <script src="src/core/sugerencias.js"></script>
   <script src="src/core/lector.js"></script>
   <script src="src/core/sueldo.js"></script>
+  <script src="src/core/voz.js"></script>
   <script src="src/core/negocio.js"></script>
   <script src="src/storage/esquema.js"></script>
   <script src="src/storage/migraciones.js"></script>
@@ -927,6 +948,7 @@ create policy "cada quien actualiza lo suyo"
   <script src="src/ui/archivos.js"></script>
   <script src="src/ui/excel.js"></script>
   <script src="src/ui/graficos.js"></script>
+  <script src="src/ui/voz.js"></script>
   <script src="src/ui/ocr.js"></script>
   <script src="src/ui/sueldo.js"></script>
   <script src="src/ui/fotos.js"></script>

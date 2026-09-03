@@ -61,7 +61,11 @@ Cuentas de usuario, nube, sincronización, voz, OCR.
 > Todo determinístico y sin salir del teléfono: ver *Entradas de datos* en
 > [ARQUITECTURA.md](ARQUITECTURA.md). Se prueba con `node herramientas/probar-lector.js`.
 >
-> **Queda pendiente de esta fase: voz, y el OCR de verdad.** Hoy de una foto se saca la fecha
+> **La voz se hizo el 2026-09-03** y el **OCR el 2026-09-02**, así que esta fase quedó
+> cerrada. Lo que sigue diciendo el párrafo de abajo quedó viejo y se conserva solo
+> como historia de por qué en su momento se descartaron.
+>
+> ~~Queda pendiente de esta fase: voz, y el OCR de verdad.~~ Hoy de una foto se saca la fecha
 > del EXIF y el QR donde el teléfono sepa leerlo, pero el monto lo escribe la persona. Leer los
 > números de una foto necesita OCR, y OCR necesita o una librería pesada en el teléfono o el
 > backend de la Fase 6. Ninguna de las dos entra todavía.

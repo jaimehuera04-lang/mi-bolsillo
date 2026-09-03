@@ -1,0 +1,96 @@
+@charset "UTF-8";
+/* ============================================================
+   src/ui/voz.css
+   La pantalla de hablar.
+
+   Lo único que de verdad importa acá es que se note que el
+   micrófono está prendido. Una app que escucha sin que se vea
+   que escucha es una app en la que uno deja de confiar, y con
+   razón. De ahí la onda que se mueve y el texto que va
+   apareciendo mientras hablas.
+   ============================================================ */
+
+/* El botón que abre todo esto. Va arriba del formulario y en
+   morado para que no se confunda con Guardar, que es verde. */
+.boton-hablar {
+  background: var(--morado);
+  margin-bottom: 12px;
+  font-size: 16px;
+  padding: 15px;
+}
+
+/* ---------- Mientras escucha ---------- */
+.voz-escuchando { text-align: center; padding: 10px 0 4px; }
+
+/* Cinco barritas que suben y bajan desfasadas. No miden el sonido
+   de verdad —para eso habría que analizar el audio, y no hace falta—
+   pero dicen lo que tienen que decir: "estoy prendido". */
+.voz-onda {
+  display: flex; align-items: center; justify-content: center;
+  gap: 5px; height: 54px; margin-bottom: 14px;
+}
+.voz-onda span {
+  width: 6px; border-radius: 3px; background: var(--morado);
+  animation: voz-latir 1s ease-in-out infinite;
+}
+.voz-onda span:nth-child(1) { height: 16px; animation-delay: 0s; }
+.voz-onda span:nth-child(2) { height: 30px; animation-delay: .15s; }
+.voz-onda span:nth-child(3) { height: 44px; animation-delay: .3s; }
+.voz-onda span:nth-child(4) { height: 30px; animation-delay: .45s; }
+.voz-onda span:nth-child(5) { height: 16px; animation-delay: .6s; }
+
+@keyframes voz-latir {
+  0%, 100% { transform: scaleY(.45); opacity: .55; }
+  50%      { transform: scaleY(1);   opacity: 1; }
+}
+
+/* Quien tenga apagadas las animaciones del sistema no las ve moverse,
+   pero igual ve las barras: la señal no se pierde, solo se queda quieta. */
+@media (prefers-reduced-motion: reduce) {
+  .voz-onda span { animation: none; opacity: .85; }
+}
+
+.voz-dicho {
+  font-size: 19px; font-weight: 600; line-height: 1.35;
+  margin: 0 0 6px; min-height: 52px;
+}
+
+/* ---------- Lo que se dijo, ya terminado ---------- */
+.voz-dicho-final {
+  background: var(--fondo); border-radius: 14px; padding: 13px 15px;
+  font-size: 15px; font-style: italic; color: var(--texto-suave);
+  margin-bottom: 14px;
+}
+
+/* ---------- Lo que se entendió ---------- */
+.voz-propuesta {
+  border: 1px solid var(--borde); border-left: 4px solid var(--rojo);
+  border-radius: 15px; padding: 14px 15px; margin-bottom: 10px;
+}
+.voz-propuesta.ingreso { border-left-color: var(--verde); }
+
+.voz-cifra {
+  font-size: 28px; font-weight: 800; letter-spacing: -.02em;
+  display: flex; align-items: baseline; gap: 6px;
+}
+.voz-propuesta.gasto   .voz-cifra { color: var(--rojo); }
+.voz-propuesta.ingreso .voz-cifra { color: var(--verde); }
+.voz-cifra .signo { font-size: 22px; opacity: .75; }
+
+.voz-detalle {
+  display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px;
+  font-size: 13px; color: var(--texto-suave);
+}
+
+/* De dónde salió cada dato. Es lo mismo que hace el lector de
+   boletas y por la misma razón: un número que aparece sin explicación
+   es un número en el que nadie confía, y menos si lo sacó un micrófono. */
+.voz-evidencia {
+  list-style: none; margin: 11px 0 0; padding: 11px 0 0;
+  border-top: 1px dashed var(--borde);
+  font-size: 12.5px; color: var(--texto-suave);
+}
+.voz-evidencia li { padding: 2px 0; }
+.voz-evidencia .de-donde { color: var(--morado); }
+
+.voz-propuesta .ayuda { margin: 10px 0 0; }

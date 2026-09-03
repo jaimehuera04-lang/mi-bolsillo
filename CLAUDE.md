@@ -45,6 +45,12 @@ estacionales − aportes a metas. Si una función no ayuda a entender o proteger
     `core/lector.js`, que es determinístico. La imagen nunca sale del aparato. Ver
     [OCR en ARQUITECTURA.md](ARQUITECTURA.md).
 
+15. **La voz sale del teléfono, y hay que decirlo.** El dictado lo hace el propio teléfono con
+    el servicio de siempre (Google en Android, Apple en iPhone), así que la voz viaja. Es la
+    única parte de la app donde eso pasa, se **avisa antes** con todas sus letras y se pregunta
+    una vez. No se guarda audio. Lo que llega es texto, y quien lo entiende es `core/voz.js`,
+    que son reglas del idioma —"cinco lucas" son 5.000— y no un modelo. Regla 1 intacta.
+
 ## Los demás documentos
 - [PRODUCTO.md](PRODUCTO.md) — idea central, las tres funciones, no-goals, contexto chileno.
 - [VOZ.md](VOZ.md) — cómo le habla la app al usuario. Es spec, no sugerencia.

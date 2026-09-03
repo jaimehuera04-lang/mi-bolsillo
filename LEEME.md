@@ -103,6 +103,7 @@ mi-bolsillo/
 │   │   ├── calculos.js     Totales, categorías, saldos de cuentas, patrimonio
 │   │   ├── lector.js       Saca el monto, la fecha y el comercio del texto de un papel
 │   │   ├── sueldo.js       El sueldo libre, las cuotas, la fecha de liberación y marzo
+│   │   ├── voz.js          Entiende una frase hablada: "gasté cinco lucas en comida"
 │   │   ├── negocio.js      Existencias, totales de venta, margen y caja del negocio
 │   │   └── sugerencias.js  Mira tus números y decide qué vale la pena decir
 │   ├── storage/        Guardar y leer en el dispositivo
@@ -118,6 +119,8 @@ mi-bolsillo/
 │       ├── sueldo.js       La pantalla del sueldo libre y el simulador de cuotas
 │       ├── sueldo.css      Sus estilos
 │       ├── ocr.js          Lee el texto de un pantallazo del banco
+│       ├── voz.js          El micrófono y la pantalla de lo que entendió
+│       ├── voz.css         Sus estilos
 │       ├── negocio.js      Las pantallas de la pestaña Negocio
 │       ├── negocio.css     Sus estilos, aparte para poder sacarlos enteros
 │       ├── fotos.js        Deja presentable la foto de un producto, en el teléfono
@@ -132,6 +135,7 @@ mi-bolsillo/
     ├── probar-sueldo.js       El sueldo libre, las cuotas, la liberación y el Modo Marzo
     ├── probar-compromisos.js  Los compromisos guardando de verdad, con el puente a los movimientos
     ├── probar-ocr.js          El cosido de filas de un pantallazo del banco
+    ├── probar-voz.js          Frases habladas en chileno: lucas, palos, "gané" vs "gasté"
     ├── probar-negocio.js      Las cuentas del negocio: stock, márgenes, caja y alertas
     ├── probar-datos-negocio.js  El negocio guardando de verdad, y el puente con lo personal
     └── generar-iconos.js      Vuelve a crear los íconos si cambias el color
