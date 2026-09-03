@@ -60,6 +60,16 @@ const Adjuntos = (() => {
       };
       peticion.onsuccess = () => resolver(peticion.result);
       peticion.onerror = () => { sirve = false; resolver(null); };
+
+      // 'blocked' pasa cuando otra pestaña tiene la base abierta y algo
+      // pide borrarla o cambiarle la versión: la nuestra queda esperando
+      // a que la otra la suelte, y puede no soltarla nunca.
+      peticion.onblocked = () => { sirve = false; resolver(null); };
+
+      // Y el caso feo: ni onsuccess, ni onerror, ni onblocked. La bodega
+      // simplemente no contesta. Sin este tope, promesaBase queda colgada
+      // para siempre y CADA intento posterior se queda esperándola.
+      setTimeout(() => { sirve = false; resolver(null); }, 12000);
       peticion.onblocked = () => { sirve = false; resolver(null); };
     });
 
@@ -67,7 +77,27 @@ const Adjuntos = (() => {
   }
 
   /** Corre una operación dentro de una transacción. Devuelve porDefecto si algo falla. */
+  /* Cuánto esperamos a la bodega antes de rendirnos, en milisegundos.
+     IndexedDB normalmente responde en milisegundos, pero puede quedarse
+     callada para siempre: basta que otra pestaña tenga la base abierta
+     mientras algo intenta borrarla, y entonces ni responde ni falla.
+     Sin este tope, la pantalla se quedaba con el botón en "Leyendo…"
+     y no había forma de salir más que cerrar la app. Es mejor decir
+     "no pudimos guardar el respaldo" que dejar a alguien esperando. */
+  const PACIENCIA = 12000;
+
+  function conPaciencia(promesa, porDefecto) {
+    return Promise.race([
+      promesa,
+      new Promise(resolver => setTimeout(() => resolver(porDefecto), PACIENCIA)),
+    ]);
+  }
+
   function conBodega(modo, trabajo, porDefecto) {
+    return conPaciencia(hacerEnBodega(modo, trabajo, porDefecto), porDefecto);
+  }
+
+  function hacerEnBodega(modo, trabajo, porDefecto) {
     return abrir().then(base => {
       if (!base) return porDefecto;
       return new Promise(resolver => {

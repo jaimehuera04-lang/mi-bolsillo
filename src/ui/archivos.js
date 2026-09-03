@@ -25,12 +25,12 @@
                        adentro. NO funciona con un PDF que por dentro
                        es una foto escaneada: ahí no hay letras que
                        sacar, hay píxeles.
-     .jpg .png .heic   una foto son píxeles. Sin OCR no se puede
-                       leer, y OCR es la Fase 7. Lo que SÍ sacamos:
-                       la fecha en que se tomó (va escrita en el
-                       archivo, en los datos EXIF) y el código QR si
-                       la boleta trae uno y el teléfono sabe leerlo.
-                       El monto lo escribe la persona.
+     .jpg .png .heic   acá SÍ se sacan las letras, pero no en este
+                       archivo: de la imagen sacamos la fecha en que
+                       se tomó (va en los datos EXIF) y el código QR
+                       si la boleta trae uno. El texto lo lee
+                       src/ui/ocr.js, que es quien convierte un
+                       pantallazo del banco en movimientos.
 
    Nada de esto sale del teléfono. No hay ninguna llamada a internet
    en este archivo, y esa es justamente la gracia.
@@ -668,12 +668,15 @@ const Archivos = (() => {
         // Decir "no se puede leer una foto" y quedarse ahí deja a la
         // persona sin saber qué hacer, cuando la salida existe y es
         // buena: el propio teléfono sabe leer el texto de una imagen.
+        // Ya no decimos "no se puede": desde que existe src/ui/ocr.js,
+        // sí se puede. Este aviso solo aparece si el lector tampoco le
+        // entendió, y ahí la salida sigue siendo el OCR del propio
+        // teléfono, que suele acertar más con fotos difíciles.
         aviso: codigo
           ? ''
           : (fechaFoto ? 'De la foto sacamos el día en que la tomaste. ' : '')
-            + 'El monto no, porque una foto son píxeles. Si es una captura de pantalla, '
-            + 'ábrela en Fotos, copia su texto y toca "Pegar texto" acá arriba: '
-            + 'con eso se llena todo.',
+            + 'Si le cuesta leer la imagen, ábrela en Fotos, copia su texto '
+            + 'y toca "Pegar texto" acá arriba: con eso se llena todo.',
       };
     }
 
