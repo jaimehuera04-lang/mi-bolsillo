@@ -8,22 +8,25 @@
    Así el celular sabe que tiene que bajar la versión nueva.
    ============================================================ */
 
-const VERSION = 'mi-bolsillo-v20';
+const VERSION = 'mi-bolsillo-v21';
 
 const ARCHIVOS = [
   './',
   './index.html',
   './src/ui/estilos.css',
+  './src/ui/sueldo.css',
   './src/ui/negocio.css',
   './src/config-nube.js',
   './src/data/categorias.js',
   './src/data/tecnicas.js',
   './src/data/pistas.js',
+  './src/data/estacionales.js',
   './src/core/fechas.js',
   './src/core/dinero.js',
   './src/core/calculos.js',
   './src/core/sugerencias.js',
   './src/core/lector.js',
+  './src/core/sueldo.js',
   './src/core/negocio.js',
   './src/storage/esquema.js',
   './src/storage/migraciones.js',
@@ -36,6 +39,7 @@ const ARCHIVOS = [
   './src/ui/archivos.js',
   './src/ui/excel.js',
   './src/ui/graficos.js',
+  './src/ui/sueldo.js',
   './src/ui/fotos.js',
   './src/ui/catalogo.js',
   './src/ui/reportes.js',

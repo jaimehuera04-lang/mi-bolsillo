@@ -330,6 +330,8 @@
 
   /* ---------------- 4. Inicio (dashboard) ---------------- */
   function dibujarInicio() {
+    // El sueldo libre va primero: es la razón de existir de la app.
+    UiSueldo.dibujarEnInicio();
     const r = Datos.resumenDelMes(vista.anio, vista.mes);
 
     const saldo = $$$('saldoMes');
@@ -3016,6 +3018,7 @@
     dibujarTecnicas();
     calcularAhorro();
     fijarTipo('gasto');
+    UiSueldo.conectar();
     UiNegocio.conectar();
     acomodarPestanaNegocio();
     irA('inicio');
@@ -3192,6 +3195,10 @@
     mesEnPantalla: () => ({ anio: vista.anio, mes: vista.mes }),
     /** La barra de abajo pasa de cinco a seis columnas y viceversa. */
     acomodarPestanaNegocio,
+    /** Redibuja la pantalla que esté a la vista. */
+    redibujar: dibujar,
+    /** Mueve el mes que está mirando la persona. */
+    verMes(anio, mes) { vista.anio = anio; vista.mes = mes; dibujar(); },
     /** Redibuja la pestaña del negocio si es la que está a la vista. */
     refrescarNegocio() {
       if (vista.pantalla === 'negocio' && typeof UiNegocio !== 'undefined') UiNegocio.dibujar();

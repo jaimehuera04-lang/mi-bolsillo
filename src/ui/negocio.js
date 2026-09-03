@@ -492,7 +492,7 @@ const UiNegocio = (() => {
           <div><span>Suma</span><strong>${dinero(bruto)}</strong></div>
           <div>
             <span>Descuento</span>
-            <input type="number" id="descuentoVenta" inputmode="numeric" min="0" step="100"
+            <input type="number" id="descuentoVenta" inputmode="numeric" min="0" step="1"
                    value="${vista.descuentoVenta || ''}" placeholder="0">
           </div>
           <div class="grande"><span>Total</span><strong>${dinero(total)}</strong></div>
@@ -684,12 +684,12 @@ const UiNegocio = (() => {
         <div class="fila-dos">
           <div>
             <label for="pPrecio">Lo vendes en</label>
-            <input type="number" id="pPrecio" inputmode="numeric" min="0" step="10"
+            <input type="number" id="pPrecio" inputmode="numeric" min="0" step="1"
                    value="${p ? p.precio : ''}" placeholder="1990">
           </div>
           <div>
             <label for="pCosto">Te cuesta</label>
-            <input type="number" id="pCosto" inputmode="numeric" min="0" step="10"
+            <input type="number" id="pCosto" inputmode="numeric" min="0" step="1"
                    value="${p ? p.costo : ''}" placeholder="1200">
           </div>
         </div>
@@ -705,13 +705,13 @@ const UiNegocio = (() => {
           <div class="fila-dos">
             <div>
               <label for="pStock">${p ? 'Hay ahora' : '¿Cuántos tienes?'}</label>
-              <input type="number" id="pStock" inputmode="decimal" min="0" step="1"
+              <input type="number" id="pStock" inputmode="decimal" min="0" step="any"
                      value="${p ? hay : ''}" placeholder="0"
                      ${p && p.variantes.length ? 'disabled' : ''}>
             </div>
             <div>
               <label for="pMinimo">Avísame cuando queden</label>
-              <input type="number" id="pMinimo" inputmode="decimal" min="0" step="1"
+              <input type="number" id="pMinimo" inputmode="decimal" min="0" step="any"
                      value="${p ? p.stockMinimo : ''}" placeholder="6">
             </div>
           </div>
@@ -782,18 +782,18 @@ const UiNegocio = (() => {
         <div class="fila-dos">
           <div>
             <label for="vPrecio">Se vende en</label>
-            <input type="number" id="vPrecio" inputmode="numeric" min="0" step="10"
+            <input type="number" id="vPrecio" inputmode="numeric" min="0" step="1"
                    value="${v ? v.precio : p.precio}">
           </div>
           <div>
             <label for="vCosto">Cuesta</label>
-            <input type="number" id="vCosto" inputmode="numeric" min="0" step="10"
+            <input type="number" id="vCosto" inputmode="numeric" min="0" step="1"
                    value="${v ? v.costo : p.costo}">
           </div>
         </div>
         ${v ? '' : `
           <label for="vStock">¿Cuántas tienes?</label>
-          <input type="number" id="vStock" inputmode="decimal" min="0" step="1" value="0">`}
+          <input type="number" id="vStock" inputmode="decimal" min="0" step="any" value="0">`}
         <div class="fila-botones" style="margin-top:18px">
           ${v ? `<button type="button" class="boton peligro" data-borrar-variante="${v.id}" data-de="${productoId}">Borrar</button>` : ''}
           <button type="submit" class="boton">Guardar</button>
@@ -809,7 +809,7 @@ const UiNegocio = (() => {
         <p class="ayuda">De <strong>${esc(p.nombre)}</strong>. La app cree que quedan
            <strong>${verCantidad(hay)}</strong>.</p>
         <label for="sHay">¿Cuántos hay de verdad?</label>
-        <input type="number" id="sHay" inputmode="decimal" step="1" value="${hay}" required>
+        <input type="number" id="sHay" inputmode="decimal" step="any" value="${hay}" required>
         <p class="ayuda">Se guarda la diferencia, no el número final, así siempre se puede
            ver hacia atrás qué pasó entre un conteo y otro.</p>
         <button type="submit" class="boton" style="margin-top:16px">Cuadrar</button>
@@ -854,7 +854,7 @@ const UiNegocio = (() => {
             </div>
             <div>
               <label for="fSueldo">Sueldo mensual</label>
-              <input type="number" id="fSueldo" inputmode="numeric" min="0" step="1000"
+              <input type="number" id="fSueldo" inputmode="numeric" min="0" step="1"
                      value="${f ? f.sueldo : ''}">
             </div>
           </div>
@@ -902,7 +902,7 @@ const UiNegocio = (() => {
         <div class="fila-dos">
           <div>
             <label for="cMonto">Monto</label>
-            <input type="number" id="cMonto" inputmode="numeric" min="0" step="100" placeholder="60000">
+            <input type="number" id="cMonto" inputmode="numeric" min="0" step="1" placeholder="60000">
           </div>
           <div>
             <label for="cFecha">Fecha</label>
@@ -959,7 +959,7 @@ const UiNegocio = (() => {
         <div class="fila-dos" style="margin-top:14px">
           <div>
             <label for="qDescuento">Descuento</label>
-            <input type="number" id="qDescuento" inputmode="numeric" min="0" step="100"
+            <input type="number" id="qDescuento" inputmode="numeric" min="0" step="1"
                    value="${q ? q.descuento : ''}" placeholder="0">
           </div>
           <div>
@@ -1011,7 +1011,7 @@ const UiNegocio = (() => {
              formulario mudo: no enviaba y no decía por qué. El mínimo va
              en 0 y de que sea mayor que cero se encarga datos-negocio.js,
              que además explica el error con palabras. -->
-        <input type="number" id="rMonto" inputmode="numeric" min="0" step="1000" required
+        <input type="number" id="rMonto" inputmode="numeric" min="0" step="1" required
                placeholder="300000">
         <p class="ayuda">En la caja del negocio hay ${dinero(caja)} este mes.</p>
 
@@ -1519,8 +1519,8 @@ const UiNegocio = (() => {
                 `<option value="${p.id}|${v.id}">${esc(p.nombre)} — ${esc(v.nombre)}</option>`).join('')
             : `<option value="${p.id}|">${esc(p.nombre)}</option>`)).join('')}
       </select>
-      <input type="number" class="linea-cantidad" inputmode="decimal" min="0" step="1" value="1" placeholder="1">
-      <input type="number" class="linea-precio" inputmode="numeric" min="0" step="10"
+      <input type="number" class="linea-cantidad" inputmode="decimal" min="0" step="any" value="1" placeholder="1">
+      <input type="number" class="linea-precio" inputmode="numeric" min="0" step="1"
              placeholder="${esCompra ? 'costo' : 'precio'}">
       <button type="button" class="boton fantasma chico" data-quitar-linea>✕</button>`;
     caja.appendChild(fila);
