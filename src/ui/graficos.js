@@ -18,12 +18,27 @@ const Graficos = (() => {
   /* ------------------------------------------------------------
      1) DONA - en que se va la plata, por categoría
      ------------------------------------------------------------ */
+  /**
+   * opciones: { mensajeVacio, rotulo, aria }
+   * 'rotulo' es la palabra chica del centro. Por defecto dice "Gastaste",
+   * que es lo que corresponde en las finanzas personales; el negocio le
+   * pasa "Vendiste". El texto no puede quedar fijo acá adentro: el mismo
+   * dibujo se usa para dos cosas distintas.
+   *
+   * Cada dato es { nombre, monto, color, porcentaje }. Si no viene el
+   * porcentaje se calcula solo, así quien llama no tiene que hacer la
+   * división dos veces.
+   */
   function dona(contenedor, datos, opciones = {}) {
     const total = datos.reduce((a, d) => a + d.monto, 0);
     if (!total) {
       contenedor.innerHTML = vacio(opciones.mensajeVacio || 'Sin gastos este mes 🎉');
       return;
     }
+    datos = datos.map(d => ({
+      ...d,
+      porcentaje: d.porcentaje === undefined ? (d.monto / total) * 100 : d.porcentaje,
+    }));
 
     const T = 200;                 // lienzo cuadrado de 200x200
     const centro = T / 2;
@@ -58,7 +73,7 @@ const Graficos = (() => {
            aria-label="Reparto de gastos por categoría">
         ${arcos}
         <text x="${centro}" y="${centro - 8}" text-anchor="middle"
-              font-size="10" style="fill:var(--texto-suave)">Gastaste</text>
+              font-size="10" style="fill:var(--texto-suave)">${esc(opciones.rotulo || 'Gastaste')}</text>
         <text x="${centro}" y="${centro + 11}" text-anchor="middle"
               font-size="17" font-weight="700" style="fill:var(--texto)">
           ${esc(Datos.formatearDinero(total))}
@@ -97,7 +112,12 @@ const Graficos = (() => {
   /* ------------------------------------------------------------
      2) BARRAS - ingresos vs gastos, mes a mes
      ------------------------------------------------------------ */
-  function barras(contenedor, meses) {
+  /**
+   * opciones: { nombreVerde, nombreRojo }
+   * Igual que la dona: los nombres de la leyenda son "Entró" y "Salió"
+   * para las finanzas personales, y el negocio les pasa otros.
+   */
+  function barras(contenedor, meses, opciones = {}) {
     const maximo = Math.max(1, ...meses.map(m => Math.max(m.ingresos, m.gastos)));
     const A = 320, H = 170;
     const margenAbajo = 26, margenArriba = 10;
@@ -132,8 +152,8 @@ const Graficos = (() => {
       <svg class="grafico" viewBox="0 0 ${A} ${H}" style="max-height:190px" role="img"
            aria-label="Ingresos y gastos de los últimos meses">${cuerpo}</svg>
       <div class="leyenda">
-        <span class="item"><span class="punto" style="background:var(--verde)"></span>Entró</span>
-        <span class="item"><span class="punto" style="background:var(--rojo)"></span>Salió</span>
+        <span class="item"><span class="punto" style="background:var(--verde)"></span>${esc(opciones.nombreVerde || 'Entró')}</span>
+        <span class="item"><span class="punto" style="background:var(--rojo)"></span>${esc(opciones.nombreRojo || 'Salió')}</span>
       </div>`;
   }
 
