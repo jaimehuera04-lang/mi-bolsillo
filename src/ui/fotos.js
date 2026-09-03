@@ -59,11 +59,20 @@ const UiFotos = (() => {
       if (config.emparejarLuz) emparejarLuz(pincel, ancho, alto);
 
       const blob = await aBlob(lienzo);
+      const anchoOriginal = imagen.width || imagen.naturalWidth;
+      const altoOriginal = imagen.height || imagen.naturalHeight;
       if (imagen.close) imagen.close();
 
-      // Si "mejorarla" la dejó más pesada que el original, nos
-      // quedamos con el original. Pasa con fotos ya optimizadas.
-      if (blob.size >= archivo.size && archivo.type === 'image/jpeg') {
+      // Si la foto salió del mismo porte que entró, no la recortamos ni la
+      // achicamos: solo le tocamos la luz. En ese caso, si además quedó más
+      // pesada, no vale la pena y devolvemos el original.
+      //
+      // Pero si SÍ cambió de porte, nos quedamos con la nueva aunque pese
+      // más: el punto de esto no son los bytes, es que la foto de 4000×3000
+      // del celular no entre a un catálogo con ese tamaño. Antes acá había
+      // una sola comparación de peso y se comía el recorte entero.
+      const mismoPorte = ancho === anchoOriginal && alto === altoOriginal;
+      if (mismoPorte && blob.size >= archivo.size && archivo.type === 'image/jpeg') {
         return { blob: archivo, nombre: archivo.name, antes: archivo.size, despues: archivo.size };
       }
       return { blob, nombre, antes: archivo.size, despues: blob.size };

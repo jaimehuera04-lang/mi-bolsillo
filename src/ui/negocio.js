@@ -881,6 +881,20 @@ const UiNegocio = (() => {
       <form id="formNegocio" data-guardar="compra">
         <p class="ayuda">Esto sale de la caja del negocio, no de tu bolsillo. No baja tu sueldo libre.</p>
 
+        <!-- Esto es lo que otras apps venden como "lectura de facturas con
+             IA". Acá lo hace core/lector.js, que ya lee comprobantes
+             chilenos en PDF, Excel, correo del banco y texto pegado, sin
+             mandar el archivo a ninguna parte. Va ARRIBA a propósito: si
+             lees primero, los campos de abajo se llenan solos. -->
+        <div class="zona-respaldo">
+          <button type="button" class="boton secundario" id="botonLeerFactura">
+            📄 Leer la factura o boleta
+          </button>
+          <p class="ayuda">Se queda en tu teléfono. La app te muestra de qué línea sacó cada dato.</p>
+          <div id="lecturaCompra"></div>
+          <div class="tiras-adjuntos" id="adjuntosCompra"></div>
+        </div>
+
         <label for="cDescripcion">¿Qué fue?</label>
         <input type="text" id="cDescripcion" required autocomplete="off"
                placeholder="Pedido semanal, arriendo del local, luz…">
@@ -1181,22 +1195,47 @@ const UiNegocio = (() => {
     document.addEventListener('change', alCambiar);
   }
 
+  /* Los nombres que reconoce el escucha de toques.
+     Están en una lista y no en un selector escrito a mano porque un
+     selector hay que mantenerlo en paralelo con las ramas de abajo, y
+     ya se me olvidó una vez: el botón de leer la factura existía, tenía
+     su rama, y no hacía nada porque faltaba en el selector. Con la
+     lista, agregar una rama es agregar una palabra acá al lado. */
+  const ATRIBUTOS = [
+    'negocio', 'seccion', 'cerrarNegocio', 'form', 'producto', 'venta', 'compra',
+    'cotizacion', 'ficha', 'retiro', 'vender', 'mas', 'menos', 'cobrar',
+    'nuevaVariante', 'varianteDe', 'borrarProducto', 'borrarFicha',
+    'borrarCotizacion', 'borrarVariante', 'convertir', 'quitarLinea',
+  ];
+  const IDS = new Set([
+    'encenderNegocio', 'irAlNegocio', 'apagarNegocio', 'guardarAjustesNegocio',
+    'agregarLineaCompra', 'agregarLineaCotizacion', 'botonFotoProducto', 'botonLeerFactura',
+  ]);
+
+  /** Sube desde donde se tocó hasta encontrar algo que nos interese. */
+  function objetivo(desde) {
+    for (let el = desde; el && el !== document; el = el.parentElement) {
+      if (el.id && IDS.has(el.id)) return el;
+      if (el.dataset && ATRIBUTOS.some(a => el.dataset[a] !== undefined)) return el;
+    }
+    return null;
+  }
+
   async function alTocar(e) {
-    const t = e.target.closest('[data-negocio], [data-seccion], [data-cerrar-negocio], '
-      + '[data-form], [data-producto], [data-venta], [data-compra], [data-cotizacion], '
-      + '[data-ficha], [data-retiro], [data-vender], [data-mas], [data-menos], '
-      + '[data-cobrar], [data-nueva-variante], [data-variante-de], [data-borrar-producto], '
-      + '[data-borrar-ficha], [data-borrar-cotizacion], [data-borrar-variante], '
-      + '[data-convertir], #encenderNegocio, #irAlNegocio, #apagarNegocio, '
-      + '#guardarAjustesNegocio, #agregarLineaCompra, #agregarLineaCotizacion, '
-      + '#botonFotoProducto, [data-quitar-linea]');
+    const t = objetivo(e.target);
     if (!t) return;
     const d = t.dataset;
 
     /* --- navegación --- */
     if (d.negocio === 'vender')     return abrirVender();
     if (d.seccion)                  return abrirSeccion(d.seccion);
-    if (d.cerrarNegocio)            return window.App.cerrarHoja(d.cerrarNegocio);
+    if (d.cerrarNegocio) {
+      // Cerrar un formulario sin guardar deja sus fotos sin dueño. Se van
+      // ahora; y si alguien cerró con el botón "atrás" en vez de este, el
+      // barrido de huérfanos del arranque las alcanza igual.
+      if (d.cerrarNegocio === 'telonNegocioForm') soltarFotosPendientes();
+      return window.App.cerrarHoja(d.cerrarNegocio);
+    }
     if (d.form)                     return abrirFormulario(d.form, { lista: d.lista });
 
     /* --- encender y apagar --- */
@@ -1235,7 +1274,24 @@ const UiNegocio = (() => {
     if (t.id === 'agregarLineaCompra')     return agregarLinea('lineasCompra');
     if (t.id === 'agregarLineaCotizacion') return agregarLinea('lineasCotizacion');
     if (d.quitarLinea !== undefined)       { t.closest('.linea-editable').remove(); return; }
-    if (t.id === 'botonFotoProducto')      return $$$('archivoFotoNegocio').click();
+
+    // El mismo selector de archivos sirve para las dos cosas; lo que
+    // cambia es qué hacemos con lo que traiga.
+    if (t.id === 'botonFotoProducto')      return pedirArchivo('foto');
+    if (t.id === 'botonLeerFactura')       return pedirArchivo('factura');
+  }
+
+  function pedirArchivo(paraQue) {
+    vista.fotoPara = paraQue;
+    $$$('archivoFotoNegocio').click();
+  }
+
+  /** Borra de la bodega las fotos de un formulario que se cerró sin guardar. */
+  function soltarFotosPendientes() {
+    if (typeof Adjuntos !== 'undefined') {
+      vista.fotosPendientes.forEach(f => Adjuntos.borrar(f.id));
+    }
+    vista.fotosPendientes = [];
   }
 
   function alEscribir(e) {
@@ -1262,8 +1318,12 @@ const UiNegocio = (() => {
       if (zona) zona.hidden = !e.target.checked;
     }
     if (e.target.id === 'archivoFotoNegocio') {
-      recibirFotos([...e.target.files]);
+      const archivos = [...e.target.files];
+      // El value se limpia siempre: sin eso, elegir DOS VECES la misma foto
+      // no dispara 'change' la segunda vez y parece que la app se colgó.
       e.target.value = '';
+      if (vista.fotoPara === 'factura') leerFactura(archivos);
+      else recibirFotos(archivos);
     }
     if (e.target.id === 'clienteVenta')   vista.clienteVenta = e.target.value || null;
     if (e.target.id === 'empleadoVenta')  vista.empleadoVenta = e.target.value || null;
@@ -1404,7 +1464,11 @@ const UiNegocio = (() => {
       proveedorId: txt('cProveedor') || null,
       categoria: txt('cCategoria'),
       lineas: leerLineas('lineasCompra'),
+      // La factura que se leyó (o se adjuntó sin leer) queda colgada
+      // del gasto, para poder mirarla después.
+      adjuntos: vista.fotosPendientes,
     });
+    vista.fotosPendientes = [];
     avisar('Gasto anotado.');
   }
 
@@ -1478,6 +1542,81 @@ const UiNegocio = (() => {
     }).filter(l => l.cantidad > 0);
   }
 
+  /* ---------------- Leer una factura ----------------
+
+     El mismo lector determinístico de Movimientos, apuntado al
+     formulario de gastos del negocio. No inventa nada y no anota solo:
+     rellena, muestra de qué línea sacó cada dato y deja deshacer.
+     Regla 12 de CLAUDE.md.                                        */
+
+  async function leerFactura(archivos) {
+    const caja = $$$('lecturaCompra');
+    if (!caja) return;
+
+    for (const archivo of archivos) {
+      try {
+        const leido = await Archivos.leer(archivo);
+
+        // El archivo se guarda igual, aunque no se le entienda el texto:
+        // la foto de la factura vale por sí sola.
+        if (await Adjuntos.disponible()) {
+          const ficha = await Adjuntos.guardar({
+            id: 'adj-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+            nombre: leido.nombre, tipo: leido.tipo, blob: leido.blob,
+          });
+          if (ficha) vista.fotosPendientes.push(ficha);
+        }
+
+        if (!leido.texto) {
+          caja.innerHTML = avisoDeLectura(leido.aviso
+            || 'Guardamos el archivo, pero no le pudimos sacar el texto. Escribe los datos tú.');
+          continue;
+        }
+
+        const p = Lector.leerComprobante(leido.texto, { hoy: Fechas.hoyISO() });
+        if (leido.fechaFoto && !p.fecha) p.fecha = leido.fechaFoto;
+        aplicarLecturaDeFactura(p);
+      } catch (e) {
+        caja.innerHTML = avisoDeLectura(e.message || 'No pudimos leer ese archivo.');
+      }
+    }
+    pintarFotosPendientes('adjuntosCompra');
+  }
+
+  const avisoDeLectura = texto =>
+    `<div class="consejo lectura" style="margin-top:10px"><strong>📄 Lectura</strong>${esc(texto)}</div>`;
+
+  function aplicarLecturaDeFactura(p) {
+    const caja = $$$('lecturaCompra');
+    if (p.encontrados === 0) {
+      caja.innerHTML = avisoDeLectura('Guardamos el archivo, pero no reconocimos ni el monto ni la fecha. Escríbelos tú.');
+      return;
+    }
+
+    const antes = { monto: valorDe('cMonto'), fecha: valorDe('cFecha'), descripcion: valorDe('cDescripcion') };
+
+    if (p.monto) $$$('cMonto').value = p.monto;
+    if (p.fecha) $$$('cFecha').value = p.fecha;
+    if (p.nota && !antes.descripcion) $$$('cDescripcion').value = p.nota;
+
+    caja.innerHTML = `
+      <div class="consejo lectura" style="margin-top:10px">
+        <strong>📄 Esto entendimos del papel</strong>
+        ${(p.evidencia || []).map(e =>
+          `<span class="ayuda" style="display:block">· ${esc(e.linea)}</span>`).join('')}
+        <button type="button" class="boton fantasma chico" id="deshacerLecturaCompra">
+          No, déjalo como estaba
+        </button>
+      </div>`;
+
+    $$$('deshacerLecturaCompra').addEventListener('click', () => {
+      $$$('cMonto').value = antes.monto;
+      $$$('cFecha').value = antes.fecha;
+      $$$('cDescripcion').value = antes.descripcion;
+      caja.innerHTML = '';
+    }, { once: true });
+  }
+
   /* ---------------- Fotos de producto ---------------- */
 
   async function recibirFotos(archivos) {
@@ -1508,8 +1647,8 @@ const UiNegocio = (() => {
     pintarFotosPendientes();
   }
 
-  function pintarFotosPendientes() {
-    const caja = $$$('fotosDelProducto');
+  function pintarFotosPendientes(dondeId) {
+    const caja = $$$(dondeId || 'fotosDelProducto');
     if (!caja) return;
     const tipo = $$$('negocioForm').dataset.tipo;
     const extra = JSON.parse($$$('negocioForm').dataset.extra || '{}');
