@@ -8,7 +8,7 @@
    Así el celular sabe que tiene que bajar la versión nueva.
    ============================================================ */
 
-const VERSION = 'mi-bolsillo-v21';
+const VERSION = 'mi-bolsillo-v22';
 
 const ARCHIVOS = [
   './',
@@ -39,6 +39,7 @@ const ARCHIVOS = [
   './src/ui/archivos.js',
   './src/ui/excel.js',
   './src/ui/graficos.js',
+  './src/ui/ocr.js',
   './src/ui/sueldo.js',
   './src/ui/fotos.js',
   './src/ui/catalogo.js',
@@ -78,11 +79,18 @@ self.addEventListener('install', evento => {
 });
 
 // 2. Al activarse: borramos las copias viejas
+//
+// Menos la del lector de texto. Ese pesa varios megas, no cambia entre
+// versiones de la app y la persona ya lo bajó una vez: borrarlo cada
+// vez que publicamos un arreglo de una línea sería hacerle gastar
+// cinco megas de datos por nada.
 self.addEventListener('activate', evento => {
   evento.waitUntil(
     caches.keys()
       .then(nombres => Promise.all(
-        nombres.filter(n => n !== VERSION).map(n => caches.delete(n))
+        nombres
+          .filter(n => n !== VERSION && n !== CACHE_LECTOR)
+          .map(n => caches.delete(n))
       ))
       .then(() => self.clients.claim())
   );
@@ -102,7 +110,19 @@ self.addEventListener('fetch', evento => {
   // pasaba por encima con los datos de este teléfono. Todo lo que no
   // sea de nuestro propio sitio pasa derecho al navegador.
   const url = new URL(evento.request.url);
-  if (url.origin !== self.location.origin) return;
+
+  // ÚNICA excepción a la regla de arriba, y es deliberada: el lector de
+  // texto (Tesseract) vive en un CDN y pesa varios megas. Sin guardarlo,
+  // cada pantallazo del banco volvería a bajarlo.
+  //
+  // Es seguro porque son SOLO archivos de programa, iguales para todo
+  // el mundo, que nunca llevan datos de nadie. Lo que esta guarda
+  // protege —que las consultas a la nube NO se respondan con copias
+  // viejas— sigue intacto: cualquier otro origen pasa derecho.
+  if (url.origin !== self.location.origin) {
+    if (esDelLectorDeTexto(url)) return evento.respondWith(deLaCopiaPrimero(evento.request));
+    return;
+  }
 
   evento.respondWith(
     fetch(evento.request)
@@ -117,3 +137,51 @@ self.addEventListener('fetch', evento => {
       .catch(() => caches.match(evento.request).then(r => r || caches.match('./index.html')))
   );
 });
+
+/* ============================================================
+   El lector de texto (OCR)
+
+   Vive en un CDN y pesa varios megas entre el motor y el idioma.
+   Se guarda con nombre propio y NO se borra al cambiar de versión
+   de la app: subir la VERSION de arriba no tiene por qué obligar
+   a la persona a bajar cinco megas de nuevo.
+
+   Solo se aceptan estos dos dominios y nada más. Si mañana el
+   lector cambia de casa, hay que tocar esta lista a mano, a
+   propósito: una lista abierta acá sería una puerta abierta.
+   ============================================================ */
+
+const CACHE_LECTOR = 'mi-bolsillo-lector-v1';
+
+const CASAS_DEL_LECTOR = [
+  'cdn.jsdelivr.net',            // la librería y su motor
+  'tessdata.projectnaptha.com',  // los idiomas
+];
+
+function esDelLectorDeTexto(url) {
+  if (!CASAS_DEL_LECTOR.includes(url.hostname)) return false;
+  // Y dentro de esos dominios, solo lo del lector.
+  return /tesseract|tessdata/i.test(url.pathname);
+}
+
+/**
+ * Primero la copia guardada; si no está, se baja y se guarda.
+ * Al revés del resto de la app, que va primero a la red: estos
+ * archivos no cambian nunca dentro de una misma versión, así que
+ * preguntarle a internet cada vez solo haría esperar a la persona.
+ */
+function deLaCopiaPrimero(peticion) {
+  return caches.open(CACHE_LECTOR).then(cache =>
+    cache.match(peticion).then(copia => {
+      if (copia) return copia;
+      return fetch(peticion).then(respuesta => {
+        // 'opaque' es lo que devuelve un CDN sin CORS: se puede
+        // guardar y servir, aunque no se pueda mirar por dentro.
+        if (respuesta && (respuesta.ok || respuesta.type === 'opaque')) {
+          cache.put(peticion, respuesta.clone());
+        }
+        return respuesta;
+      });
+    })
+  );
+}

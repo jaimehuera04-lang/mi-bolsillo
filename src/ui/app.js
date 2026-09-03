@@ -953,6 +953,71 @@
     }
   }
 
+  /* ---------------- Leer el pantallazo del banco ----------------
+
+     Lo que más sube la gente no es una boleta: es una captura de la
+     pantalla de movimientos de su banco. Hasta ahora de una imagen
+     solo se sacaba la fecha del EXIF y el QR, y el texto había que
+     pegarlo a mano.
+
+     La primera vez hay que bajar el lector de texto, que pesa varios
+     megas. Eso se pregunta ANTES: bajarle 5 MB por datos móviles a
+     alguien sin avisarle es una falta de respeto, aunque sea para
+     algo que pidió. La respuesta se recuerda.               */
+
+  async function leerImagenConOcr(adjuntoId, nombre) {
+    if (typeof UiOcr === 'undefined') return '';
+
+    if (!UiOcr.yaSeBajo() && !UiOcr.yaEstaListo()) {
+      const si = await Dialogos.confirmar({
+        titulo: '¿Leo la imagen por ti?',
+        texto: `Puedo sacarle el texto a ese pantallazo y llenar los movimientos solo.\n\n`
+             + `La primera vez tengo que bajar el lector, que pesa unos ${UiOcr.PESO_APROXIMADO}. `
+             + `Después queda guardado en este teléfono y funciona sin internet.`,
+        aceptar: 'Sí, léelo', cancelar: 'Ahora no',
+      });
+      if (!si) {
+        avisar('Puedes pegarme el texto con el botón "Pegar texto".');
+        return '';
+      }
+    }
+
+    const guardado = await Adjuntos.obtener(adjuntoId);
+    if (!guardado || !guardado.blob) return '';
+
+    mostrarProgresoDeLectura('Preparando el lector…', 0);
+    try {
+      const texto = await UiOcr.leer(guardado.blob, ({ fase, pct }) => {
+        mostrarProgresoDeLectura(
+          fase === 'preparando' ? 'Bajando el lector, solo esta vez…' : 'Leyendo la imagen…',
+          pct);
+      });
+      if (!texto || texto.length < 8) {
+        mostrarLectura(null, 'Le pasé el lector a la imagen pero no le entendí el texto. '
+          + 'Prueba con una captura más grande, o usa "Pegar texto".');
+        return '';
+      }
+      return texto;
+    } catch (e) {
+      mostrarLectura(null, e.message || 'No pudimos leer la imagen.');
+      return '';
+    }
+  }
+
+  /** La barra de "voy en esto". Sin ella la app parece colgada. */
+  function mostrarProgresoDeLectura(que, pct) {
+    const caja = $$$('resultadoLectura');
+    if (!caja) return;
+    // La caja YA es un .consejo.lectura, así que acá va solo el
+    // contenido; envolverlo otra vez dibujaba una caja dentro de otra.
+    caja.hidden = false;
+    caja.innerHTML = `
+      <strong>🔎 ${esc(que)}</strong>
+      <div class="barra" style="margin-top:8px">
+        <span style="width:${Math.max(3, pct)}%; background:var(--verde)"></span>
+      </div>`;
+  }
+
   /**
    * La persona eligió uno o más archivos en el formulario.
    * Se guardan todos como respaldo; del primero que traiga texto
@@ -998,7 +1063,20 @@
       dibujarAdjuntosDelFormulario();
     }
 
-    if (!paraLeer) {
+    // Una imagen sin texto útil todavía no está perdida: puede ser el
+    // pantallazo de los movimientos del banco, que es lo que más se
+    // sube. Ahí entra el lector de texto (OCR).
+    const soloImagen = !paraLeer || !paraLeer.texto;
+    const imagen = vista.adjuntosPendientes.filter(a => a.clase === 'imagen').pop();
+    if (soloImagen && imagen) {
+      const texto = await leerImagenConOcr(imagen.id, imagen.nombre);
+      if (texto) {
+        paraLeer = { ...(paraLeer || {}), texto, nombre: imagen.nombre };
+        avisoDelArchivo = '';
+      }
+    }
+
+    if (!paraLeer || (!paraLeer.texto && !paraLeer.fechaFoto)) {
       mostrarLectura(null, avisoDelArchivo);
       return;
     }

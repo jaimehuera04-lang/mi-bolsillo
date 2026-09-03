@@ -505,6 +505,11 @@ const Lector = (() => {
       const nota = recortar(linea
         .replace(fechas[0].crudo, ' ')
         .replace(/\$?\s*[\d.]{3,}/g, ' ')
+        // Sacado el número, el signo y el peso quedan colgando: de
+        // "COMPRA LIDER $ -38.500" sobraba un "$ -" al final de la
+        // glosa. Se van solo cuando quedan SUELTOS, para no partir un
+        // apellido como "J-PEREZ" ni un "PAGO 50%-DTO".
+        .replace(/(^|\s)[$+\-]+(?=\s|$)/g, ' ')
         .replace(/\s+/g, ' ')
         .trim());
 
