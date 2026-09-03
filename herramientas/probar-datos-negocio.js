@@ -35,11 +35,13 @@ const contexto = vm.createContext({
 const ARCHIVOS = [
   'src/data/categorias.js',
   'src/data/tecnicas.js',
+  'src/data/estacionales.js',
   'src/core/fechas.js',
   'src/core/dinero.js',
   'src/core/calculos.js',
   'src/core/sugerencias.js',
   'src/core/negocio.js',
+  'src/core/sueldo.js',
   'src/storage/esquema.js',
   'src/storage/migraciones.js',
   'src/storage/almacenamiento.js',

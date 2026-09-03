@@ -168,11 +168,52 @@ const Migraciones = (() => {
     return nuevo;
   }
 
-  /* La cadena. Para agregar el esquema 5, se suma una línea aquí. */
+  /* ------------------------------------------------------------
+     Esquema 4 -> 5  (septiembre 2026)
+
+     Que cambia: nada de forma. Los cajones 'compromisos',
+     'ingresosPrevistos', 'estacionales' y 'simulaciones' existían
+     desde el esquema 2, vacíos, esperando la Fase 2.
+
+     Lo que sí arregla es un agujero real: quien entró a la app en
+     el esquema 2 o 3 y escribió su ingreso esperado en Ajustes NO
+     tiene ningún ingreso previsto. Esa persona abriría la pantalla
+     del sueldo libre y vería cero contra lo que restar, o sea la
+     app rota justo en su función principal. Solo la migración 1->2
+     creaba ese primer ingreso, y ya nadie pasa por ahí.
+
+     Se crea únicamente si la lista está vacía: a quien ya tenga
+     ingresos previstos no se le toca nada.
+     ------------------------------------------------------------ */
+  function migrate_4_a_5(viejo) {
+    const nuevo = { ...viejo };
+
+    ['compromisos', 'ingresosPrevistos', 'estacionales', 'simulaciones'].forEach(lista => {
+      nuevo[lista] = Array.isArray(viejo[lista]) ? viejo[lista] : [];
+    });
+
+    const esperado = Dinero.entero((viejo.ajustes || {}).ingresoEsperado);
+    if (!nuevo.ingresosPrevistos.length && esperado > 0) {
+      nuevo.ingresosPrevistos = [{
+        id: Esquema.nuevoId(),
+        nombre: 'Sueldo',
+        monto: esperado,
+        frecuencia: 'mensual',
+        diaDelMes: 30,
+        activo: true,
+      }];
+    }
+
+    nuevo.meta = { ...(viejo.meta || {}), schemaVersion: 5 };
+    return nuevo;
+  }
+
+  /* La cadena. Para agregar el esquema 6, se suma una línea aquí. */
   const CADENA = {
     1: migrate_1_a_2,
     2: migrate_2_a_3,
     3: migrate_3_a_4,
+    4: migrate_4_a_5,
   };
 
   /** Que versión tiene este objeto. El esquema 1 usaba 'versión' suelto. */
@@ -212,5 +253,5 @@ const Migraciones = (() => {
     return { estado: actual, desde, hasta: v, migro: desde !== v };
   }
 
-  return { aplicar, versionDe, migrate_1_a_2, migrate_2_a_3, migrate_3_a_4 };
+  return { aplicar, versionDe, migrate_1_a_2, migrate_2_a_3, migrate_3_a_4, migrate_4_a_5 };
 })();

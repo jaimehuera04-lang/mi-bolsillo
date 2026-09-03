@@ -260,6 +260,394 @@ const Datos = (() => {
     return mov;
   }
 
+  /* ============================================================
+     COMPROMISOS — la entidad de primera clase de esta app
+
+     Todo lo de acá abajo alimenta el sueldo libre. Las cuentas
+     mismas están en core/sueldo.js; este bloque solo valida lo
+     que llega, lo ordena y lo guarda.
+     ============================================================ */
+
+  const texto = v => String(v === undefined || v === null ? '' : v).trim();
+
+  /* ---------- Ingresos previstos ---------- */
+
+  /**
+   * Lo que ESPERAS que entre. Sin al menos uno, el sueldo libre no
+   * tiene contra qué restar y la app no puede hacer su trabajo.
+   */
+  function agregarIngresoPrevisto({ nombre, monto, frecuencia, diaDelMes, fecha, desde, hasta }) {
+    const limpio = texto(nombre);
+    if (!limpio) throw new Error('¿Cómo se llama ese ingreso? Por ejemplo: Sueldo.');
+    const valor = Dinero.entero(monto);
+    if (valor <= 0) throw new Error('El monto tiene que ser mayor que cero.');
+
+    const ingreso = {
+      id: Esquema.nuevoId(),
+      nombre: limpio,
+      monto: valor,
+      frecuencia: frecuencia === 'unico' ? 'unico' : 'mensual',
+      diaDelMes: Math.min(31, Math.max(1, Dinero.entero(diaDelMes) || 30)),
+      fecha: fecha || '',
+      desde: desde || '',
+      hasta: hasta || '',
+      activo: true,
+      creado: Fechas.hoyISO(),
+    };
+    estado().ingresosPrevistos.push(ingreso);
+    guardar();
+    return ingreso;
+  }
+
+  function editarIngresoPrevisto(id, datos) {
+    const i = estado().ingresosPrevistos.find(x => x.id === id);
+    if (!i) return null;
+    if (datos.nombre !== undefined) {
+      const limpio = texto(datos.nombre);
+      if (!limpio) throw new Error('El nombre no puede quedar vacío.');
+      i.nombre = limpio;
+    }
+    if (datos.monto !== undefined) {
+      const valor = Dinero.entero(datos.monto);
+      if (valor <= 0) throw new Error('El monto tiene que ser mayor que cero.');
+      i.monto = valor;
+    }
+    if (datos.diaDelMes !== undefined) i.diaDelMes = Math.min(31, Math.max(1, Dinero.entero(datos.diaDelMes) || 30));
+    if (datos.frecuencia !== undefined) i.frecuencia = datos.frecuencia === 'unico' ? 'unico' : 'mensual';
+    ['fecha', 'desde', 'hasta'].forEach(c => { if (datos[c] !== undefined) i[c] = datos[c] || ''; });
+    if (datos.activo !== undefined) i.activo = Boolean(datos.activo);
+    guardar();
+    return i;
+  }
+
+  function borrarIngresoPrevisto(id) {
+    estado().ingresosPrevistos = estado().ingresosPrevistos.filter(x => x.id !== id);
+    guardar();
+  }
+
+  /* ---------- Compromisos fijos ---------- */
+
+  /**
+   * El dividendo, la isapre, el CAE, el plan de celular.
+   * Se guarda la REGLA, no doscientas filas: cambiar el monto del
+   * arriendo tiene que ser un solo cambio, no doscientos.
+   */
+  function agregarCompromisoFijo({ nombre, monto, frecuencia, diaDelMes, mesDelAnio,
+                                   categoria, cuenta, desde, hasta }) {
+    const limpio = texto(nombre);
+    if (!limpio) throw new Error('¿Qué es lo que pagas? Por ejemplo: Dividendo.');
+    const valor = Dinero.entero(monto);
+    if (valor <= 0) throw new Error('El monto tiene que ser mayor que cero.');
+
+    const c = {
+      id: Esquema.nuevoId(),
+      tipo: 'fijo',
+      nombre: limpio,
+      monto: valor,
+      frecuencia: frecuencia === 'anual' ? 'anual' : 'mensual',
+      diaDelMes: Math.min(31, Math.max(1, Dinero.entero(diaDelMes) || 1)),
+      mesDelAnio: Math.min(11, Math.max(0, Dinero.entero(mesDelAnio))),
+      categoria: categoria || 'servicios',
+      cuenta: cuenta || null,
+      desde: desde || '',
+      hasta: hasta || '',
+      estado: 'pendiente',
+      movimientoId: null,
+      activo: true,
+      creado: Fechas.hoyISO(),
+    };
+    estado().compromisos.push(c);
+    guardar();
+    return c;
+  }
+
+  function editarCompromiso(id, datos) {
+    const c = compromisoPorId(id);
+    if (!c) return null;
+    if (datos.nombre !== undefined) {
+      const limpio = texto(datos.nombre);
+      if (!limpio) throw new Error('El nombre no puede quedar vacío.');
+      c.nombre = limpio;
+    }
+    if (datos.monto !== undefined) {
+      const valor = Dinero.entero(datos.monto);
+      if (valor <= 0) throw new Error('El monto tiene que ser mayor que cero.');
+      c.monto = valor;
+    }
+    if (datos.diaDelMes !== undefined) c.diaDelMes = Math.min(31, Math.max(1, Dinero.entero(datos.diaDelMes) || 1));
+    if (datos.mesDelAnio !== undefined) c.mesDelAnio = Math.min(11, Math.max(0, Dinero.entero(datos.mesDelAnio)));
+    if (datos.frecuencia !== undefined) c.frecuencia = datos.frecuencia === 'anual' ? 'anual' : 'mensual';
+    ['categoria', 'cuenta', 'desde', 'hasta', 'fecha'].forEach(x => {
+      if (datos[x] !== undefined) c[x] = datos[x] || (x === 'cuenta' ? null : '');
+    });
+    if (datos.activo !== undefined) c.activo = Boolean(datos.activo);
+    guardar();
+    return c;
+  }
+
+  const compromisoPorId = id => estado().compromisos.find(c => c.id === id) || null;
+
+  /**
+   * Termina un compromiso fijo sin borrar su historia.
+   * "Ya no pago el CAE" no significa que nunca lo pagué: se le pone
+   * fecha de término y los meses anteriores siguen cuadrando.
+   */
+  function terminarCompromiso(id, hastaMes) {
+    const c = compromisoPorId(id);
+    if (!c) return null;
+    c.hasta = hastaMes || Fechas.claveMes(new Date().getFullYear(), new Date().getMonth());
+    guardar();
+    return c;
+  }
+
+  function borrarCompromiso(id) {
+    const c = compromisoPorId(id);
+    if (!c) return;
+    // Si es una cuota, se van TODAS las de esa compra: media compra
+    // en cuotas no significa nada y dejaría la fecha de liberación mintiendo.
+    estado().compromisos = c.compraId
+      ? estado().compromisos.filter(x => x.compraId !== c.compraId)
+      : estado().compromisos.filter(x => x.id !== id);
+    guardar();
+  }
+
+  /* ---------- Compras en cuotas ---------- */
+
+  /**
+   * Regla 2: una compra en cuotas genera UN GASTO de hoy y
+   * N COMPROMISOS futuros con fecha propia.
+   *
+   * El gasto es opcional a propósito. Si la compra ya está anotada
+   * (por ejemplo, la leyó el lector de la boleta), anotarla otra vez
+   * sería contar dos veces el mismo peso, que es la Regla 8.
+   */
+  function comprarEnCuotas({ nombre, monto, cuotas, primeraFecha, diaDelMes, interesTotal,
+                             categoria, cuenta, anotarElGasto, fechaCompra }) {
+    const limpio = texto(nombre);
+    if (!limpio) throw new Error('¿Qué compraste?');
+    const valor = Dinero.entero(monto);
+    if (valor <= 0) throw new Error('El monto tiene que ser mayor que cero.');
+    const n = Dinero.entero(cuotas);
+    if (n < 1 || n > 60) throw new Error('Las cuotas tienen que ser entre 1 y 60.');
+
+    const hoy = fechaCompra || Fechas.hoyISO();
+    const desde = (primeraFecha || hoy).slice(0, 7);
+    const dia = Dinero.entero(diaDelMes) || Number((primeraFecha || hoy).slice(8, 10)) || 5;
+
+    const compraId = Esquema.nuevoId();
+    const partes = Sueldo.cuotasDe({
+      monto: valor, cuotas: n, desde, diaDelMes: dia, interesTotal,
+    });
+
+    const nuevos = partes.map(p => ({
+      id: Esquema.nuevoId(),
+      tipo: 'cuota',
+      compraId,
+      nombre: `${limpio} ${p.numero}/${p.de}`,
+      numero: p.numero,
+      de: p.de,
+      monto: p.monto,
+      fecha: p.fecha,
+      frecuencia: 'unico',
+      categoria: categoria || 'deuda',
+      cuenta: cuenta || null,
+      estado: 'pendiente',
+      movimientoId: null,
+      activo: true,
+      creado: Fechas.hoyISO(),
+    }));
+    estado().compromisos.push(...nuevos);
+
+    let gasto = null;
+    if (anotarElGasto) {
+      gasto = agregarMovimiento({
+        tipo: 'gasto',
+        monto: valor,
+        categoria: categoria || 'deuda',
+        fecha: hoy,
+        cuentaOrigen: cuenta || (cuentasActivas()[0] || {}).id,
+        descripcion: limpio,
+        nota: `Comprado en ${n} cuotas`,
+      });
+    }
+
+    guardar();
+    return { compraId, cuotas: nuevos, gasto };
+  }
+
+  /** Todas las cuotas de una misma compra, en orden. */
+  const cuotasDeLaCompra = compraId => estado().compromisos
+    .filter(c => c.compraId === compraId)
+    .sort((a, b) => (a.numero || 0) - (b.numero || 0));
+
+  /**
+   * Marca una cuota como pagada y, si se pide, anota el movimiento.
+   * El pago de una cuota de tarjeta es una TRANSFERENCIA hacia la
+   * tarjeta, no un gasto nuevo: el gasto se contó al comprar
+   * (Regla 8). Por eso 'comoTransferencia' existe.
+   */
+  function pagarCompromiso(id, { fecha, cuentaOrigen, cuentaDestino, comoTransferencia } = {}) {
+    const c = compromisoPorId(id);
+    if (!c) return null;
+
+    let mov = null;
+    if (cuentaOrigen) {
+      mov = agregarMovimiento({
+        tipo: comoTransferencia ? 'transferencia' : 'gasto',
+        monto: c.monto,
+        categoria: comoTransferencia ? null : (c.categoria || 'deuda'),
+        fecha: fecha || Fechas.hoyISO(),
+        cuentaOrigen,
+        cuentaDestino: comoTransferencia ? cuentaDestino : null,
+        descripcion: c.nombre,
+        compromisoId: c.id,
+      });
+    }
+    c.estado = 'pagado';
+    c.movimientoId = mov ? mov.id : null;
+    c.fechaPago = fecha || Fechas.hoyISO();
+    guardar();
+    return { compromiso: c, movimiento: mov };
+  }
+
+  /** Deshace el pago, y se lleva el movimiento que había creado. */
+  function despagarCompromiso(id) {
+    const c = compromisoPorId(id);
+    if (!c) return null;
+    if (c.movimientoId) borrarMovimiento(c.movimientoId);
+    c.estado = 'pendiente';
+    c.movimientoId = null;
+    c.fechaPago = '';
+    guardar();
+    return c;
+  }
+
+  /* ---------- Estacionales ---------- */
+
+  function agregarEstacional({ nombre, monto, mes, dia, cadaAnios, anioBase, categoria, emoji }) {
+    const limpio = texto(nombre);
+    if (!limpio) throw new Error('¿Qué gasto es? Por ejemplo: Matrícula.');
+    const valor = Dinero.entero(monto);
+    if (valor <= 0) throw new Error('El monto tiene que ser mayor que cero.');
+
+    const e = {
+      id: Esquema.nuevoId(),
+      nombre: limpio,
+      monto: valor,
+      mes: Math.min(11, Math.max(0, Dinero.entero(mes))),
+      dia: Math.min(31, Math.max(1, Dinero.entero(dia) || 1)),
+      cadaAnios: Math.max(1, Dinero.entero(cadaAnios) || 1),
+      anioBase: Dinero.entero(anioBase) || new Date().getFullYear(),
+      categoria: categoria || 'otro',
+      emoji: emoji || '📅',
+      activo: true,
+      creado: Fechas.hoyISO(),
+    };
+    estado().estacionales.push(e);
+    guardar();
+    return e;
+  }
+
+  function editarEstacional(id, datos) {
+    const e = estado().estacionales.find(x => x.id === id);
+    if (!e) return null;
+    if (datos.nombre !== undefined) {
+      const limpio = texto(datos.nombre);
+      if (!limpio) throw new Error('El nombre no puede quedar vacío.');
+      e.nombre = limpio;
+    }
+    if (datos.monto !== undefined) {
+      const valor = Dinero.entero(datos.monto);
+      if (valor <= 0) throw new Error('El monto tiene que ser mayor que cero.');
+      e.monto = valor;
+    }
+    if (datos.mes !== undefined) e.mes = Math.min(11, Math.max(0, Dinero.entero(datos.mes)));
+    if (datos.dia !== undefined) e.dia = Math.min(31, Math.max(1, Dinero.entero(datos.dia) || 1));
+    if (datos.cadaAnios !== undefined) e.cadaAnios = Math.max(1, Dinero.entero(datos.cadaAnios) || 1);
+    if (datos.categoria !== undefined) e.categoria = datos.categoria;
+    if (datos.activo !== undefined) e.activo = Boolean(datos.activo);
+    guardar();
+    return e;
+  }
+
+  function borrarEstacional(id) {
+    estado().estacionales = estado().estacionales.filter(x => x.id !== id);
+    guardar();
+  }
+
+  /** Agrega uno desde el calendario chileno, con su monto sugerido. */
+  function agregarEstacionalDePlantilla(plantillaId, monto) {
+    const p = Estacionales.porId(plantillaId);
+    if (!p) throw new Error('Ese gasto no está en la lista.');
+    return agregarEstacional({
+      nombre: p.nombre,
+      monto: monto === undefined ? p.monto : monto,
+      mes: p.mes, dia: p.dia, categoria: p.categoria, emoji: p.emoji,
+    });
+  }
+
+  /* ---------- Simulaciones guardadas ---------- */
+
+  function guardarSimulacion({ nombre, monto, cuotas, desde, diaDelMes, interesTotal }) {
+    const s = {
+      id: Esquema.nuevoId(),
+      nombre: texto(nombre) || 'Una compra',
+      monto: Dinero.entero(monto),
+      cuotas: Dinero.entero(cuotas),
+      desde: desde || Fechas.hoyISO().slice(0, 7),
+      diaDelMes: Dinero.entero(diaDelMes) || 5,
+      interesTotal: Dinero.entero(interesTotal),
+      creada: Fechas.hoyISO(),
+    };
+    estado().simulaciones.push(s);
+    guardar();
+    return s;
+  }
+
+  function borrarSimulacion(id) {
+    estado().simulaciones = estado().simulaciones.filter(s => s.id !== id);
+    guardar();
+  }
+
+  /* ---------- Consultas del sueldo libre ----------
+     Son core/sueldo.js con el estado ya puesto, para que la
+     pantalla no tenga que ir a buscarlo cada vez.              */
+
+  const sueldoLibre     = (anio, mes)   => Sueldo.sueldoLibreDe(estado(), anio, mes);
+  const proyeccion      = (anio, mes, n) => Sueldo.proyeccion(estado(), anio, mes, n || 12);
+  const mesMasApretado  = (anio, mes, n) => Sueldo.mesMasApretado(proyeccion(anio, mes, n));
+  const fechaLiberacion = ()            => Sueldo.fechaDeLiberacion(estado(), Fechas.hoyISO());
+  const mesesApretados  = (anio, mes, n) => Sueldo.mesesQueVienenApretados(estado(), anio, mes, n || 12);
+  const simularCuotas   = datos         => Sueldo.simular(estado(), datos);
+  const compromisosDelMes  = (anio, mes) => Sueldo.compromisosDelMes(estado(), anio, mes);
+  const estacionalesDelMes = (anio, mes) => Sueldo.estacionalesDelMes(estado(), anio, mes);
+
+  /** Las cuotas que vienen, agrupadas por compra. */
+  function comprasEnCuotas() {
+    const mapa = new Map();
+    for (const c of estado().compromisos) {
+      if (c.tipo !== 'cuota' || !c.compraId) continue;
+      if (!mapa.has(c.compraId)) mapa.set(c.compraId, []);
+      mapa.get(c.compraId).push(c);
+    }
+    return [...mapa.entries()].map(([compraId, cuotas]) => {
+      cuotas.sort((a, b) => (a.numero || 0) - (b.numero || 0));
+      const pendientes = cuotas.filter(c => c.estado !== 'pagado');
+      return {
+        compraId,
+        // El nombre sin el "3/12" del final, que cambia en cada cuota.
+        nombre: String(cuotas[0].nombre || '').replace(/\s+\d+\/\d+$/, ''),
+        cuotas,
+        cuantas: cuotas.length,
+        pagadas: cuotas.length - pendientes.length,
+        total: cuotas.reduce((t, c) => t + c.monto, 0),
+        falta: pendientes.reduce((t, c) => t + c.monto, 0),
+        ultima: cuotas[cuotas.length - 1].fecha,
+        siguiente: pendientes.length ? pendientes[0] : null,
+      };
+    }).sort((a, b) => (a.ultima < b.ultima ? -1 : 1));
+  }
+
   /* ---------- Metas de ahorro ---------- */
   function agregarMeta({ nombre, montoObjetivo, emoji, fechaObjetivo, cuenta }) {
     const limpio = String(nombre || '').trim();
@@ -429,6 +817,25 @@ const Datos = (() => {
     adjuntarAMovimiento, quitarAdjunto, idsDeAdjuntosVivos,
     agregarMeta, abonarMeta, borrarMeta,
     fijarPresupuesto, guardarAjustes,
+
+    // el sueldo libre: compromisos, ingresos previstos y estacionales
+    agregarIngresoPrevisto, editarIngresoPrevisto, borrarIngresoPrevisto,
+    ingresosPrevistos: () => estado().ingresosPrevistos,
+    agregarCompromisoFijo, editarCompromiso, compromisoPorId,
+    terminarCompromiso, borrarCompromiso,
+    compromisos: () => estado().compromisos,
+    comprarEnCuotas, cuotasDeLaCompra, comprasEnCuotas,
+    pagarCompromiso, despagarCompromiso,
+    agregarEstacional, editarEstacional, borrarEstacional, agregarEstacionalDePlantilla,
+    estacionales: () => estado().estacionales,
+    PLANTILLAS_ESTACIONALES: Estacionales.PLANTILLAS,
+    porQueApretaElMes: Estacionales.porQueApreta,
+    guardarSimulacion, borrarSimulacion,
+    simulaciones: () => estado().simulaciones,
+
+    // las cuentas del sueldo libre
+    sueldoLibre, proyeccion, mesMasApretado, fechaLiberacion, mesesApretados,
+    simularCuotas, compromisosDelMes, estacionalesDelMes,
 
     // registro
     registrar, estaRegistrado, correoValido, nombreDesdeCorreo,

@@ -10,7 +10,7 @@
 
 const Esquema = (() => {
 
-  const VERSION_ESQUEMA = 4;
+  const VERSION_ESQUEMA = 5;
 
   // La llave ya no lleva el número de versión: la versión vive DENTRO
   // del objeto. Poner "v1" en el nombre invita a crear otra llave en
@@ -51,10 +51,44 @@ const Esquema = (() => {
       movimientos: [],
 
       /* compromisos: plata que ya prometiste y todavía no sale.
-         Se llenan en la Fase 2. Aquí solo dejamos el cajón listo.  */
+         Es la entidad de primera clase de esta app (Regla 2) y lo que
+         alimenta el sueldo libre. Hay de dos formas, y no se mezclan:
+
+           tipo 'fijo'  → una REGLA. { frecuencia: 'mensual' | 'anual',
+                          diaDelMes, mesDelAnio, desde, hasta }
+                          "el dividendo, todos los 5, hasta 2038". No se
+                          guardan 200 filas: cambiar el monto del
+                          arriendo obligaría a editar 200 cosas.
+
+           tipo 'cuota' → una FILA. { fecha, monto, compraId, numero, de }
+                          "cuota 3 de 12, el 5 de noviembre, $39.990".
+                          Cada una con fecha y monto propios, porque la
+                          primera suele traer el interés, y porque una se
+                          puede pagar antes sin tocar las demás.
+
+         Las dos llevan: { id, nombre, monto, categoria, cuenta,
+                           estado: 'pendiente' | 'pagado', movimientoId,
+                           activo, creado }.
+         Ver src/core/sueldo.js.                                     */
       compromisos: [],
+
+      /* ingresosPrevistos: lo que ESPERAS que entre, no lo que entró.
+         { id, nombre, monto, frecuencia: 'mensual' | 'unico',
+           diaDelMes, fecha, desde, hasta, activo }
+         Sin esto el sueldo libre no tiene contra qué restar.        */
       ingresosPrevistos: [],
+
+      /* estacionales: marzo, el permiso de circulación, las
+         contribuciones, septiembre, diciembre.
+         { id, nombre, monto, mes (0-11), dia, cadaAnios, anioBase,
+           categoria, activo }
+         Van aparte de los fijos porque no son deudas que firmaste:
+         son gastos que sabes que vienen, y el valor está en avisarte
+         con meses de anticipación. Ver Modo Marzo.                  */
       estacionales: [],
+
+      /* simulaciones: las compras en cuotas que estuviste pensando.
+         Se guardan para poder volver a mirarlas sin recalcular.     */
       simulaciones: [],
 
       metas: [],

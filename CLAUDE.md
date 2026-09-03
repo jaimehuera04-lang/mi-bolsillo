@@ -38,6 +38,13 @@ estacionales − aportes a metas. Si una función no ayuda a entender o proteger
     los dos juntos. Si se mezclaran, el sueldo libre quedaría inflado con plata que hay que
     devolverle al negocio para reponer. Ver [NEGOCIO.md](NEGOCIO.md).
 
+14. **La app baja UNA librería, y solo una.** El lector de texto (OCR) que convierte el
+    pantallazo del banco en movimientos vive en un CDN y se baja la primera vez, con
+    permiso de la persona. Es una excepción consciente a "sin librerías": leer letras de una
+    imagen no se improvisa. **El OCR solo entrega texto**; quien lo entiende sigue siendo
+    `core/lector.js`, que es determinístico. La imagen nunca sale del aparato. Ver
+    [OCR en ARQUITECTURA.md](ARQUITECTURA.md).
+
 ## Los demás documentos
 - [PRODUCTO.md](PRODUCTO.md) — idea central, las tres funciones, no-goals, contexto chileno.
 - [VOZ.md](VOZ.md) — cómo le habla la app al usuario. Es spec, no sugerencia.
@@ -45,6 +52,7 @@ estacionales − aportes a metas. Si una función no ayuda a entender o proteger
 - [ROADMAP.md](ROADMAP.md) — las fases y su criterio verificable de término.
 - [LEEME.md](LEEME.md) — cómo correrla, instalarla y publicarla.
 - [SUPABASE.md](SUPABASE.md) — cómo encender la nube y cómo funciona la sincronización.
+- [SUELDO-LIBRE.md](SUELDO-LIBRE.md) — la cifra central, las cuotas, la fecha de liberación y el Modo Marzo.
 - [NEGOCIO.md](NEGOCIO.md) — la pestaña Negocio: la frontera con lo personal y cómo está armada.
 
 ## Protocolo
