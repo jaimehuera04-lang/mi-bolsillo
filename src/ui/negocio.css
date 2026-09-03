@@ -10,12 +10,10 @@
    funcionan solos.
    ============================================================ */
 
-/* Con el negocio encendido la barra de abajo pasa de cinco a seis
-   columnas. Seis en una pantalla angosta aprietan, así que la letra
-   baja un punto: es eso o cortar los nombres con puntos suspensivos. */
-.navegacion.con-negocio { grid-template-columns: repeat(6, 1fr); }
-.navegacion.con-negocio button { font-size: 9.5px; padding-left: 0; padding-right: 0; }
-.navegacion.con-negocio button .icono { font-size: 19px; }
+/* Acá vivían tres reglas para apretar la barra de abajo a seis
+   columnas cuando el negocio estaba encendido. Ya no hacen falta: el
+   menú es una lista vertical y le cabe un elemento más sin achicar
+   nada. Justamente por eso se cambió la barra por el menú. */
 
 /* ---------- Colores de texto sueltos ---------- */
 .verde   { color: var(--verde); }

@@ -27,8 +27,11 @@
   --sombra:       0 2px 10px rgba(20, 35, 50, .06);
   --sombra-alta:  0 8px 28px rgba(20, 35, 50, .14);
 
-  /* La mide app.js al arrancar; este valor es solo el de partida */
-  --alto-barra-inferior: 62px;
+  /* Antes esto era el alto de la barra de pestañas de abajo, que app.js
+     medía al arrancar. Ya no hay barra: el menú vive en el costado. Lo
+     único que queda abajo es el respiro de la barra de gestos del
+     teléfono, y eso lo sabe el propio navegador. */
+  --alto-barra-inferior: env(safe-area-inset-bottom, 0px);
 
   /* El fondo de escritorio: lo que rodea al marco del teléfono */
   --fondo-escritorio: #dfe5ea;
@@ -175,11 +178,22 @@ input.con-error:focus { outline-color: var(--rojo); }
 /* Al bajar por el contenido, el encabezado levanta una sombra:
    es la señal de que hay algo pasando por debajo. */
 .app.desplazado .cabecera { box-shadow: 0 8px 20px rgba(10, 25, 40, .22); }
-.cabecera .saludo { font-size: 14px; opacity: .9; margin: 0; }
-.cabecera .titulo { font-size: 20px; font-weight: 700; margin: 2px 0 0; }
-.cabecera-fila { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+/* Con el ☰ al lado, el encabezado quedó con menos ancho para repartir.
+   Sin estos "nowrap", "Mi Bolsillo" y "septiembre 2026" se partían en
+   dos líneas y el encabezado crecía al doble. Lo que cede es el saludo,
+   que se corta con puntos suspensivos: es lo menos importante de los
+   tres. */
+.cabecera .saludo {
+  font-size: 13px; opacity: .9; margin: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cabecera .titulo { font-size: 19px; font-weight: 700; margin: 1px 0 0; white-space: nowrap; }
+.cabecera-fila { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+/* El bloque del saludo es el que se encoge; el chip del mes no. */
+.cabecera-izquierda > div { min-width: 0; }
 
 .chip-mes {
+  flex: 0 0 auto; white-space: nowrap;
   background: rgba(255,255,255,.18);
   border: 1px solid rgba(255,255,255,.28);
   color: #fff;
@@ -263,29 +277,86 @@ input.con-error:focus { outline-color: var(--rojo); }
 /* ---------- Barra de navegación inferior ---------- */
 /* Ya no va "flotando" sobre el contenido: es una pieza real del marco,
    como la barra de pestañas de cualquier app del teléfono. */
-.navegacion {
-  flex: 0 0 auto;
-  position: relative; z-index: 40;
-  display: grid; grid-template-columns: repeat(5, 1fr);
+/* ---------- El botón ☰ del encabezado ---------- */
+.cabecera-izquierda { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+.boton-menu {
+  background: rgba(255, 255, 255, .18);
+  border: 1px solid rgba(255, 255, 255, .28);
+  color: #fff; font-family: inherit;
+  width: 38px; height: 38px; flex: 0 0 38px;
+  border-radius: 12px; font-size: 18px; line-height: 1;
+  cursor: pointer; display: grid; place-items: center;
+  transition: transform .12s ease, background .15s ease;
+}
+.boton-menu:active { transform: scale(.9); background: rgba(255, 255, 255, .3); }
+
+/* ---------- El menú lateral ---------- */
+.telon-menu {
+  position: absolute; inset: 0; z-index: 70;
+  background: rgba(12, 20, 28, 0);
+  visibility: hidden;
+  transition: background .26s ease, visibility 0s linear .3s;
+  /* Igual que .telon: sin esto, el menú cerrado —que vive empujado
+     con translateX(-101%)— vuelve desplazable al marco de la app. */
+  overflow: hidden;
+}
+.telon-menu.abierto {
+  background: rgba(12, 20, 28, .5);
+  visibility: visible;
+  transition: background .26s ease, visibility 0s;
+}
+
+.menu-lateral {
+  position: absolute; top: 0; left: 0; bottom: 0;
+  width: 76%; max-width: 290px;
   background: var(--tarjeta);
-  border-top: 1px solid var(--borde);
-  padding-bottom: env(safe-area-inset-bottom);
+  border-radius: 0 22px 22px 0;
+  box-shadow: var(--sombra-alta);
+  padding: calc(env(safe-area-inset-top) + 20px) 14px calc(env(safe-area-inset-bottom) + 18px);
+  display: flex; flex-direction: column; gap: 3px;
+  overflow-y: auto; scrollbar-width: none;
+  transform: translateX(-101%);
+  transition: transform .3s cubic-bezier(.2, .85, .25, 1);
 }
-.navegacion button {
+.menu-lateral::-webkit-scrollbar { width: 0; display: none; }
+.telon-menu.abierto .menu-lateral { transform: none; }
+/* mientras el dedo lo arrastra debe seguir al dedo, sin animación */
+.menu-lateral.arrastrando { transition: none; }
+
+.menu-cabecera {
+  display: flex; align-items: center; gap: 11px;
+  padding: 4px 8px 16px; margin-bottom: 8px;
+  border-bottom: 1px solid var(--borde);
+}
+.menu-emoji { font-size: 30px; line-height: 1; }
+.menu-cabecera strong { display: block; font-size: 16px; }
+.menu-cabecera span  { font-size: 12px; color: var(--texto-suave); word-break: break-all; }
+
+.menu-lateral button[data-pantalla] {
   background: none; border: 0; font-family: inherit; cursor: pointer;
-  padding: 9px 2px 10px; color: var(--texto-suave);
-  display: flex; flex-direction: column; align-items: center; gap: 3px;
-  font-size: 10.5px; font-weight: 600;
+  color: var(--texto); text-align: left;
+  display: flex; align-items: center; gap: 13px;
+  padding: 13px 12px; border-radius: 13px;
+  font-size: 15px; font-weight: 600;
+  transition: background .15s ease, transform .1s ease;
 }
-.navegacion button .icono {
-  font-size: 20px; line-height: 1;
-  transition: transform .2s cubic-bezier(.2, .85, .25, 1);
+.menu-lateral button[data-pantalla]:active { transform: scale(.97); }
+.menu-lateral button[data-pantalla] .icono { font-size: 21px; line-height: 1; }
+
+/* La pestaña en la que estás se marca con fondo, no solo con color:
+   en una lista vertical el color solo se pierde de vista. */
+.menu-lateral button[data-pantalla].activa {
+  background: var(--verde-suave); color: var(--verde-oscuro);
 }
-.navegacion button.activa { color: var(--verde); }
-/* el icono de la pestaña en la que estás se levanta un poco: es la
-   señal chiquitita que separa una app de una barra de enlaces */
-.navegacion button.activa .icono { transform: translateY(-2px) scale(1.12); }
-.navegacion button:active .icono { transform: scale(.88); }
+@media (prefers-color-scheme: dark) {
+  .menu-lateral button[data-pantalla].activa { color: #7fe3bd; }
+}
+
+.menu-pie {
+  margin: auto 0 0; padding: 16px 12px 0;
+  font-size: 11.5px; color: var(--texto-suave); line-height: 1.45;
+}
 
 /* ---------- Botón flotante (+) ---------- */
 .boton-flotante {

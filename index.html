@@ -158,9 +158,15 @@
   <header class="cabecera">
     <div>
       <div class="cabecera-fila">
-        <div>
-          <p class="saludo" id="saludo">Hola</p>
-          <p class="titulo">Mi Bolsillo</p>
+        <div class="cabecera-izquierda">
+          <!-- El menú vive acá arriba a la izquierda, que es donde el
+               pulgar lo busca y donde no le quita espacio a nada. -->
+          <button class="boton-menu" id="botonMenu" aria-label="Abrir el menú"
+                  aria-expanded="false" aria-controls="menuPrincipal">☰</button>
+          <div>
+            <p class="saludo" id="saludo">Hola</p>
+            <p class="titulo">Mi Bolsillo</p>
+          </div>
         </div>
         <div class="chip-mes">
           <button id="mesAnterior" aria-label="Mes anterior">&#9664;</button>
@@ -599,15 +605,36 @@ create policy "cada quien actualiza lo suyo"
   <!-- ================= BOTÓN + Y NAVEGACIÓN ================= -->
   <button class="boton-flotante" id="botonAgregar" aria-label="Agregar movimiento">+</button>
 
-  <nav class="navegacion">
-    <button class="activa" data-pantalla="inicio"><span class="icono">📊</span>Inicio</button>
-    <button data-pantalla="movimientos"><span class="icono">📝</span>Movimientos</button>
-    <button data-pantalla="metas"><span class="icono">🎯</span>Metas</button>
-    <button data-pantalla="aprender"><span class="icono">💡</span>Aprender</button>
-    <!-- Nace escondida. La muestra app.js si el negocio está encendido. -->
-    <button data-pantalla="negocio" hidden><span class="icono">🏪</span>Negocio</button>
-    <button data-pantalla="ajustes"><span class="icono">⚙️</span>Ajustes</button>
-  </nav>
+  <!-- ================= EL MENÚ =================
+       Antes esto era una barra de seis pestañas abajo. En una pantalla
+       de teléfono seis no caben: los nombres se achican, se cortan y la
+       barra se ve congestionada. Ahora es un cajón que entra desde la
+       izquierda, y abajo queda la pantalla entera para el contenido.
+
+       Se abre de tres formas: el botón ☰ de arriba a la izquierda,
+       deslizando desde el borde izquierdo, y el botón "atrás" lo
+       cierra como cualquier otra capa. -->
+  <div class="telon-menu" id="telonMenu">
+    <nav class="menu-lateral" id="menuPrincipal" aria-label="Menú principal">
+      <div class="menu-cabecera">
+        <span class="menu-emoji">💚</span>
+        <div>
+          <strong>Mi Bolsillo</strong>
+          <span id="menuQuien">Tu plata, ordenada</span>
+        </div>
+      </div>
+
+      <button class="activa" data-pantalla="inicio"><span class="icono">📊</span>Inicio</button>
+      <button data-pantalla="movimientos"><span class="icono">📝</span>Movimientos</button>
+      <button data-pantalla="metas"><span class="icono">🎯</span>Metas</button>
+      <button data-pantalla="aprender"><span class="icono">💡</span>Aprender</button>
+      <!-- Nace escondido. Lo muestra app.js si el negocio está encendido. -->
+      <button data-pantalla="negocio" hidden><span class="icono">🏪</span>Negocio</button>
+      <button data-pantalla="ajustes"><span class="icono">⚙️</span>Ajustes</button>
+
+      <p class="menu-pie">Desliza desde el borde izquierdo para abrirlo.</p>
+    </nav>
+  </div>
 
   <!-- ================= VENTANA: NUEVO MOVIMIENTO ================= -->
   <div class="telon" id="telonMovimiento">

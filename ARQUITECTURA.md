@@ -55,6 +55,7 @@ Lo que sigue no es decoración: cada punto tapa una filtración concreta del nav
 | **Las hojas se deslizan** al entrar y al salir, y se cierran arrastrándolas hacia abajo. | Ventanas que aparecen y desaparecen de golpe. |
 | **Las ventanas de `Dialogos` van en `z-index: 120`**, sobre la bienvenida (100) y los avisos en 130. | Una ventana por debajo de la bienvenida es invisible e intocable: la app queda esperando para siempre un toque imposible. Pasó de verdad. |
 | **En el computador la app se dibuja dentro de un marco de teléfono**, no estirada a todo el ancho. | Que en pantalla grande parezca una sección de un sitio web. |
+| **El menú vive en un cajón que entra desde la izquierda**, no en una barra de pestañas abajo. Se abre con el ☰ del encabezado o deslizando desde el borde izquierdo. | Seis destinos en una barra de teléfono no caben: los nombres se achican hasta que no se leen. Y la barra le comía 62 px de alto a cada pantalla. |
 | **El teclado no tapa los campos**: `interactive-widget=resizes-content` más `scrollIntoView` al enfocar. | Efecto secundario del marco fijo; sin esto el marco fijo sería peor que el scroll de documento. |
 
 Al tocar `index.html`, `estilos.css`, `app.js` o `dialogos.js` hay que subir `VERSION` en `sw.js`,

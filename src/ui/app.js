@@ -135,7 +135,8 @@
 
     vista.pantalla = nombre;
     $$('.pantalla').forEach(p => p.classList.toggle('activa', p.id === `pantalla-${nombre}`));
-    $$('.navegacion button').forEach(b => b.classList.toggle('activa', b.dataset.pantalla === nombre));
+    $$('#menuPrincipal button[data-pantalla]')
+      .forEach(b => b.classList.toggle('activa', b.dataset.pantalla === nombre));
     // el botón + solo tiene sentido en las pantallas de plata
     $$$('botonAgregar').style.display = ['inicio', 'movimientos', 'negocio'].includes(nombre) ? '' : 'none';
     // En el negocio el + no anota un gasto tuyo: vende.
@@ -147,6 +148,110 @@
     // cambiar de pestaña te deja donde la habías dejado
     contenido.scrollTop = repetida ? 0 : (scrollDeCadaPantalla[nombre] || 0);
     marcarDesplazamiento();
+  }
+
+  /* ---------------- El menú lateral ----------------
+
+     Antes esto era una barra de seis pestañas abajo. Seis no caben en
+     una pantalla de teléfono: los nombres se achican hasta que no se
+     leen y la barra se ve congestionada. Ahora es un cajón que entra
+     desde la izquierda.
+
+     Se abre con el botón ☰ o deslizando desde el borde izquierdo, y se
+     cierra tocando fuera, eligiendo un destino, deslizando hacia la
+     izquierda o con el botón "atrás" del teléfono, porque se anota
+     como una capa más (ver anotarCapa).                            */
+
+  function abrirMenu() {
+    const telon = $$$('telonMenu');
+    if (telon.classList.contains('abierto')) return;
+    telon.classList.add('abierto');
+    $$$('botonMenu').setAttribute('aria-expanded', 'true');
+    anotarCapa(cerrarMenuSinHistorial);
+  }
+
+  /** Cierra el cajón sin tocar el historial. La usa el botón "atrás". */
+  function cerrarMenuSinHistorial() {
+    const telon = $$$('telonMenu');
+    telon.classList.remove('abierto');
+    $$$('botonMenu').setAttribute('aria-expanded', 'false');
+    if (telon.contains(document.activeElement)) document.activeElement.blur();
+  }
+
+  function cerrarMenu() {
+    if (!$$$('telonMenu').classList.contains('abierto')) return;
+    cerrarMenuSinHistorial();
+    olvidarCapa();
+  }
+
+  /**
+   * Abrir arrastrando desde el borde izquierdo, y cerrar arrastrando
+   * hacia la izquierda.
+   *
+   * El gesto se escucha en TODA la pantalla pero solo cuenta si el dedo
+   * partió en los primeros 20 píxeles. Una franja que capturara toques
+   * se comería el toque de cualquier cosa pegada a ese borde, y ahí hay
+   * casillas y botones.
+   */
+  function prepararMenuLateral() {
+    const telon = $$$('telonMenu');
+    const cajon = $('.menu-lateral');
+    const ancho = () => cajon.offsetWidth || 280;
+
+    let partida = null;      // dónde empezó el dedo
+    let recorrido = 0;
+    let abriendo = false;    // true si partió del borde con el menú cerrado
+
+    const empezar = e => {
+      if (e.touches.length !== 1) return;
+      const x = e.touches[0].clientX;
+      const abierto = telon.classList.contains('abierto');
+      // Con algo más abierto encima (una hoja, un diálogo) el gesto no
+      // es para el menú: sería robarle el arrastre a la hoja.
+      if (!abierto && (capas.length || Dialogos.hayAbierto())) return;
+      if (!abierto && x > 20) return;
+      partida = x;
+      recorrido = 0;
+      abriendo = !abierto;
+      cajon.classList.add('arrastrando');
+      if (abriendo) telon.classList.add('abierto');
+    };
+
+    const mover = e => {
+      if (partida === null) return;
+      const dx = e.touches[0].clientX - partida;
+      recorrido = abriendo ? Math.max(0, dx) : Math.min(0, dx);
+      const posicion = abriendo
+        ? Math.min(0, -ancho() + recorrido)
+        : recorrido;
+      cajon.style.transform = `translateX(${posicion}px)`;
+    };
+
+    const soltar = () => {
+      if (partida === null) return;
+      partida = null;
+      cajon.classList.remove('arrastrando');
+      cajon.style.transform = '';
+      // Pasado un tercio del cajón, el gesto se completa; si no, vuelve.
+      const suficiente = Math.abs(recorrido) > ancho() / 3;
+      if (abriendo) {
+        // Durante el arrastre el telón ya estaba "abierto" para poder
+        // verse. Se quita antes de llamar a abrirMenu() porque esa
+        // función se sale sola si lo encuentra abierto, y entonces el
+        // menú se abría SIN registrar su capa: el botón "atrás" no lo
+        // cerraba y sacaba de la app.
+        telon.classList.remove('abierto');
+        if (suficiente) { vibrar(6); abrirMenu(); }
+      } else if (suficiente) {
+        vibrar(6);
+        cerrarMenu();
+      }
+    };
+
+    $$$('app').addEventListener('touchstart', empezar, { passive: true });
+    $$$('app').addEventListener('touchmove', mover, { passive: true });
+    $$$('app').addEventListener('touchend', soltar);
+    $$$('app').addEventListener('touchcancel', soltar);
   }
 
   /** Una vibración cortita al tocar. Si el aparato no puede, no pasa nada. */
@@ -220,13 +325,9 @@
    * del sistema o con la barra de gestos del celular.
    */
   function prepararMarco() {
-    const medir = () => {
-      const alto = $('.navegacion').offsetHeight;
-      document.documentElement.style.setProperty('--alto-barra-inferior', alto + 'px');
-    };
-    medir();
-    window.addEventListener('resize', medir);
-    if (window.visualViewport) window.visualViewport.addEventListener('resize', medir);
+    // Antes acá se medía el alto de la barra de pestañas de abajo. Ya no
+    // existe: el menú vive en el costado y lo único que queda abajo es el
+    // respiro de la barra de gestos, que el CSS saca solo de env().
 
     $$$('contenido').addEventListener('scroll', marcarDesplazamiento, { passive: true });
     prepararArrastreDeHojas();
@@ -320,9 +421,8 @@
    */
   function acomodarPestanaNegocio() {
     const activo = typeof DatosNegocio !== 'undefined' && DatosNegocio.estaActivo();
-    const boton = $('.navegacion button[data-pantalla="negocio"]');
+    const boton = $('#menuPrincipal button[data-pantalla="negocio"]');
     if (boton) boton.hidden = !activo;
-    $('.navegacion').classList.toggle('con-negocio', activo);
     // Si estabas parado en Negocio y lo apagaste, no te podemos dejar
     // mirando una pantalla que ya no existe.
     if (!activo && vista.pantalla === 'negocio') irA('inicio');
@@ -2584,9 +2684,19 @@
       avisar('Sesión cerrada');
     });
 
-    // Navegación inferior
-    $$('.navegacion button').forEach(b =>
-      b.addEventListener('click', () => { vibrar(6); irA(b.dataset.pantalla); }));
+    // El menú lateral: tocar un destino navega Y cierra el menú.
+    $$('#menuPrincipal button[data-pantalla]').forEach(b =>
+      b.addEventListener('click', () => {
+        vibrar(6);
+        cerrarMenu();
+        irA(b.dataset.pantalla);
+      }));
+
+    $$$('botonMenu').addEventListener('click', () => { vibrar(6); abrirMenu(); });
+    // Tocar el fondo oscuro cierra, como en cualquier app.
+    $$$('telonMenu').addEventListener('click', e => {
+      if (e.target === $$$('telonMenu')) cerrarMenu();
+    });
 
     // Botones internos que llevan a otra pantalla
     document.addEventListener('click', e => {
@@ -3057,6 +3167,15 @@
     const h = new Date().getHours();
     const momento = h < 12 ? 'Buenos días' : h < 20 ? 'Buenas tardes' : 'Buenas noches';
     $$$('saludo').textContent = nombre ? `${momento}, ${nombre}` : momento;
+
+    // El menú también dice de quién es esta app. Con el correo a la
+    // vista se nota al tiro si entraste con la cuenta equivocada, que
+    // en un aparato compartido pasa.
+    const quien = $$$('menuQuien');
+    if (quien) {
+      const correo = Datos.obtener().ajustes.correo;
+      quien.textContent = nombre || correo || 'Tu plata, ordenada';
+    }
   }
 
   /* ---------------- 15. Arranque ---------------- */
@@ -3087,6 +3206,7 @@
     Datos.cargar();
     prepararMarco();
     prepararBotonAtras();
+    prepararMenuLateral();
     prepararArrastreDeArchivos();
     conectarEventos();
     prepararNube();
