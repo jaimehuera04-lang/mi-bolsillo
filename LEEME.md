@@ -95,12 +95,14 @@ mi-bolsillo/
 │   ├── datos.js        La puerta de entrada: lo único que la pantalla conoce
 │   ├── datos-negocio.js  La puerta del negocio, y el puente con tu plata personal
 │   ├── data/           Listas fijas: categorías, tipos de cuenta, técnicas de ahorro
-│   │   └── pistas.js       Diccionario chileno: JUMBO → supermercado, "abono" → entró plata
+│   │   ├── pistas.js       Diccionario chileno: JUMBO → supermercado, "abono" → entró plata
+│   │   └── estacionales.js El calendario de lo que aprieta en Chile: marzo, el 18, diciembre
 │   ├── core/           El motor. Funciones puras: calculan y no tocan nada más
 │   │   ├── fechas.js       Días y meses en ISO, sin líos de zona horaria
 │   │   ├── dinero.js       Pesos chilenos enteros y cómo se muestran
 │   │   ├── calculos.js     Totales, categorías, saldos de cuentas, patrimonio
 │   │   ├── lector.js       Saca el monto, la fecha y el comercio del texto de un papel
+│   │   ├── sueldo.js       El sueldo libre, las cuotas, la fecha de liberación y marzo
 │   │   ├── negocio.js      Existencias, totales de venta, margen y caja del negocio
 │   │   └── sugerencias.js  Mira tus números y decide qué vale la pena decir
 │   ├── storage/        Guardar y leer en el dispositivo
@@ -112,6 +114,9 @@ mi-bolsillo/
 │       ├── estilos.css     Colores, tamaños, diseño
 │       ├── archivos.js     Abre el archivo que elegiste y lo convierte en texto
 │       ├── graficos.js     Dona, barras y línea (SVG a mano, sin librerías)
+│       ├── sueldo.js       La pantalla del sueldo libre y el simulador de cuotas
+│       ├── sueldo.css      Sus estilos
+│       ├── ocr.js          Lee el texto de un pantallazo del banco
 │       ├── negocio.js      Las pantallas de la pestaña Negocio
 │       ├── negocio.css     Sus estilos, aparte para poder sacarlos enteros
 │       ├── fotos.js        Deja presentable la foto de un producto, en el teléfono
@@ -123,6 +128,9 @@ mi-bolsillo/
     ├── servidor.js            Servidor local para probar
     ├── probar-migracion.js    Revisa que una migración no pierda ni un peso
     ├── probar-lector.js       Le pasa comprobantes chilenos al lector y revisa qué entendió
+    ├── probar-sueldo.js       El sueldo libre, las cuotas, la liberación y el Modo Marzo
+    ├── probar-compromisos.js  Los compromisos guardando de verdad, con el puente a los movimientos
+    ├── probar-ocr.js          El cosido de filas de un pantallazo del banco
     ├── probar-negocio.js      Las cuentas del negocio: stock, márgenes, caja y alertas
     ├── probar-datos-negocio.js  El negocio guardando de verdad, y el puente con lo personal
     └── generar-iconos.js      Vuelve a crear los íconos si cambias el color

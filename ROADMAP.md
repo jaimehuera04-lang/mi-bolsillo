@@ -16,21 +16,21 @@ migración de los datos existentes.
 **Terminada cuando:** instalo la versión nueva sobre la anterior, todos mis datos antiguos
 aparecen intactos, y una transferencia entre dos cuentas deja el patrimonio total sin cambios.
 
-## Fase 2 — Compromisos
+## Fase 2 — Compromisos  ✅ **Terminada el 2026-09-03.**
 Compromisos fijos recurrentes, compras en cuotas que generan compromisos futuros, gastos
 estacionales chilenos, y el cálculo del **sueldo libre** mes a mes a 12 meses.
 
 **Terminada cuando:** la app me dice correctamente mi sueldo libre de cualquiera de los próximos
 12 meses y me deja ver el desglose completo de ese número.
 
-## Fase 3 — ¿Y SI LO PAGO EN CUOTAS? + FECHA DE LIBERACIÓN
+## Fase 3 — ¿Y SI LO PAGO EN CUOTAS? + FECHA DE LIBERACIÓN  ✅ **Terminada el 2026-09-03.**
 La función estrella, determinística, sin IA. Ingreso monto y cuotas y veo el impacto mes a mes,
 el mes más apretado, y al menos una alternativa concreta.
 
 **Terminada cuando:** puedo simular una compra en cuotas, ver mis 12 meses antes y después, y la
 app me ofrece una alternativa que efectivamente mejora el mes apretado.
 
-## Fase 4 — Modo Marzo y alertas anticipadas
+## Fase 4 — Modo Marzo y alertas anticipadas  ✅ **Terminada el 2026-09-03.**
 Calendario de estacionales chilenos, advertencia anticipada de meses críticos, ajuste de aportes
 para llegar preparado.
 
@@ -65,6 +65,11 @@ Cuentas de usuario, nube, sincronización, voz, OCR.
 > del EXIF y el QR donde el teléfono sepa leerlo, pero el monto lo escribe la persona. Leer los
 > números de una foto necesita OCR, y OCR necesita o una librería pesada en el teléfono o el
 > backend de la Fase 6. Ninguna de las dos entra todavía.
+
+> Las Fases 2, 3 y 4 se construyeron juntas el 2026-09-03, después del negocio y fuera de
+> orden, porque nunca se habían hecho: los cajones estaban vacíos desde el esquema 2 y la
+> app no calculaba el sueldo libre, que es su razón de existir. Ver
+> [SUELDO-LIBRE.md](SUELDO-LIBRE.md).
 
 ## Fase 8 — Negocio
 

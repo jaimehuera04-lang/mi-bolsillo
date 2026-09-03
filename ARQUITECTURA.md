@@ -338,6 +338,63 @@ barrido de huérfanos del arranque los borra.
 
 El detalle completo está en [NEGOCIO.md](NEGOCIO.md).
 
+## El sueldo libre
+
+La cifra central del producto. Vive en `src/core/sueldo.js` y se calcula sobre cuatro
+cajones del estado que existían vacíos desde el esquema 2:
+
+```js
+ingresosPrevistos: [{ id, nombre, monto, frecuencia, diaDelMes, desde, hasta, activo }]
+
+compromisos: [
+  // tipo "fijo": una REGLA. No se guardan 200 filas; cambiar el monto
+  // del arriendo tiene que ser un solo cambio.
+  { tipo: "fijo", frecuencia: "mensual" | "anual", diaDelMes, mesDelAnio, desde, hasta },
+  // tipo "cuota": una FILA con fecha y monto propios, porque la primera
+  // suele traer el interés y porque una se puede pagar antes.
+  { tipo: "cuota", fecha, monto, compraId, numero, de },
+]
+
+estacionales: [{ nombre, monto, mes, dia, cadaAnios, anioBase, categoria }]
+simulaciones: [{ nombre, monto, cuotas, desde, diaDelMes, interesTotal }]
+```
+
+Todas las funciones son puras y **la fecha de hoy entra como argumento**, nunca se lee
+adentro: sin eso no se podría probar "cómo se ve marzo desde octubre", que es justo lo que
+hace el Modo Marzo.
+
+`sueldoLibreDe()` devuelve **siempre** el desglose además del total. La pantalla lo muestra
+entero. El detalle completo está en [SUELDO-LIBRE.md](SUELDO-LIBRE.md).
+
+## OCR — leer el pantallazo del banco
+
+`src/ui/ocr.js` carga **Tesseract** desde un CDN la primera vez que hace falta. Es la única
+librería del proyecto y una excepción deliberada a la regla de "sin librerías" (Regla 14).
+
+**Por qué se aceptó.** Leer letras de una imagen no se improvisa. Las tres salidas eran una
+librería en el teléfono, un modelo en un servidor, o seguir pegando el texto a mano. La
+primera es la única que funciona en iPhone y en Android, gratis, y sin que el pantallazo del
+banco salga del aparato.
+
+**Lo que no cambia.** El OCR solo entrega TEXTO; quien lo entiende sigue siendo
+`core/lector.js`, determinístico y probado. Nada se anota solo: sale la misma pantalla de
+revisar línea por línea que ya usaba una cartola en Excel. Regla 12 intacta.
+
+**El cosido de filas** es la pieza que hace que de un pantallazo salgan ocho movimientos y
+no uno. Una cartola en Excel trae un movimiento por línea, pero la app del banco apila la
+fecha arriba y la glosa con el monto abajo, y el OCR respeta ese apilado. `coserFilas()` las
+vuelve a pegar antes de que el lector las mire. Es una regla de FORMA —cómo una imagen se
+convierte en texto— y por eso vive en `ui/ocr.js` y no en `core/lector.js`.
+
+Ojo con un detalle que costó: para saber si una línea ya trae el monto hay que sacarle la
+fecha ANTES de mirar, porque el año de `05/09/2026` parece perfectamente un monto.
+
+**El ayudante guarda el lector en una caché propia** (`CACHE_LECTOR` en `sw.js`) que NO se
+borra al publicar una versión nueva. Es la única excepción a la guarda de "solo peticiones
+de nuestro propio origen", y está acotada a dos dominios que sirven archivos de programa,
+nunca datos de nadie. Lo que esa guarda protege —que las consultas a la nube no se respondan
+con copias viejas— sigue intacto.
+
 ## Motor de compromisos
 
 Debe poder responder todo esto **sin IA**, con funciones puras y desglosables:
