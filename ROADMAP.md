@@ -66,6 +66,22 @@ Cuentas de usuario, nube, sincronización, voz, OCR.
 > números de una foto necesita OCR, y OCR necesita o una librería pesada en el teléfono o el
 > backend de la Fase 6. Ninguna de las dos entra todavía.
 
+## Fase 8 — Negocio
+
+**Fuera del orden, a pedido de Jaime el 2026-09-02.** Una pestaña Negocio con las quince
+funciones de la lista que trajo: inventario con variantes, ventas con comprobante, gastos,
+cotizaciones, clientes, proveedores, equipo, catálogo, estadísticas y reportes en Excel.
+
+Es un módulo del tamaño de una segunda app, así que se decidió antes de escribir nada:
+**vive dentro de Mi Bolsillo pero con su propia contabilidad**, nace apagado, y lo único que
+cruza a las finanzas personales es el retiro. Las tres funciones que otras apps venden "con
+IA" se hicieron sin IA: catálogo, mejora de fotos y lectura de facturas las hace el propio
+teléfono. Ver [NEGOCIO.md](NEGOCIO.md).
+
+**Terminada cuando:** puedo vender algo desde el teléfono, la mercadería sale de la bodega
+sola, me llevo el comprobante por WhatsApp, y esa venta **no** aparece en mis movimientos
+personales hasta que me pago a mí mismo.
+
 ---
 
 ## Definición de "terminado"

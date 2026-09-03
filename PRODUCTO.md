@@ -37,6 +37,21 @@ entrega y que motiva más que cualquier gráfico.
 
 Si no, no se agrega, aunque otras apps la tengan.
 
+### La excepción, y por qué no rompe el criterio
+
+El **2026-09-02** se agregó la pestaña Negocio, que a primera vista no pasa ese filtro: llevar
+inventario y cotizaciones no tiene nada que ver con el sueldo libre de nadie.
+
+Pasa por dos razones. La primera es que quien tiene un negocio chico **no sabe cuál es su
+sueldo libre**, porque no sabe cuánto de la plata que tiene en la mano es del negocio. Separar
+esas dos platas es exactamente proteger ese número, y es lo único que hace el módulo con las
+finanzas personales: el retiro.
+
+La segunda es que la pestaña **nace apagada**. Para quien no vende nada, la app no cambió en
+nada. El criterio sigue mandando en todo lo que sí se ve de entrada.
+
+Ver [NEGOCIO.md](NEGOCIO.md).
+
 ## Qué NO va a ser (no-goals)
 
 Si alguna vez se pide algo de esta lista, hay que recordar que se descartó a propósito:

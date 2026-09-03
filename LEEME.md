@@ -93,6 +93,7 @@ mi-bolsillo/
 ├── sw.js               Hace que funcione sin internet
 ├── src/
 │   ├── datos.js        La puerta de entrada: lo único que la pantalla conoce
+│   ├── datos-negocio.js  La puerta del negocio, y el puente con tu plata personal
 │   ├── data/           Listas fijas: categorías, tipos de cuenta, técnicas de ahorro
 │   │   └── pistas.js       Diccionario chileno: JUMBO → supermercado, "abono" → entró plata
 │   ├── core/           El motor. Funciones puras: calculan y no tocan nada más
@@ -100,6 +101,7 @@ mi-bolsillo/
 │   │   ├── dinero.js       Pesos chilenos enteros y cómo se muestran
 │   │   ├── calculos.js     Totales, categorías, saldos de cuentas, patrimonio
 │   │   ├── lector.js       Saca el monto, la fecha y el comercio del texto de un papel
+│   │   ├── negocio.js      Existencias, totales de venta, margen y caja del negocio
 │   │   └── sugerencias.js  Mira tus números y decide qué vale la pena decir
 │   ├── storage/        Guardar y leer en el dispositivo
 │   │   ├── esquema.js      La forma exacta de los datos guardados
@@ -110,12 +112,19 @@ mi-bolsillo/
 │       ├── estilos.css     Colores, tamaños, diseño
 │       ├── archivos.js     Abre el archivo que elegiste y lo convierte en texto
 │       ├── graficos.js     Dona, barras y línea (SVG a mano, sin librerías)
+│       ├── negocio.js      Las pantallas de la pestaña Negocio
+│       ├── negocio.css     Sus estilos, aparte para poder sacarlos enteros
+│       ├── fotos.js        Deja presentable la foto de un producto, en el teléfono
+│       ├── catalogo.js     Arma tu catálogo como una página web de un solo archivo
+│       ├── reportes.js     Estadísticas, planillas de Excel y comprobantes de venta
 │       └── app.js          Escucha los toques y decide qué se muestra
 ├── iconos/             Los íconos de la app
 └── herramientas/
     ├── servidor.js            Servidor local para probar
     ├── probar-migracion.js    Revisa que una migración no pierda ni un peso
     ├── probar-lector.js       Le pasa comprobantes chilenos al lector y revisa qué entendió
+    ├── probar-negocio.js      Las cuentas del negocio: stock, márgenes, caja y alertas
+    ├── probar-datos-negocio.js  El negocio guardando de verdad, y el puente con lo personal
     └── generar-iconos.js      Vuelve a crear los íconos si cambias el color
 ```
 

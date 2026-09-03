@@ -31,6 +31,12 @@ estacionales − aportes a metas. Si una función no ayuda a entender o proteger
     suben a la nube ni entran en el `.json`: una boleta lleva el local, la tarjeta y la hora.
     Y el lector de comprobantes (`core/lector.js`) **propone y nunca anota solo**, mostrando de
     qué línea sacó cada dato. Ver *Entradas de datos* en [ARQUITECTURA.md](ARQUITECTURA.md).
+13. **La plata del negocio no es tu plata.** La pestaña Negocio lleva su propia contabilidad:
+    una venta NO es un ingreso tuyo y una compra de mercadería NO es un gasto tuyo. No entran
+    a `movimientos` y no mueven el sueldo libre. Lo único que cruza es el **retiro**, que crea
+    un ingreso personal de categoría `negocio` y guarda su `movimientoId` para poder deshacer
+    los dos juntos. Si se mezclaran, el sueldo libre quedaría inflado con plata que hay que
+    devolverle al negocio para reponer. Ver [NEGOCIO.md](NEGOCIO.md).
 
 ## Los demás documentos
 - [PRODUCTO.md](PRODUCTO.md) — idea central, las tres funciones, no-goals, contexto chileno.
@@ -39,6 +45,7 @@ estacionales − aportes a metas. Si una función no ayuda a entender o proteger
 - [ROADMAP.md](ROADMAP.md) — las fases y su criterio verificable de término.
 - [LEEME.md](LEEME.md) — cómo correrla, instalarla y publicarla.
 - [SUPABASE.md](SUPABASE.md) — cómo encender la nube y cómo funciona la sincronización.
+- [NEGOCIO.md](NEGOCIO.md) — la pestaña Negocio: la frontera con lo personal y cómo está armada.
 
 ## Protocolo
 Antes de codear (máx. 10 líneas): qué cambio, qué archivos, por qué, qué impacto, cómo no rompo nada.
