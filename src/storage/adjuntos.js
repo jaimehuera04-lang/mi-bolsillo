@@ -82,13 +82,11 @@ const Adjuntos = (() => {
       // simplemente no contesta. Sin este tope, promesaBase queda colgada
       // para siempre y CADA intento posterior se queda esperándola.
       setTimeout(() => contestar(null, false), 12000);
-      peticion.onblocked = () => { sirve = false; resolver(null); };
     });
 
     return promesaBase;
   }
 
-  /** Corre una operación dentro de una transacción. Devuelve porDefecto si algo falla. */
   /* Cuánto esperamos a la bodega antes de rendirnos, en milisegundos.
      IndexedDB normalmente responde en milisegundos, pero puede quedarse
      callada para siempre: basta que otra pestaña tenga la base abierta
@@ -105,6 +103,7 @@ const Adjuntos = (() => {
     ]);
   }
 
+  /** Corre una operación dentro de una transacción. Devuelve porDefecto si algo falla. */
   function conBodega(modo, trabajo, porDefecto) {
     return conPaciencia(hacerEnBodega(modo, trabajo, porDefecto), porDefecto);
   }
@@ -154,8 +153,20 @@ const Adjuntos = (() => {
       creado: new Date().toISOString(),
       blob,
     };
-    return conBodega('readwrite', bodega => { bodega.put(registro); }, null)
-      .then(() => ficha(registro));
+    // Antes esto devolvía la ficha pasara lo que pasara: si la bodega
+    // estaba caída, la app anotaba el respaldo en el movimiento y el
+    // archivo no existía en ninguna parte. Un adjunto fantasma es peor
+    // que no tener adjunto, porque nadie se entera hasta que lo va a
+    // buscar.
+    //
+    // 'devolver(true)' marca la intención; quien confirma de verdad es
+    // el 'oncomplete' de la transacción. Si la bodega está caída, si la
+    // transacción aborta o si se acaba la paciencia, sale el false de
+    // por defecto y esta función devuelve null.
+    return conBodega('readwrite', (bodega, devolver) => {
+      bodega.put(registro);
+      devolver(true);
+    }, false).then(guardo => (guardo === true ? ficha(registro) : null));
   }
 
   /** El archivo completo, con su blob, o null si acá no está. */
