@@ -58,18 +58,30 @@ const Adjuntos = (() => {
           bodega.createIndex('movimientoId', 'movimientoId', { unique: false });
         }
       };
-      peticion.onsuccess = () => resolver(peticion.result);
-      peticion.onerror = () => { sirve = false; resolver(null); };
+      // Quién contestó primero. Sin esta marca, el temporizador de más
+      // abajo declaraba la bodega inservible DOCE SEGUNDOS DESPUÉS de
+      // haberse abierto bien: la app guardaba los archivos igual, pero
+      // decía que no podía guardarlos.
+      let yaContesto = false;
+      const contestar = (base, funciona) => {
+        if (yaContesto) return;
+        yaContesto = true;
+        if (!funciona) sirve = false;
+        resolver(base);
+      };
+
+      peticion.onsuccess = () => contestar(peticion.result, true);
+      peticion.onerror   = () => contestar(null, false);
 
       // 'blocked' pasa cuando otra pestaña tiene la base abierta y algo
       // pide borrarla o cambiarle la versión: la nuestra queda esperando
       // a que la otra la suelte, y puede no soltarla nunca.
-      peticion.onblocked = () => { sirve = false; resolver(null); };
+      peticion.onblocked = () => contestar(null, false);
 
       // Y el caso feo: ni onsuccess, ni onerror, ni onblocked. La bodega
       // simplemente no contesta. Sin este tope, promesaBase queda colgada
       // para siempre y CADA intento posterior se queda esperándola.
-      setTimeout(() => { sirve = false; resolver(null); }, 12000);
+      setTimeout(() => contestar(null, false), 12000);
       peticion.onblocked = () => { sirve = false; resolver(null); };
     });
 
