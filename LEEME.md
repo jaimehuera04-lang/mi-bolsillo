@@ -149,6 +149,7 @@ cuentas.** Los detalles están en [ARQUITECTURA.md](ARQUITECTURA.md).
 | Quiero cambiar... | Abre este archivo | Busca |
 |---|---|---|
 | Los colores | `src/ui/estilos.css` | el bloque `:root` de arriba |
+| Tu foto y tu perfil | la app misma | *Ajustes → Mi perfil* |
 | Las categorías (agregar/quitar) | `src/data/categorias.js` | `GASTO` |
 | Los tipos de cuenta | `src/data/categorias.js` | `TIPOS_CUENTA` |
 | Los textos de las técnicas | `src/data/tecnicas.js` | `TECNICAS` |

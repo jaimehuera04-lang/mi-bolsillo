@@ -10,7 +10,7 @@
 
 const Esquema = (() => {
 
-  const VERSION_ESQUEMA = 5;
+  const VERSION_ESQUEMA = 6;
 
   // La llave ya no lleva el número de versión: la versión vive DENTRO
   // del objeto. Poner "v1" en el nombre invita a crear otra llave en
@@ -109,7 +109,38 @@ const Esquema = (() => {
         ingresoEsperado: 0,
         tutorialVisto: false,
         iaActivada: false,        // apagada de fábrica, se enciende en la Fase 6
+
+        /* La foto de perfil: acá va SOLO la ficha
+           { id, nombre, tipo, tamano }. El archivo vive en IndexedDB,
+           como todos los adjuntos (regla 12). Consecuencia honesta:
+           la ficha sí viaja a la nube y la foto no, así que en otro
+           aparato se ven las iniciales hasta que la vuelvas a poner.
+           La pantalla lo dice; fingir que está sería peor. */
+        foto: null,
+
+        /* Quién eres, para que la app deje de adivinar.
+           Esto NO es decoración: de acá salen los gastos de marzo que
+           te toca a TI. Sin auto no tiene sentido ofrecerte el permiso
+           de circulación, y sin hijos en el colegio, la matrícula. */
+        perfil: perfilNuevo(),
       },
+    };
+  }
+
+  /**
+   * Lo que la app necesita saber de la persona para no ofrecerle
+   * gastos que no le corresponden.
+   *
+   * Son tres preguntas y nada más. La tentación de pedir edad,
+   * ciudad, estado civil y profesión existe siempre; ninguna de esas
+   * cambia un solo número de esta app, y pedir datos que no se usan
+   * es la forma más barata de perder la confianza de alguien.
+   */
+  function perfilNuevo() {
+    return {
+      tieneAuto: false,
+      hijosEnColegio: 0,
+      casaPropia: false,
     };
   }
 
@@ -214,5 +245,5 @@ const Esquema = (() => {
   }
 
   return { VERSION_ESQUEMA, LLAVE, LLAVE_VIEJA, LLAVE_RESPALDO,
-           nuevoId, estadoNuevo, cuentaPorDefecto, negocioNuevo };
+           nuevoId, estadoNuevo, cuentaPorDefecto, negocioNuevo, perfilNuevo };
 })();

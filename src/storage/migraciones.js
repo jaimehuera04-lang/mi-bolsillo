@@ -208,12 +208,38 @@ const Migraciones = (() => {
     return nuevo;
   }
 
-  /* La cadena. Para agregar el esquema 6, se suma una línea aquí. */
+  /* ------------------------------------------------------------
+     Esquema 5 -> 6  (septiembre 2026)
+
+     Que cambia:
+       - ajustes gana "foto": la ficha de la foto de perfil. El
+         archivo mismo va a IndexedDB, como todo adjunto (regla 12).
+       - ajustes gana "perfil": tres cosas sobre la persona que la
+         app usa para no ofrecerle gastos que no le corresponden.
+         Sin auto no tiene sentido el permiso de circulación.
+
+     Nace en blanco y sin foto. Quien no la ponga ve sus iniciales,
+     que es lo que hacen todas las apps y funciona.
+     ------------------------------------------------------------ */
+  function migrate_5_a_6(viejo) {
+    const nuevo = { ...viejo };
+    const a = viejo.ajustes || {};
+    nuevo.ajustes = {
+      ...a,
+      foto: a.foto || null,
+      perfil: { ...Esquema.perfilNuevo(), ...(a.perfil || {}) },
+    };
+    nuevo.meta = { ...(viejo.meta || {}), schemaVersion: 6 };
+    return nuevo;
+  }
+
+  /* La cadena. Para agregar el esquema 7, se suma una línea aquí. */
   const CADENA = {
     1: migrate_1_a_2,
     2: migrate_2_a_3,
     3: migrate_3_a_4,
     4: migrate_4_a_5,
+    5: migrate_5_a_6,
   };
 
   /** Que versión tiene este objeto. El esquema 1 usaba 'versión' suelto. */
@@ -253,5 +279,5 @@ const Migraciones = (() => {
     return { estado: actual, desde, hasta: v, migro: desde !== v };
   }
 
-  return { aplicar, versionDe, migrate_1_a_2, migrate_2_a_3, migrate_3_a_4, migrate_4_a_5 };
+  return { aplicar, versionDe, migrate_1_a_2, migrate_2_a_3, migrate_3_a_4, migrate_4_a_5, migrate_5_a_6 };
 })();

@@ -40,7 +40,7 @@ for (const archivo of [
 ]) {
   vm.runInContext(fs.readFileSync(path.join(RAIZ, archivo), 'utf8'), contexto, { filename: archivo });
 }
-const { Datos, Sueldo } = vm.runInContext('({ Datos, Sueldo })', contexto);
+const { Datos, Sueldo, Esquema } = vm.runInContext('({ Datos, Sueldo, Esquema })', contexto);
 
 /* ------------------------------------------------------------ */
 
@@ -218,7 +218,12 @@ const antesDeRecargar = Datos.sueldoLibre(ANIO, MES).libre;
 Datos.cargar();
 revisar('El sueldo libre es el mismo', Datos.sueldoLibre(ANIO, MES).libre, antesDeRecargar);
 revisar('Los compromisos siguen ahí', Datos.compromisos().length > 0, true);
-revisar('Y el esquema quedó en 5', Datos.obtener().meta.schemaVersion, 5);
+// Contra el esquema ACTUAL y no contra un número escrito a mano: lo que
+// importa acá es que guardar y recargar no lo deje a medio migrar, no
+// cuál es el número de hoy. Con el número fijo, cada migración nueva
+// rompía esta prueba sin que nada estuviera mal.
+revisar('Y el esquema quedó al día',
+  Datos.obtener().meta.schemaVersion, Esquema.VERSION_ESQUEMA);
 
 /* ------------------------------------------------------------ */
 

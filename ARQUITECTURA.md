@@ -40,6 +40,34 @@ Meta de estructura (se llega ahí por fases, no de un salto):
 10. **Esto es una app, no una página.** Ver la sección siguiente. Todo lo que delate al
     navegador se considera un error, no un detalle estético.
 
+## El perfil
+
+`ajustes.foto` guarda **solo la ficha** de la foto; el archivo va a IndexedDB como cualquier
+adjunto (regla 12). Eso tiene una consecuencia honesta que la pantalla dice en vez de esconder:
+la ficha **sí** viaja a la nube y la foto **no**, así que en un teléfono nuevo se ven las
+iniciales hasta que la vuelvas a poner. Sin foto, las iniciales sobre el verde de la app: se
+distinguen de un vistazo y no dan la sensación de "te falta algo por hacer".
+
+**`Datos.idsDeAdjuntosVivos()` tiene que incluir la foto de perfil**, o el barrido de huérfanos
+del arranque la borra y la persona ve sus iniciales al día siguiente sin entender por qué. Es
+la tercera vez que este cajón se olvida; si agregas otro sitio donde vivan adjuntos, agrégalo
+ahí también.
+
+### `ajustes.perfil` no es una encuesta
+
+```js
+perfil: { tieneAuto, hijosEnColegio, casaPropia }
+```
+
+Tres preguntas, y cada una **cambia lo que la app hace**: `Datos.sugerenciasDelAnio()` filtra
+el calendario chileno para no ofrecerle el permiso de circulación a quien no tiene auto ni la
+matrícula a quien no tiene hijos. La matrícula además se multiplica por el número de hijos.
+
+La tentación de pedir edad, ciudad, estado civil y profesión existe siempre. Ninguna de esas
+cambia un solo número de esta app, y **pedir datos que no se usan es la forma más barata de
+perder la confianza de alguien**. Si alguna vez se agrega un campo acá, tiene que venir con la
+respuesta a "¿qué cálculo cambia?".
+
 ## Hablar
 
 `src/ui/voz.js` prende el micrófono y `src/core/voz.js` entiende lo que se dijo. La división

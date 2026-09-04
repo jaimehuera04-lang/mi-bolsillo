@@ -340,6 +340,46 @@ input.con-error:focus { outline-color: var(--rojo); }
 }
 .boton-menu:active { transform: scale(.9); background: rgba(255, 255, 255, .3); }
 
+/* ---------- El avatar ----------
+
+   Cuando no hay foto van las iniciales sobre el verde de la app. Eso
+   es mejor que una silueta gris: se distingue de un vistazo y no da
+   la sensación de "te falta algo por hacer".
+
+   Con foto, la imagen va de fondo y el texto se apaga (font-size:0).
+   Así el mismo elemento sirve para los dos casos y no hay que armar
+   dos estructuras distintas en el HTML. */
+.avatar {
+  width: 44px; height: 44px; flex: 0 0 44px;
+  border-radius: 50%;
+  background: linear-gradient(140deg, var(--verde), var(--verde-oscuro));
+  background-size: cover; background-position: center;
+  color: #fff; font-family: inherit; font-weight: 700; font-size: 16px;
+  letter-spacing: .02em;
+  display: grid; place-items: center;
+  border: 0; padding: 0; cursor: pointer;
+  overflow: hidden;
+}
+.avatar.con-foto { font-size: 0; }
+.avatar.grande {
+  width: 74px; height: 74px; flex: 0 0 74px; font-size: 25px;
+}
+
+/* La cabecera del menú es ahora un botón que lleva a Ajustes. */
+.menu-cabecera {
+  width: 100%; background: none; border: 0; font-family: inherit;
+  color: var(--texto); text-align: left; cursor: pointer;
+}
+.menu-cabecera:active { opacity: .7; }
+.menu-quien { flex: 1; min-width: 0; }
+.menu-editar { font-size: 14px; opacity: .5; }
+
+/* La foto en Ajustes, con sus dos botones al lado. */
+.perfil-foto { display: flex; align-items: center; gap: 15px; margin: 6px 0 4px; }
+.perfil-foto-texto { flex: 1; min-width: 0; }
+.perfil-foto-texto .boton { width: auto; display: inline-block; margin-right: 6px; }
+.perfil-foto-texto .ayuda { margin: 8px 0 0; }
+
 /* ---------- El menú lateral ---------- */
 .telon-menu {
   position: absolute; inset: 0; z-index: var(--capa-menu);
@@ -373,14 +413,21 @@ input.con-error:focus { outline-color: var(--rojo); }
 /* mientras el dedo lo arrastra debe seguir al dedo, sin animación */
 .menu-lateral.arrastrando { transition: none; }
 
+/* Lo que le falta a la cabecera del menú, además de lo que ya se dijo
+   arriba en el bloque del avatar. */
 .menu-cabecera {
   display: flex; align-items: center; gap: 11px;
   padding: 4px 8px 16px; margin-bottom: 8px;
   border-bottom: 1px solid var(--borde);
 }
-.menu-emoji { font-size: 30px; line-height: 1; }
 .menu-cabecera strong { display: block; font-size: 16px; }
-.menu-cabecera span  { font-size: 12px; color: var(--texto-suave); word-break: break-all; }
+
+/* OJO: este selector va sobre .menu-quien y NO sobre "span" a secas.
+   El avatar también es un span ahí adentro, y un ".menu-cabecera span"
+   le ganaba en especificidad: le apagaba el blanco y le achicaba las
+   iniciales a 12 px. */
+.menu-quien strong { display: block; font-size: 16px; }
+.menu-quien span   { font-size: 12px; color: var(--texto-suave); word-break: break-all; }
 
 .menu-lateral button[data-pantalla] {
   background: none; border: 0; font-family: inherit; cursor: pointer;

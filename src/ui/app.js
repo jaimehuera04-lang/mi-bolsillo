@@ -557,6 +557,106 @@
     $$$('campoCorreoAjustes').value = a.correo || '';
     $$$('campoNombre').value = a.nombre || '';
     $$$('campoIngresoEsperado').value = a.ingresoEsperado || '';
+
+    const p = Datos.perfil();
+    $$$('perfilAuto').checked = Boolean(p.tieneAuto);
+    $$$('perfilCasa').checked = Boolean(p.casaPropia);
+    $$$('perfilHijos').value = p.hijosEnColegio || 0;
+    dibujarSugerenciasDelAnio();
+    dibujarAvatares();
+  }
+
+  /* ---------------- La foto de perfil ----------------
+
+     Se dibuja en dos lugares: el menú y Ajustes. Si no hay foto van
+     las iniciales, que es lo que hacen todas las apps y funciona.
+
+     Ojo con el caso que parece raro y no lo es: la FICHA de la foto
+     sí viaja a la nube, pero el archivo no (regla 12). Entonces en un
+     teléfono nuevo la ficha existe y la foto no. Ahí se muestran las
+     iniciales y se dice por qué, en vez de dejar un cuadro roto.  */
+
+  async function dibujarAvatares() {
+    const a = Datos.obtener().ajustes;
+    const iniciales = Datos.inicialesDe(a.nombre || a.correo);
+    const cajas = [$$$('menuAvatar'), $$$('avatarAjustes')].filter(Boolean);
+
+    cajas.forEach(c => {
+      c.textContent = iniciales;
+      c.style.backgroundImage = '';
+      c.classList.remove('con-foto');
+    });
+    const quitar = $$$('botonQuitarFoto');
+    if (quitar) quitar.hidden = !a.foto;
+
+    if (!a.foto || !a.foto.id || typeof Adjuntos === 'undefined') return;
+
+    const guardada = await Adjuntos.obtener(a.foto.id);
+    const nota = $$$('notaFotoPerfil');
+
+    if (!guardada || !guardada.blob) {
+      // La ficha vino de la nube pero el archivo se quedó en el otro
+      // aparato. Se dice, no se esconde.
+      if (nota) {
+        nota.textContent = 'Tu foto está en el otro teléfono: las fotos no suben a la nube. '
+          + 'Vuelve a ponerla acá si quieres verla en este.';
+      }
+      return;
+    }
+
+    if (nota) nota.textContent = 'Se queda en este teléfono. No sube a la nube ni la ve nadie.';
+    const url = URL.createObjectURL(guardada.blob);
+    cajas.forEach(c => {
+      c.textContent = '';
+      c.style.backgroundImage = `url(${url})`;
+      c.classList.add('con-foto');
+    });
+  }
+
+  /** Recibe la foto elegida, la deja presentable y la guarda. */
+  async function ponerFotoDePerfil(archivo) {
+    if (!archivo) return;
+    if (!Adjuntos.disponible()) return avisar('Este navegador no nos deja guardar fotos.');
+    try {
+      // El mismo recorte cuadrado y aclarado que usan las fotos de
+      // producto: una foto de perfil es exactamente el mismo problema.
+      const lista = await UiFotos.mejorar(archivo);
+      const ficha = await Adjuntos.guardar({
+        id: 'adj-perfil-' + Date.now().toString(36),
+        nombre: lista.nombre, tipo: lista.blob.type, blob: lista.blob,
+      });
+      if (!ficha) return avisar('No pudimos guardar esa foto.');
+      Datos.guardarFotoDePerfil(ficha);
+      dibujarAvatares();
+      avisar('Listo, esa es tu foto.');
+    } catch (e) {
+      avisar(e.message || 'No pudimos usar esa foto.');
+    }
+  }
+
+  /** Los gastos del año que sí le tocan, según lo que dijo de sí mismo. */
+  function dibujarSugerenciasDelAnio() {
+    const caja = $$$('sugerenciasDelAnio');
+    if (!caja) return;
+    const lista = Datos.sugerenciasDelAnio();
+    const p = Datos.perfil();
+
+    // Sin nada marcado no hay nada que sugerir todavía.
+    if (!p.tieneAuto && !p.casaPropia && !p.hijosEnColegio) { caja.innerHTML = ''; return; }
+
+    const propios = lista.filter(x =>
+      ['permiso', 'permiso2', 'revision', 'seguro', 'matricula', 'contrib1'].includes(x.id));
+    if (!propios.length) { caja.innerHTML = ''; return; }
+
+    caja.innerHTML = `
+      <div class="consejo" style="margin-top:14px">
+        <strong>💡 Con esto, estos gastos te tocan a ti</strong>
+        ${propios.map(x => `<span class="ayuda" style="display:block">
+          ${esc(x.emoji)} ${esc(x.nombre)} · ${esc(Fechas.NOMBRES_MES[x.mes])}</span>`).join('')}
+        <button type="button" class="boton fantasma chico" data-sueldo="calendario-chileno">
+          Agregarlos a mi año
+        </button>
+      </div>`;
   }
 
   /* ---------------- 8b. Cuentas ----------------
@@ -2585,7 +2685,13 @@
     // Botones internos que llevan a otra pantalla
     document.addEventListener('click', e => {
       const ir = e.target.closest('[data-ir]');
-      if (ir) irA(ir.dataset.ir);
+      if (ir) {
+        // Si el enlace estaba DENTRO del menú, hay que cerrarlo: si no,
+        // la pantalla nueva queda detrás del cajón abierto y parece que
+        // no pasó nada. Pasaba al tocar tu perfil.
+        if (ir.closest('#menuPrincipal')) cerrarMenu();
+        irA(ir.dataset.ir);
+      }
 
       const cerrar = e.target.closest('[data-cerrar]');
       if (cerrar) cerrarHoja(cerrar.dataset.cerrar);
@@ -2889,6 +2995,39 @@
       $$$(id).addEventListener('input', calcularAhorro));
 
     // ---- Ajustes ----
+    // ---- La foto de perfil ----
+    $$$('botonPonerFoto').addEventListener('click', () => $$$('archivoFotoPerfil').click());
+    $$$('avatarAjustes').addEventListener('click', () => $$$('archivoFotoPerfil').click());
+    $$$('archivoFotoPerfil').addEventListener('change', e => {
+      const archivo = e.target.files[0];
+      // Se limpia SIEMPRE: sin esto, elegir dos veces la misma foto no
+      // dispara 'change' la segunda vez y parece que la app se colgó.
+      e.target.value = '';
+      ponerFotoDePerfil(archivo);
+    });
+    $$$('botonQuitarFoto').addEventListener('click', async () => {
+      const seguro = await Dialogos.confirmar({
+        titulo: '¿Quitar tu foto?',
+        texto: 'Vuelves a las iniciales. La foto se borra de este teléfono.',
+        aceptar: 'Quitarla', peligro: true,
+      });
+      if (!seguro) return;
+      Datos.borrarFotoDePerfil();
+      dibujarAvatares();
+      avisar('Foto quitada.');
+    });
+
+    // ---- Tu situación ----
+    $$$('botonGuardarPerfil').addEventListener('click', () => {
+      Datos.guardarPerfil({
+        tieneAuto: $$$('perfilAuto').checked,
+        casaPropia: $$$('perfilCasa').checked,
+        hijosEnColegio: Number($$$('perfilHijos').value) || 0,
+      });
+      dibujarSugerenciasDelAnio();
+      avisar('Guardado. Ya sé qué gastos del año te tocan.');
+    });
+
     $$$('botonGuardarAjustes').addEventListener('click', () => {
       // si escribió un correo, tiene que ser válido; si lo dejo vacío, lo respetamos
       const correo = $$$('campoCorreoAjustes').value.trim().toLowerCase();
@@ -3052,13 +3191,22 @@
     const momento = h < 12 ? 'Buenos días' : h < 20 ? 'Buenas tardes' : 'Buenas noches';
     $$$('saludo').textContent = nombre ? `${momento}, ${nombre}` : momento;
 
+    // El menú lleva el nombre de la persona, no el de la app: es SU
+    // perfil. El nombre de la app ya está arriba en el encabezado.
+    const enElMenu = $$$('menuNombre');
+    if (enElMenu) enElMenu.textContent = nombre || 'Mi Bolsillo';
+    dibujarAvatares();
+
     // El menú también dice de quién es esta app. Con el correo a la
     // vista se nota al tiro si entraste con la cuenta equivocada, que
     // en un aparato compartido pasa.
+    // Bajo el nombre va el CORREO, no el nombre otra vez: con el correo a
+    // la vista se nota al tiro si entraste con la cuenta equivocada, que en
+    // un aparato compartido pasa. Si no hay correo, se invita a editarlo.
     const quien = $$$('menuQuien');
     if (quien) {
       const correo = Datos.obtener().ajustes.correo;
-      quien.textContent = nombre || correo || 'Tu plata, ordenada';
+      quien.textContent = correo || 'Toca para completar tu perfil';
     }
   }
 

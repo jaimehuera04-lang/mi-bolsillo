@@ -234,6 +234,11 @@ const Datos = (() => {
     if (typeof DatosNegocio !== 'undefined') {
       for (const id of DatosNegocio.idsDeAdjuntosVivos()) vivos.add(id);
     }
+    // Y la foto de perfil. Sin esta línea, el barrido del arranque la
+    // borraría y la persona vería sus iniciales al día siguiente sin
+    // entender por qué.
+    const foto = estado().ajustes.foto;
+    if (foto && foto.id) vivos.add(foto.id);
     return vivos;
   }
 
@@ -697,6 +702,81 @@ const Datos = (() => {
     guardar();
   }
 
+  /* ---------- El perfil ---------- */
+
+  const perfil = () => {
+    const a = estado().ajustes;
+    // Red de seguridad para un respaldo restaurado a mano.
+    if (!a.perfil) a.perfil = Esquema.perfilNuevo();
+    return a.perfil;
+  };
+
+  /**
+   * Guarda las tres cosas que la app usa para saber qué gastos del
+   * año te tocan a ti. Ver sugerenciasDelAnio().
+   */
+  function guardarPerfil({ tieneAuto, hijosEnColegio, casaPropia }) {
+    const p = perfil();
+    if (tieneAuto !== undefined) p.tieneAuto = Boolean(tieneAuto);
+    if (casaPropia !== undefined) p.casaPropia = Boolean(casaPropia);
+    if (hijosEnColegio !== undefined) {
+      p.hijosEnColegio = Math.max(0, Math.min(12, Dinero.entero(hijosEnColegio)));
+    }
+    guardar();
+    return p;
+  }
+
+  /** La foto de perfil. Acá va la ficha; el archivo ya está en la bodega. */
+  function guardarFotoDePerfil(ficha) {
+    const antes = estado().ajustes.foto;
+    estado().ajustes.foto = ficha || null;
+    guardar();
+    // La anterior ya no le sirve a nadie y una foto olvidada en la
+    // bodega ocupa espacio para siempre.
+    if (antes && antes.id && (!ficha || ficha.id !== antes.id)
+        && typeof Adjuntos !== 'undefined') {
+      Adjuntos.borrar(antes.id);
+    }
+    return ficha;
+  }
+
+  const borrarFotoDePerfil = () => guardarFotoDePerfil(null);
+
+  /** Las iniciales, para cuando no hay foto. "Jaime Huera" -> "JH" */
+  function inicialesDe(nombreOCorreo) {
+    const limpio = String(nombreOCorreo || '').trim();
+    if (!limpio) return '🙂';
+    const partes = limpio.split(/[\s._-]+/).filter(Boolean).slice(0, 2);
+    return partes.map(p => p.charAt(0).toUpperCase()).join('') || '🙂';
+  }
+
+  /**
+   * Los gastos del año que SÍ te tocan, según lo que dijiste de ti.
+   *
+   * Es lo que hace que el perfil valga la pena editar: sin esto, la
+   * app le ofrece el permiso de circulación a quien no tiene auto y la
+   * matrícula a quien no tiene hijos, y esa lista larga de cosas que
+   * no te corresponden es exactamente lo que hace que nadie la mire.
+   */
+  function sugerenciasDelAnio() {
+    const p = perfil();
+    const yaTengo = new Set(estado().estacionales.map(e => e.nombre));
+
+    return Estacionales.PLANTILLAS
+      .filter(x => {
+        if (['permiso', 'permiso2', 'revision', 'seguro'].includes(x.id)) return p.tieneAuto;
+        if (x.id === 'matricula') return p.hijosEnColegio > 0;
+        if (x.id === 'contrib1') return p.casaPropia;
+        return true;      // el 18, diciembre y las vacaciones le tocan a todos
+      })
+      .filter(x => !yaTengo.has(x.nombre))
+      .map(x => ({
+        ...x,
+        // La matrícula es por hijo: si tiene dos, se sugiere el doble.
+        monto: x.id === 'matricula' ? x.monto * Math.max(1, p.hijosEnColegio) : x.monto,
+      }));
+  }
+
   /* ---------- Registro ----------
      Aclaración honesta: esto NO es una cuenta. No hay servidor, ni
      contraseña, ni sincronización. El correo se guarda en este
@@ -817,6 +897,10 @@ const Datos = (() => {
     adjuntarAMovimiento, quitarAdjunto, idsDeAdjuntosVivos,
     agregarMeta, abonarMeta, borrarMeta,
     fijarPresupuesto, guardarAjustes,
+
+    // el perfil
+    perfil, guardarPerfil, guardarFotoDePerfil, borrarFotoDePerfil,
+    inicialesDe, sugerenciasDelAnio,
 
     // el sueldo libre: compromisos, ingresos previstos y estacionales
     agregarIngresoPrevisto, editarIngresoPrevisto, borrarIngresoPrevisto,

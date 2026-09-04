@@ -374,17 +374,64 @@
   <!-- ================= 6. AJUSTES ================= -->
   <main class="pantalla" id="pantalla-ajustes">
     <section class="tarjeta">
-      <h2>Tus datos</h2>
+      <h2>Mi perfil</h2>
+
+      <!-- La foto. Sin "accept" a propósito: en iPhone poner extensiones
+           esconde la Fototeca y parece que la app no dejara subir la foto. -->
+      <div class="perfil-foto">
+        <button type="button" class="avatar grande" id="avatarAjustes" aria-label="Cambiar mi foto">🙂</button>
+        <div class="perfil-foto-texto">
+          <button type="button" class="boton secundario chico" id="botonPonerFoto">Cambiar la foto</button>
+          <button type="button" class="boton fantasma chico" id="botonQuitarFoto" hidden>Quitarla</button>
+          <p class="ayuda" id="notaFotoPerfil">
+            Se queda en este teléfono. No sube a la nube ni la ve nadie.
+          </p>
+        </div>
+      </div>
+      <input type="file" id="archivoFotoPerfil" hidden>
+
+      <label for="campoNombre">¿Cómo quieres que te salude?</label>
+      <input type="text" id="campoNombre" placeholder="Tu nombre" autocomplete="given-name">
+
       <label for="campoCorreoAjustes">Tu correo</label>
       <input type="email" id="campoCorreoAjustes" inputmode="email" autocomplete="email"
              autocapitalize="off" spellcheck="false" placeholder="tucorreo@ejemplo.com">
-      <p class="ayuda">Guardado solo en este dispositivo. No se envía a ningún lado.</p>
-      <label for="campoNombre">¿Cómo quieres que te salude?</label>
-      <input type="text" id="campoNombre" placeholder="Tu nombre" autocomplete="given-name">
+      <p class="ayuda">Es la llave de tu nube, si la enciendes. Guardado en este dispositivo.</p>
+
       <label for="campoIngresoEsperado">¿Cuánto esperas recibir al mes?</label>
-      <input type="number" id="campoIngresoEsperado" placeholder="Ej: 750000" inputmode="numeric">
-      <p class="ayuda">Opcional. Sirve para calcular tus topes sugeridos.</p>
+      <input type="number" id="campoIngresoEsperado" placeholder="Ej: 750000" inputmode="numeric" step="1">
+      <p class="ayuda">Con esto la app calcula tu sueldo libre desde el primer día.</p>
+
       <button class="boton" id="botonGuardarAjustes" style="margin-top:14px">Guardar</button>
+    </section>
+
+    <!-- Esto NO es una encuesta: cada respuesta cambia qué gastos del
+         año te ofrece la app. Por eso son tres y no diez. -->
+    <section class="tarjeta">
+      <h2>Tu situación</h2>
+      <p class="ayuda" style="margin-top:-4px">
+        Tres preguntas para que deje de ofrecerte gastos que no te tocan.
+        En Chile el año aprieta distinto según esto.
+      </p>
+
+      <label class="interruptor">
+        <input type="checkbox" id="perfilAuto">
+        <span>🚗 Tengo auto</span>
+      </label>
+      <p class="ayuda">Permiso de circulación, revisión técnica y seguro.</p>
+
+      <label class="interruptor">
+        <input type="checkbox" id="perfilCasa">
+        <span>🏠 La casa donde vivo es propia</span>
+      </label>
+      <p class="ayuda">Contribuciones, cuatro veces al año.</p>
+
+      <label for="perfilHijos">🎒 Hijos en el colegio</label>
+      <input type="number" id="perfilHijos" min="0" max="12" step="1" value="0" inputmode="numeric">
+      <p class="ayuda">Matrícula, útiles y uniformes. Marzo es el mes más caro del año.</p>
+
+      <button class="boton" id="botonGuardarPerfil" style="margin-top:14px">Guardar</button>
+      <div id="sugerenciasDelAnio"></div>
     </section>
 
     <section class="tarjeta">
@@ -621,13 +668,16 @@ create policy "cada quien actualiza lo suyo"
        cierra como cualquier otra capa. -->
   <div class="telon-menu" id="telonMenu">
     <nav class="menu-lateral" id="menuPrincipal" aria-label="Menú principal">
-      <div class="menu-cabecera">
-        <span class="menu-emoji">💚</span>
-        <div>
-          <strong>Mi Bolsillo</strong>
+      <!-- Se toca y lleva a Ajustes, que es donde se edita. Un avatar
+           que no hace nada al tocarlo es una foto pegada, no un perfil. -->
+      <button class="menu-cabecera" id="menuPerfil" data-ir="ajustes">
+        <span class="avatar" id="menuAvatar" aria-hidden="true">🙂</span>
+        <span class="menu-quien">
+          <strong id="menuNombre">Mi Bolsillo</strong>
           <span id="menuQuien">Tu plata, ordenada</span>
-        </div>
-      </div>
+        </span>
+        <span class="menu-editar" aria-hidden="true">✏️</span>
+      </button>
 
       <button class="activa" data-pantalla="inicio"><span class="icono">📊</span>Inicio</button>
       <button data-pantalla="movimientos"><span class="icono">📝</span>Movimientos</button>
